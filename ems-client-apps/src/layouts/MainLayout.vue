@@ -1,21 +1,24 @@
 <template>
-  <q-layout view="lHh Lpr lFf">
-    <q-header elevated>
+  <q-layout view="lHh Lpr lFf" class="bg-grey-1">
+    <q-header class="glass-nav text-dark">
       <q-toolbar>
-        <q-btn
-          flat
-          dense
-          round
-          icon="menu"
-          aria-label="Menu"
-          @click="toggleLeftDrawer"
-        />
+        <q-btn flat dense round icon="menu" aria-label="Menu" @click="toggleLeftDrawer" />
 
-        <q-toolbar-title>
-          Quasar App
+        <q-toolbar-title class="text-weight-bold row items-center">
+          <span class="text-primary">EMS</span> <span class="q-ml-sm text-subtitle2">Student Portal</span>
         </q-toolbar-title>
 
-        <div>Quasar v{{ $q.version }}</div>
+        <q-space />
+
+        <div class="row q-gutter-sm items-center">
+          <q-btn round flat icon="search" color="grey-7" />
+          <q-btn round flat icon="notifications_none" color="grey-7">
+            <q-badge floating color="red" rounded dot />
+          </q-btn>
+          <q-avatar size="36px" class="q-ml-sm cursor-pointer shadow-1">
+            <img src="https://cdn.quasar.dev/img/avatar2.jpg">
+          </q-avatar>
+        </div>
       </q-toolbar>
     </q-header>
 
@@ -23,19 +26,30 @@
       v-model="leftDrawerOpen"
       show-if-above
       bordered
+      class="bg-white"
     >
-      <q-list>
-        <q-item-label
-          header
-        >
-          Essential Links
-        </q-item-label>
-
-        <EssentialLink
-          v-for="link in linksList"
-          :key="link.title"
-          v-bind="link"
-        />
+      <div class="q-pa-md">
+        <div class="text-subtitle1 text-weight-bold">Kasun Perera</div>
+        <div class="text-caption text-grey">Physics 2026 Batch</div>
+      </div>
+      <q-separator />
+      <q-list class="q-mt-md">
+        <q-item clickable v-ripple to="/student/dashboard" active-class="text-primary bg-indigo-1">
+          <q-item-section avatar><q-icon name="dashboard" /></q-item-section>
+          <q-item-section>Dashboard</q-item-section>
+        </q-item>
+        <q-item clickable v-ripple to="/student/courses">
+          <q-item-section avatar><q-icon name="library_books" /></q-item-section>
+          <q-item-section>My Courses</q-item-section>
+        </q-item>
+        <q-item clickable v-ripple to="/student/exams">
+          <q-item-section avatar><q-icon name="assignment" /></q-item-section>
+          <q-item-section>Exams & Results</q-item-section>
+        </q-item>
+        <q-item clickable v-ripple to="/student/payments">
+          <q-item-section avatar><q-icon name="receipt_long" /></q-item-section>
+          <q-item-section>Payments</q-item-section>
+        </q-item>
       </q-list>
     </q-drawer>
 
@@ -47,52 +61,6 @@
 
 <script setup>
 import { ref } from 'vue'
-import EssentialLink from 'components/EssentialLink.vue'
-
-const linksList = [
-  {
-    title: 'Docs',
-    caption: 'quasar.dev',
-    icon: 'school',
-    link: 'https://quasar.dev'
-  },
-  {
-    title: 'Github',
-    caption: 'github.com/quasarframework',
-    icon: 'code',
-    link: 'https://github.com/quasarframework'
-  },
-  {
-    title: 'Discord Chat Channel',
-    caption: 'chat.quasar.dev',
-    icon: 'chat',
-    link: 'https://chat.quasar.dev'
-  },
-  {
-    title: 'Forum',
-    caption: 'forum.quasar.dev',
-    icon: 'record_voice_over',
-    link: 'https://forum.quasar.dev'
-  },
-  {
-    title: 'Twitter',
-    caption: '@quasarframework',
-    icon: 'rss_feed',
-    link: 'https://twitter.quasar.dev'
-  },
-  {
-    title: 'Facebook',
-    caption: '@QuasarFramework',
-    icon: 'public',
-    link: 'https://facebook.quasar.dev'
-  },
-  {
-    title: 'Quasar Awesome',
-    caption: 'Community Quasar projects',
-    icon: 'favorite',
-    link: 'https://awesome.quasar.dev'
-  }
-]
 
 const leftDrawerOpen = ref(false)
 

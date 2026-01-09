@@ -1,1 +1,32 @@
-// app global css in SCSS form
+// app.scss
+// Brand Colors for Landing Website (Modern Tech & Corporate)
+
+$primary : #0F172A; // Deep Navy (Professional)
+$secondary : #3B82F6; // Bright Blue (Action)
+$accent : #F43F5E; // Rose (Highlights)
+
+body {
+    font-family: 'Outfit', sans-serif; // Modern Google Font
+    background-color: #ffffff;
+    color: #1e293b;
+}
+
+.hero-section {
+    position: relative;
+    min-height: 100vh;
+    overflow: hidden;
+}
+
+.feature-card {
+    transition: transform 0.3s ease;
+
+    &:hover {
+        transform: translateY(-10px);
+    }
+}
+
+.gradient-text {
+    background: linear-gradient(to right, #3B82F6, #8B5CF6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
