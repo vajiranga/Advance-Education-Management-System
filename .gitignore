@@ -1,0 +1,17 @@
+
+# Valid for all OS
+.DS_Store
+Thumbs.db
+*.swp
+.idea
+.vscode
+*.log
+node_modules
+vendor
+.env
+
+# Mobile
+.quasar
+dist
+src-cordova/platforms
+src-cordova/plugins
