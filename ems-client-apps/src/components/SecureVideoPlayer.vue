@@ -53,7 +53,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 
-const props = defineProps({
+defineProps({
   title: String,
   lessonNumber: Number,
   thumbnail: String,

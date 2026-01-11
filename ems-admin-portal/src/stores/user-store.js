@@ -1,44 +1,69 @@
 import { defineStore } from 'pinia'
-import { ref, watch } from 'vue'
+import { ref } from 'vue'
+import { api } from 'boot/axios'
 
 export const useUserStore = defineStore('user', () => {
-    // Initialize from LocalStorage or Default Mock Data
-    const savedTeachers = localStorage.getItem('ems_teachers')
-    const savedStudents = localStorage.getItem('ems_students')
-    const savedParents = localStorage.getItem('ems_parents')
 
-    const teachers = ref(savedTeachers ? JSON.parse(savedTeachers) : [
-        { id: 1, name: 'Mr. Bandara', email: 'bandara@school.com', subject: 'Physics', is_active: true },
-        { id: 2, name: 'Mrs. Silva', email: 'silva@school.com', subject: 'Chemistry', is_active: true }
-    ])
+    const teachers = ref([])
+    const students = ref([])
+    const parents = ref([])
+    const loading = ref(false)
 
-    const students = ref(savedStudents ? JSON.parse(savedStudents) : [
-        { id: 101, barcode: '8821', name: 'Kasun Perera', batch: '2026 A/L', parent_name: 'Sunil Perera', parent_phone: '0771234567' },
-        { id: 102, barcode: '8822', name: 'Nimali Silva', batch: '2027 A/L', parent_name: 'Kamal Silva', parent_phone: '0719876543' }
-    ])
-
-    const parents = ref(savedParents ? JSON.parse(savedParents) : [
-        { id: 501, name: 'Sunil Perera', phone: '0771234567', children: ['Kasun Perera'] },
-        { id: 502, name: 'Kamal Silva', phone: '0719876543', children: ['Nimali Silva', 'Amal Silva'] }
-    ])
-
-    // Watch & Save to LocalStorage
-    watch(teachers, (val) => localStorage.setItem('ems_teachers', JSON.stringify(val)), { deep: true })
-    watch(students, (val) => localStorage.setItem('ems_students', JSON.stringify(val)), { deep: true })
-    watch(parents, (val) => localStorage.setItem('ems_parents', JSON.stringify(val)), { deep: true })
-
-    // Actions
-    function addTeacher(teacher) {
-        teachers.value.push(teacher)
+    async function fetchTeachers() {
+        loading.value = true
+        try {
+            const res = await api.get('/users', { params: { role: 'teacher' } })
+            teachers.value = res.data
+        } catch (err) {
+            console.error(err)
+        } finally {
+            loading.value = false
+        }
     }
 
-    function addStudent(student) {
-        students.value.push(student)
+    async function fetchStudents() {
+        loading.value = true
+        try {
+            const res = await api.get('/users', { params: { role: 'student' } })
+            students.value = res.data
+        } catch (err) {
+            console.error(err)
+        } finally {
+            loading.value = false
+        }
     }
 
-    function addParent(parent) {
-        parents.value.push(parent)
+    async function fetchParents() {
+        loading.value = true
+        try {
+            const res = await api.get('/users', { params: { role: 'parent' } })
+            parents.value = res.data
+        } catch (err) {
+            console.error(err)
+        } finally {
+            loading.value = false
+        }
     }
 
-    return { teachers, students, parents, addTeacher, addStudent, addParent }
+    // Actions to add (mock, but could be real POST)
+    // For now we assume registration happens via Landing Page or Modal which should call API.
+    // I will update the saveUser in UsersPage to call API instead of push.
+
+    // KEEPING these for compatibility if needed, but ideally we should save to DB
+    async function addStudent(studentData) {
+        // This should engage with the register API or similar
+        // For now, let's just re-fetch or push manually
+        students.value.push(studentData)
+    }
+
+    return {
+        teachers,
+        students,
+        parents,
+        loading,
+        fetchTeachers,
+        fetchStudents,
+        fetchParents,
+        addStudent
+    }
 })

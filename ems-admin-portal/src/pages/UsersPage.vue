@@ -189,21 +189,34 @@ const saveUser = () => {
 // Columns
 const teacherCols = [
   { name: 'name', label: 'Name', field: 'name', align: 'left', sortable: true },
-  { name: 'subject', label: 'Subject', field: 'subject', align: 'left', sortable: true },
   { name: 'email', label: 'Email', field: 'email', align: 'left' },
-  { name: 'status', label: 'Status', field: 'status', align: 'center' },
+  { name: 'subject', label: 'Subjects', field: row => Array.isArray(row.subjects) ? row.subjects.join(', ') : row.subjects, align: 'left' },
+  { name: 'phone', label: 'Phone', field: 'phone', align: 'left' },
 ]
 
 const studentCols = [
-  { name: 'barcode', label: 'ID', field: 'barcode', align: 'left', sortable: true },
+  { name: 'username', label: 'ID', field: 'username', align: 'left', sortable: true },
   { name: 'name', label: 'Student Name', field: 'name', align: 'left', sortable: true },
-  { name: 'batch', label: 'Batch', field: 'batch', align: 'left', sortable: true },
-  { name: 'parent', label: 'Guardian Details', field: 'parent', align: 'left' }
+  { name: 'grade', label: 'Grade/Batch', field: 'grade', align: 'left', sortable: true },
+  { name: 'school', label: 'School', field: 'school', align: 'left', sortable: true },
+  { name: 'parent', label: 'Guardian Details', field: 'parent_name', align: 'left' }
 ]
 
 const parentCols = [
   { name: 'name', label: 'Guardian Name', field: 'name', align: 'left', sortable: true },
   { name: 'phone', label: 'Contact', field: 'phone', align: 'left' },
-  { name: 'children', label: 'Linked Students', field: 'children', align: 'left' }
+  { name: 'email', label: 'Email', field: 'email', align: 'left' }
 ]
+
+import { onMounted, watch } from 'vue'
+
+onMounted(() => {
+    userStore.fetchStudents() // Default tab
+})
+
+watch(tab, (newTab) => {
+    if (newTab === 'teachers') userStore.fetchTeachers()
+    else if (newTab === 'students') userStore.fetchStudents()
+    else if (newTab === 'parents') userStore.fetchParents()
+})
 </script>

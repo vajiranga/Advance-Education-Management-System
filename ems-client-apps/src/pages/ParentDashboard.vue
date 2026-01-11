@@ -59,21 +59,61 @@
 
     <!-- Detailed Sections -->
     <div class="row q-col-gutter-lg">
-      <!-- Attendance Calendar -->
-      <div class="col-12 col-md-8">
+      <!-- Child's Class Schedule -->\n      <div class="col-12 col-md-8">
         <q-card class="full-height">
           <q-card-section>
-            <div class="text-h6">Monthly Attendance</div>
+            <div class="text-h6">{{ selectedChild.name }}'s Class Schedule</div>
+            <div class="text-caption text-grey-7">View upcoming classes and schedule</div>
           </q-card-section>
           <q-separator />
-          <q-date
-            v-model="attendanceDates"
-            minimal
-            read-only
-            :events="events"
-            :event-color="(date) => date[5] % 2 === 0 ? 'teal' : 'orange'"
-            class="full-width no-shadow"
-          />
+          <q-card-section>
+            <div class="row q-col-gutter-md">
+              <!-- Calendar -->
+              <div class="col-12 col-md-7">
+                <q-date
+                  v-model="selectedDate"
+                  :events="eventDates"
+                  event-color="primary"
+                  flat
+                  minimal
+                  class="full-width"
+                />
+              </div>
+              
+              <!-- Schedule Details for Selected Date -->
+              <div class="col-12 col-md-5">
+                <div class="q-pa-md bg-grey-1 rounded-borders" style="min-height: 300px;">
+                  <div class="text-subtitle1 text-weight-bold q-mb-md">
+                    {{ formatDateHeader(selectedDate) }}
+                  </div>
+                  
+                  <div v-if="getClassesForDate(selectedDate).length > 0">
+                    <q-list separator>
+                      <q-item v-for="cls in getClassesForDate(selectedDate)" :key="cls.id" class="q-pa-sm">
+                        <q-item-section avatar>
+                          <q-avatar color="primary" text-color="white" size="40px">
+                            <q-icon name="schedule" />
+                          </q-avatar>
+                        </q-item-section>
+                        <q-item-section>
+                          <q-item-label class="text-weight-bold">{{ cls.subject }}</q-item-label>
+                          <q-item-label caption>{{ cls.teacher }}</q-item-label>
+                          <q-item-label caption class="text-primary">
+                            <q-icon name="access_time" size="xs" /> {{ cls.time }}
+                          </q-item-label>
+                        </q-item-section>
+                      </q-item>
+                    </q-list>
+                  </div>
+                  
+                  <div v-else class="text-center text-grey q-pa-xl">
+                    <q-icon name="event_busy" size="48px" color="grey-4" />
+                    <div class="text-subtitle2 q-mt-sm">No classes scheduled</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </q-card-section>
         </q-card>
       </div>
 
@@ -109,6 +149,33 @@ const children = [
 ]
 
 const selectedChild = ref(children[0])
-const attendanceDates = ref('2026/01/09')
-const events = ['2026/01/01', '2026/01/05', '2026/01/06']
+
+// Calendar State
+const selectedDate = ref('2026/01/09')
+const eventDates = ['2026/01/09', '2026/01/05', '2026/01/06', '2026/01/10']
+
+// Mock Class Data
+const classesCache = {
+  '2026/01/09': [
+    { id: 1, subject: 'Physics (Theory)', teacher: 'Mr. Sarath', time: '08:30 AM - 10:30 AM' },
+    { id: 2, subject: 'Chemistry (Revision)', teacher: 'Mrs. Silva', time: '11:00 AM - 01:00 PM' }
+  ],
+  '2026/01/05': [
+    { id: 3, subject: 'Mathematics', teacher: 'Mr. Perera', time: '02:00 PM - 04:00 PM' }
+  ],
+  '2026/01/06': [
+    { id: 4, subject: 'Biology', teacher: 'Dr. Gunawardena', time: '08:30 AM - 10:30 AM' }
+  ]
+}
+
+// Helper Functions
+const formatDateHeader = (dateStr) => {
+  if (!dateStr) return 'Select a date'
+  const date = new Date(dateStr)
+  return date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+}
+
+const getClassesForDate = (dateStr) => {
+  return classesCache[dateStr] || []
+}
 </script>
