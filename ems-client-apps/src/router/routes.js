@@ -13,6 +13,7 @@ const routes = [
       { path: 'exams', component: () => import('pages/StudentExamsPage.vue') },
       { path: 'payments', component: () => import('pages/StudentPaymentsPage.vue') },
       { path: 'watch/:id', component: () => import('pages/PlayerPage.vue') },
+      { path: 'profile', component: () => import('pages/student/StudentProfilePage.vue') },
     ]
   },
   {
@@ -23,7 +24,8 @@ const routes = [
       { path: 'dashboard', component: () => import('pages/ParentDashboard.vue') },
       { path: 'results', component: () => import('pages/ParentResults.vue') },
       { path: 'payments', component: () => import('pages/ParentFeesPage.vue') },
-      { path: 'messages', component: () => import('pages/ParentChatPage.vue') }
+      { path: 'messages', component: () => import('pages/ParentChatPage.vue') },
+      { path: 'profile', component: () => import('pages/ParentProfilePage.vue') }
     ]
   },
   {

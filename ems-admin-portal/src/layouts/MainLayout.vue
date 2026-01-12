@@ -74,7 +74,7 @@ defineOptions({
 
 const navigationLinks = [
   { title: 'Dashboard', icon: 'dashboard', path: '/dashboard' },
-  { title: 'Facility Management', icon: 'meeting_room', path: '/institutes' },
+  { title: 'Hall Management', icon: 'meeting_room', path: '/institutes' },
   { title: 'Users', icon: 'people', path: '/users' },
   { title: 'Courses', icon: 'library_books', path: '/courses' },
   { title: 'Finance', icon: 'payments', path: '/finance' },

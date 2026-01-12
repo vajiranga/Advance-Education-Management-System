@@ -1,24 +1,37 @@
 import { defineStore } from 'pinia'
-import { ref, watch } from 'vue'
+import { ref } from 'vue'
+import { api } from 'boot/axios'
 
 export const useCourseStore = defineStore('course', () => {
-    const savedCourses = localStorage.getItem('ems_courses')
+    const courses = ref([])
+    const loading = ref(false)
 
-    const courses = ref(savedCourses ? JSON.parse(savedCourses) : [
-        { id: 1, grade: 'Grade 10', subject: 'Mathematics', name: 'G10 Maths Theory', teacher: 'Mr. Bandara', students: 45, max_students: 50, fee: 2500, schedule: 'Sat 8:00 AM', type: 'Physical' },
-        { id: 2, grade: 'Grade 11', subject: 'Science', name: 'G11 Science Revision', teacher: 'Mrs. Silva', students: 98, max_students: 100, fee: 3000, schedule: 'Sun 10:00 AM', type: 'Hybrid' },
-        { id: 3, grade: 'Grade 6', subject: 'English', name: 'Spoken English', teacher: 'Mr. Perera', students: 12, max_students: 40, fee: 1500, schedule: 'Mon 4:00 PM', type: 'Online' },
-    ])
-
-    watch(courses, (val) => localStorage.setItem('ems_courses', JSON.stringify(val)), { deep: true })
-
-    function addCourse(course) {
-        courses.value.push(course)
+    async function fetchCourses() {
+        loading.value = true
+        try {
+            const res = await api.get('/courses')
+            courses.value = res.data.data ? res.data.data : res.data // Handle paginate or collection
+        } catch (e) {
+            console.error('Fetch courses failed', e)
+        } finally {
+            loading.value = false
+        }
     }
 
-    function deleteCourse(id) {
-        courses.value = courses.value.filter(c => c.id !== id)
+    async function addCourse(course) {
+        await api.post('/courses', course)
+        await fetchCourses()
     }
 
-    return { courses, addCourse, deleteCourse }
+    async function updateStatus(id, status, note) {
+        await api.put(`/courses/${id}/status`, { status, admin_note: note })
+        await fetchCourses()
+    }
+
+    async function deleteCourse(id) {
+        await api.delete(`/courses/${id}`)
+        await fetchCourses()
+    }
+
+    return { courses, loading, fetchCourses, addCourse, updateStatus, deleteCourse }
 })

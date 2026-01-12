@@ -8,7 +8,11 @@ use App\Http\Controllers\Api\AuthController;
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
-Route::get('/users', [App\Http\Controllers\Api\UserManagementController::class, 'index']); // Protected by auth if needed, but keeping open for dev/admin portal access for now or add middleware later
+Route::post('/parent-login', [AuthController::class, 'parentLogin']);
+Route::get('/users', [App\Http\Controllers\Api\UserManagementController::class, 'index']);
+Route::post('/users', [App\Http\Controllers\Api\UserManagementController::class, 'store']);
+Route::put('/users/{id}', [App\Http\Controllers\Api\UserManagementController::class, 'update']);
+Route::delete('/users/{id}', [App\Http\Controllers\Api\UserManagementController::class, 'destroy']);
 
 Route::prefix('v1')->group(function () {
     
@@ -18,6 +22,7 @@ Route::prefix('v1')->group(function () {
     // Tenant / Institute Routes 
     // (Note: In production, these should be inside the tenant.php routes file and protected by tenancy middleware)
     Route::apiResource('courses', CourseController::class);
+    Route::put('courses/{id}/status', [CourseController::class, 'updateStatus']);
 
     // Academic Routes (Grades & Subjects)
     Route::get('grades', [App\Http\Controllers\Api\V1\AcademicController::class, 'getGrades']);
@@ -31,6 +36,10 @@ Route::prefix('v1')->group(function () {
     });
 });
 
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/user', function (Request $request) {
+        return $request->user();
+    });
+    Route::put('/user/profile', [AuthController::class, 'updateProfile']);
+    Route::get('/parent/children', [App\Http\Controllers\Api\ParentController::class, 'getChildren']);
+});

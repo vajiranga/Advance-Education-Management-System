@@ -326,9 +326,19 @@ const onSubmit = async () => {
 
   } catch (error) {
     console.error(error)
+    let msg = error.response?.data?.message || 'Registration failed. Check your inputs.'
+    
+    // Check for "Already Registered" condition (validation error on unique fields)
+    if (error.response?.status === 422 && error.response.data.errors) {
+        const e = error.response.data.errors
+        if (e.email || e.username || e.phone || e.nic) {
+             msg = 'You are already registered! Please Login.'
+        }
+    }
+
     $q.notify({
         color: 'negative',
-        message: error.response?.data?.message || 'Registration failed. Check your inputs.'
+        message: msg
     })
     if (error.response?.data?.errors) {
          // Optional: Show validation errors more explicitly

@@ -12,10 +12,10 @@
                 <img src="https://cdn.quasar.dev/img/boy-avatar.png">
               </q-avatar>
               <div>
-                <div class="text-h5 text-weight-bold">Kasun Perera</div>
-                <div class="text-subtitle1 text-grey-7">Grade 10 - 2026 A/L Batch</div>
+                <div class="text-h5 text-weight-bold">{{ authStore.user?.name || 'Loading...' }}</div>
+                <div class="text-subtitle1 text-grey-7">{{ authStore.user?.grade || 'N/A' }} - {{ authStore.user?.batch || '' }}</div>
                 <q-chip size="sm" color="blue-1" text-color="primary" icon="school">
-                  Science Stream
+                  {{ authStore.user?.school || 'Science Stream' }}
                 </q-chip>
               </div>
             </div>
@@ -26,9 +26,9 @@
              <div class="bg-grey-2 q-pa-sm rounded-borders inline-block">
                <!-- Simulated Barcode -->
                <div style="font-family: 'Libre Barcode 39', sans-serif; font-size: 48px; line-height: 1;">
-                 *STU8821*
+                 *{{ authStore.user?.username || '0000' }}*
                </div>
-               <div class="text-caption text-weight-bold letter-spacing-2 q-mt-xs">STU-8821</div>
+               <div class="text-caption text-weight-bold letter-spacing-2 q-mt-xs">{{ authStore.user?.username }}</div>
              </div>
              <div class="text-caption text-grey q-mt-sm">Scan at Entrance</div>
           </div>
@@ -210,6 +210,10 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useAuthStore } from 'stores/auth-store'
+
+const authStore = useAuthStore()
+
 
 const selectedDate = ref(new Date().toISOString().split('T')[0]) // YYYY/MM/DD format
 

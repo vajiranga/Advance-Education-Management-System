@@ -22,17 +22,32 @@
       
       <q-card-section class="q-px-lg q-mt-md">
         <q-form @submit="onSubmit" class="q-gutter-md">
-          <q-input outlined v-model="email" label="Email or Index Number" :rules="[val => !!val || 'This field is required']">
-            <template v-slot:prepend>
-              <q-icon name="account_circle" />
-            </template>
-          </q-input>
+          
+          <!-- Parent Login Fields -->
+          <div v-if="role === 'parent'">
+              <div class="text-caption text-grey-7 q-mb-sm">Enter the Student ID and Registered Parent Phone Number</div>
+              <q-input outlined v-model="studentId" label="Student ID (e.g. STU2026...)" :rules="[val => !!val || 'Student ID is required']">
+                <template v-slot:prepend><q-icon name="badge" /></template>
+              </q-input>
+              <q-input outlined v-model="parentPhone" label="Parent Phone Number" :rules="[val => !!val || 'Phone Number is required']">
+                <template v-slot:prepend><q-icon name="phone" /></template>
+              </q-input>
+          </div>
 
-          <q-input outlined v-model="password" label="Password" type="password" :rules="[val => !!val || 'Password is required']">
-            <template v-slot:prepend>
-              <q-icon name="lock" />
-            </template>
-          </q-input>
+          <!-- Standard Login Fields -->
+          <div v-else>
+              <q-input outlined v-model="email" label="Email or Index Number" :rules="[val => !!val || 'This field is required']">
+                <template v-slot:prepend>
+                  <q-icon name="account_circle" />
+                </template>
+              </q-input>
+
+              <q-input outlined v-model="password" label="Password" type="password" :rules="[val => !!val || 'Password is required']">
+                <template v-slot:prepend>
+                  <q-icon name="lock" />
+                </template>
+              </q-input>
+          </div>
           
           <q-btn unelevated color="primary" size="lg" class="full-width q-mt-sm" label="Login" type="submit" :loading="loading" />
         </q-form>
@@ -53,17 +68,30 @@ import { useQuasar } from 'quasar'
 const $q = useQuasar()
 const email = ref('')
 const password = ref('')
-const role = ref('student') // Default role, but backend will override if user has one
+const role = ref('student') // Default role
 const loading = ref(false)
+
+// Parent specific fields
+const parentPhone = ref('')
+const studentId = ref('')
 
 const onSubmit = async () => {
   loading.value = true
   try {
-    const response = await api.post('/login', {
-        email: email.value,
-        password: password.value,
-        role: role.value // Optional hint for redirection if user role is ambiguous
-    })
+    let response;
+    
+    if (role.value === 'parent') {
+        response = await api.post('/parent-login', {
+            phone: parentPhone.value,
+            student_id: studentId.value
+        })
+    } else {
+        response = await api.post('/login', {
+            email: email.value,
+            password: password.value,
+            role: role.value 
+        })
+    }
 
     $q.notify({
         color: 'positive',

@@ -14,7 +14,7 @@
             </q-item-section>
             <q-item-section>
               <q-item-label>{{ child.name }}</q-item-label>
-              <q-item-label caption>{{ child.batch }}</q-item-label>
+              <q-item-label caption>{{ child.grade }}</q-item-label>
             </q-item-section>
           </q-item>
         </q-list>
@@ -141,20 +141,20 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { api } from 'boot/axios'
+import { useAuthStore } from 'stores/auth-store'
 
-const children = [
-  { id: 1, name: 'Kasun Perera', batch: '2026 A/L Physics' },
-  { id: 2, name: 'Nimali Perera', batch: '2028 O/L' }
-]
-
-const selectedChild = ref(children[0])
+const authStore = useAuthStore()
+const children = ref([])
+const selectedChild = ref({ name: 'Loading...', grade: '' })
+const loading = ref(true)
 
 // Calendar State
 const selectedDate = ref('2026/01/09')
 const eventDates = ['2026/01/09', '2026/01/05', '2026/01/06', '2026/01/10']
 
-// Mock Class Data
+// Mock Class Data (Keep this mocked for now as schedule API isn't built yet)
 const classesCache = {
   '2026/01/09': [
     { id: 1, subject: 'Physics (Theory)', teacher: 'Mr. Sarath', time: '08:30 AM - 10:30 AM' },
@@ -167,6 +167,25 @@ const classesCache = {
     { id: 4, subject: 'Biology', teacher: 'Dr. Gunawardena', time: '08:30 AM - 10:30 AM' }
   ]
 }
+
+onMounted(async () => {
+    // Ensure token is ready
+    authStore.init()
+    
+    try {
+        const res = await api.get('/parent/children')
+        children.value = res.data
+        if (children.value.length > 0) {
+            selectedChild.value = children.value[0]
+        } else {
+             selectedChild.value = { name: 'No Linked Children', grade: '-' }
+        }
+    } catch (e) {
+        console.error('Failed to fetch children', e)
+    } finally {
+        loading.value = false
+    }
+})
 
 // Helper Functions
 const formatDateHeader = (dateStr) => {

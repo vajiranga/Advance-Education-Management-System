@@ -175,7 +175,7 @@ const onSubmitRegistration = async () => {
     
     // Reset form
     newInstitute.value = { name: '', id: '', email: '', plan_id: 'pro', domain: '' }
-  } catch (error) {
+  } catch {
     $q.notify({
       color: 'negative',
       position: 'top',

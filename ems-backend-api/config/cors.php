@@ -19,13 +19,7 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => [
-        'http://localhost:9000',
-        'http://localhost:9001',
-        'http://localhost:9002',
-        'http://localhost:9003',
-        'http://localhost:8080' // Standard Vue port just in case
-    ],
+    'allowed_origins' => ['*'],
 
     'allowed_origins_patterns' => [],
 

@@ -17,6 +17,61 @@
           </q-btn>
           <q-avatar size="36px" class="q-ml-sm cursor-pointer shadow-1">
             <img src="https://cdn.quasar.dev/img/avatar2.jpg">
+            <q-menu>
+              <q-list style="min-width: 220px">
+                <q-item class="bg-primary text-white">
+                  <q-item-section>
+                    <div class="text-subtitle2">{{ authStore.user?.name || 'Guest' }}</div>
+                    <div class="text-caption">{{ authStore.user?.username }}</div>
+                  </q-item-section>
+                </q-item>
+
+                <q-separator />
+                
+                <q-item clickable v-close-popup to="/student/profile">
+                  <q-item-section avatar><q-icon name="person" /></q-item-section>
+                  <q-item-section>My Profile</q-item-section>
+                </q-item>
+
+                <q-separator />
+                <q-item-label header class="text-grey-7">Switch Account</q-item-label>
+
+                <q-item 
+                  v-for="(acc, idx) in authStore.accounts" 
+                  :key="idx" 
+                  clickable 
+                  v-close-popup 
+                  @click="authStore.switchAccount(idx)"
+                  :active="idx === authStore.activeAccountIndex"
+                  active-class="bg-blue-1 text-primary"
+                >
+                   <q-item-section avatar>
+                     <q-avatar size="24px" color="primary" text-color="white" font-size="12px">
+                        {{ acc.user?.name?.charAt(0) || 'U' }}
+                     </q-avatar>
+                   </q-item-section>
+                   <q-item-section>
+                     <q-item-label>{{ acc.user?.name }}</q-item-label>
+                     <q-item-label caption>{{ acc.user?.username }}</q-item-label>
+                   </q-item-section>
+                   <q-item-section side v-if="idx === authStore.activeAccountIndex">
+                     <q-icon name="check" color="primary" size="xs" />
+                   </q-item-section>
+                </q-item>
+
+                <q-item clickable v-close-popup href="http://localhost:9000/login">
+                  <q-item-section avatar><q-icon name="person_add" /></q-item-section>
+                  <q-item-section>Add Another Account</q-item-section>
+                </q-item>
+
+                <q-separator />
+
+                <q-item clickable v-close-popup @click="authStore.logout()">
+                  <q-item-section avatar><q-icon name="logout" color="negative" /></q-item-section>
+                  <q-item-section class="text-negative">Logout</q-item-section>
+                </q-item>
+              </q-list>
+            </q-menu>
           </q-avatar>
         </div>
       </q-toolbar>
@@ -29,8 +84,8 @@
       class="bg-white"
     >
       <div class="q-pa-md">
-        <div class="text-subtitle1 text-weight-bold">Kasun Perera</div>
-        <div class="text-caption text-grey">Physics 2026 Batch</div>
+        <div class="text-subtitle1 text-weight-bold">{{ authStore.user?.name || 'Loading...' }}</div>
+        <div class="text-caption text-grey">{{ authStore.user?.username }}</div>
       </div>
       <q-separator />
       <q-list class="q-mt-md">
@@ -50,6 +105,14 @@
           <q-item-section avatar><q-icon name="receipt_long" /></q-item-section>
           <q-item-section>Payments</q-item-section>
         </q-item>
+        <q-item clickable v-ripple to="/student/profile">
+          <q-item-section avatar><q-icon name="person" /></q-item-section>
+          <q-item-section>Profile</q-item-section>
+        </q-item>
+        <q-item clickable v-ripple @click="authStore.logout()">
+          <q-item-section avatar><q-icon name="logout" /></q-item-section>
+          <q-item-section>Logout</q-item-section>
+        </q-item>
       </q-list>
     </q-drawer>
 
@@ -60,9 +123,31 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { useAuthStore } from 'stores/auth-store'
+import { useRoute } from 'vue-router'
 
 const leftDrawerOpen = ref(false)
+const authStore = useAuthStore()
+const route = useRoute()
+
+onMounted(async () => {
+  // Initialize store (headers etc)
+  authStore.init()
+
+  if (route.query.token) {
+    // Add new account from token
+    await authStore.addAccountFromToken(route.query.token)
+    
+    // Clean URL
+    const url = new URL(window.location.href)
+    url.searchParams.delete('token')
+    window.history.replaceState({}, document.title, url.toString())
+  } else if (!authStore.user) {
+    // Try to fetch user if token exists but no user loaded (rare with new logic but safe)
+    await authStore.fetchUser()
+  }
+})
 
 function toggleLeftDrawer () {
   leftDrawerOpen.value = !leftDrawerOpen.value

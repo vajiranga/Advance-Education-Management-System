@@ -33,4 +33,112 @@ class UserManagementController extends Controller
 
         return response()->json($users);
     }
+
+
+    public function store(Request $request)
+    {
+        // Reusing similar validation logic but as admin
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
+            'role' => 'required|in:student,teacher,parent',
+            'email' => $request->role === 'teacher' ? 'required|string|email|max:255|unique:users' : 'nullable|string|email|max:255|unique:users',
+            'password' => 'required|string|min:8', // Admin sets password directly
+            
+            // Optional fields
+            'phone' => 'nullable|string',
+            'whatsapp' => 'nullable|string',
+            'dob' => 'nullable|date',
+            'gender' => 'nullable|string',
+            'school' => 'nullable|string',
+            'grade' => 'nullable|string',
+            'parent_name' => 'nullable|string',
+            'parent_phone' => 'nullable|string',
+            'parent_email' => 'nullable|email',
+            'nic' => 'nullable|string',
+            'experience' => 'nullable|string',
+            'qualifications' => 'nullable|array',
+            'subjects' => 'nullable|array',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $username = null;
+        if ($request->role === 'student') {
+            // Generate index
+            $year = date('Y');
+            $rnd = rand(1000, 9999);
+            $username = "STU$year$rnd"; 
+            // Simplified generation for admin add, can use dedicated method if preferred
+            while(User::where('username', $username)->exists()){
+                 $rnd = rand(1000, 9999);
+                 $username = "STU$year$rnd";
+            }
+        } elseif ($request->role === 'parent') {
+             $username = 'PAR-' . rand(1000,9999);
+        } elseif ($request->role === 'teacher') {
+             $username = 'TCH-' . rand(1000,9999);
+        }
+
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => \Illuminate\Support\Facades\Hash::make($request->password),
+            'plain_password' => $request->password,
+            'role' => $request->role,
+            'username' => $username,
+            
+            'dob' => $request->dob,
+            'gender' => $request->gender,
+            'phone' => $request->phone,
+            'whatsapp' => $request->whatsapp,
+            'school' => $request->school,
+            'grade' => $request->grade,
+            
+            'parent_name' => $request->parent_name,
+            'parent_phone' => $request->parent_phone,
+            'parent_email' => $request->parent_email,
+
+            'nic' => $request->nic,
+            'qualifications' => $request->qualifications,
+            'subjects' => $request->subjects,
+            'experience' => $request->experience,
+        ]);
+
+        return response()->json(['message' => 'User created successfully', 'user' => $user], 201);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $user = User::findOrFail($id);
+
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
+            'email' => 'nullable|email|max:255|unique:users,email,'.$id,
+            'phone' => 'nullable|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $user->fill($request->except(['password', 'username', 'role'])); // Prevent role/username change for now if risky
+
+        if ($request->filled('password')) {
+            $user->password = \Illuminate\Support\Facades\Hash::make($request->password);
+            $user->plain_password = $request->password;
+        }
+
+        $user->save();
+
+        return response()->json(['message' => 'User updated successfully', 'user' => $user]);
+    }
+
+    public function destroy($id)
+    {
+        $user = User::findOrFail($id);
+        $user->delete();
+        return response()->json(['message' => 'User deleted successfully']);
+    }
 }

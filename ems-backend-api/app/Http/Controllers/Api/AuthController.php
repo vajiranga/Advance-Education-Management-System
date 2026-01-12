@@ -53,6 +53,7 @@ class AuthController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'plain_password' => $request->password, // DEMO ONLY: Storing plain password as requested
             'role' => $request->role,
             'username' => $username,
             
@@ -72,6 +73,36 @@ class AuthController extends Controller
             'subjects' => $request->subjects,
             'experience' => $request->experience,
         ]);
+
+        // Auto-create Parent User if this is a Student registration
+        if ($request->role === 'student' && $request->parent_name) {
+            $parent = User::where('role', 'parent')
+                ->where(function($q) use ($request) {
+                    if ($request->parent_phone) $q->orWhere('phone', $request->parent_phone);
+                    if ($request->parent_email) $q->orWhere('email', $request->parent_email);
+                })->first();
+
+            if (!$parent) {
+                // Generate a placeholder email if none provided, using phone
+                $parentEmail = $request->parent_email;
+                if (empty($parentEmail) && $request->parent_phone) {
+                    $parentEmail = $request->parent_phone . '@parent.ems';
+                }
+
+                User::create([
+                    'name' => $request->parent_name,
+                    'email' => $parentEmail,
+                    'phone' => $request->parent_phone,
+                    'role' => 'parent',
+                    // Set a default password for the parent account
+                    'password' => Hash::make('password123'), 
+                    'plain_password' => 'password123',
+                    'whatsapp' => $request->parent_phone, 
+                    // Store the student connection? Not easy without pivot table, 
+                    // but we can at least ensure the parent exists in the system.
+                ]);
+            }
+        }
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
@@ -110,6 +141,59 @@ class AuthController extends Controller
         ]);
     }
 
+    public function parentLogin(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'phone' => 'required|string',
+            'student_id' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        // Find Student
+        $student = User::where('username', $request->student_id)
+                       ->where('role', 'student')
+                       ->first();
+
+        if (!$student) {
+            return response()->json(['message' => 'Invalid Student ID'], 404);
+        }
+
+        // Validate Phone (Check against student's parent_phone)
+        if ($student->parent_phone !== $request->phone) {
+             return response()->json(['message' => 'Phone number does not match the registered parent phone for this student.'], 401);
+        }
+
+        // Find Parent User Account
+        $parent = User::where('role', 'parent')
+                      ->where('phone', $request->phone)
+                      ->first();
+
+        if (!$parent) {
+             // Auto-create:
+             $parent = User::create([
+                 'name' => $student->parent_name ?? 'Parent',
+                 'phone' => $request->phone,
+                 'role' => 'parent',
+                 'email' => $request->phone . '@parent.ems', 
+                 'password' => Hash::make(Str::random(16)), 
+                 'plain_password' => 'no_password_login',
+                 'username' => 'PAR-' . rand(1000,9999)
+             ]);
+        }
+
+        $token = $parent->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'message' => 'Parent login success',
+            'user' => $parent,
+            'token' => $token,
+            'redirect_url' => $this->getRedirectUrl('parent')
+        ]);
+    }
+
     private function generateIndexNumber()
     {
         // Format: STU + Year + 4 Random Digits (e.g. STU20261234)
@@ -130,5 +214,39 @@ class AuthController extends Controller
             case 'parent': return "$baseUrl/parent/dashboard";
             default: return "$baseUrl/login";
         }
+    }
+
+    public function updateProfile(Request $request)
+    {
+        $user = $request->user();
+
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
+            'phone' => 'nullable|string',
+            'whatsapp' => 'nullable|string',
+            'email' => 'nullable|email|max:255|unique:users,email,'.$user->id,
+            'password' => 'nullable|string|min:8|confirmed',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $user->name = $request->name;
+        $user->phone = $request->phone;
+        $user->whatsapp = $request->whatsapp;
+        if ($request->email) $user->email = $request->email;
+
+        if ($request->password) {
+            $user->password = Hash::make($request->password);
+            $user->plain_password = $request->password;
+        }
+
+        $user->save();
+
+        return response()->json([
+            'message' => 'Profile updated successfully',
+            'user' => $user
+        ]);
     }
 }
