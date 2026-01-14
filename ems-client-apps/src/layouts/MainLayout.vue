@@ -101,6 +101,10 @@
           <q-item-section avatar><q-icon name="assignment" /></q-item-section>
           <q-item-section>Exams & Results</q-item-section>
         </q-item>
+        <q-item clickable v-ripple to="/student/attendance">
+          <q-item-section avatar><q-icon name="how_to_reg" /></q-item-section>
+          <q-item-section>Attendance</q-item-section>
+        </q-item>
         <q-item clickable v-ripple to="/student/payments">
           <q-item-section avatar><q-icon name="receipt_long" /></q-item-section>
           <q-item-section>Payments</q-item-section>

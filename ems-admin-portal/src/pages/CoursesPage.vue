@@ -3,7 +3,18 @@
     <!-- Header -->
     <div class="row items-center justify-between q-mb-md">
       <div class="text-h5">Course Management</div>
-      <q-btn color="primary" icon="add_card" label="Create New Course" @click="openAddDialog" />
+      <div class="q-gutter-md">
+          <q-btn v-if="statusTab === 'pending' && filteredCourses.length > 0" 
+                 color="positive" icon="done_all" label="Approve All" 
+                 @click="bulkApprove" />
+                 
+          <q-btn v-if="filteredCourses.length > 0" 
+                 color="negative" icon="delete_sweep" label="Delete All" 
+                 outline 
+                 @click="bulkDelete" />
+                 
+          <q-btn color="primary" icon="add_card" label="Create New Course" @click="openAddDialog" />
+      </div>
     </div>
 
     <!-- Status Tabs -->
@@ -17,8 +28,8 @@
       narrow-indicator
     >
       <q-tab name="all" label="All Courses" />
-      <q-tab name="pending" label="Pending Approval" icon="pending" class="text-orange" />
       <q-tab name="approved" label="Approved" icon="check_circle" class="text-green" />
+      <q-tab name="pending" label="Pending Approval" icon="pending" class="text-orange" />
       <q-tab name="rejected" label="Rejected" icon="cancel" class="text-red" />
     </q-tabs>
 
@@ -48,21 +59,22 @@
          <div class="row q-col-gutter-md" v-else>
            <div class="col-12 col-md-6 col-lg-4" v-for="course in filteredCourses" :key="course.id">
              <q-card class="my-card column full-height">
-               <q-img :src="course.cover_image_url || 'https://cdn.quasar.dev/img/parallax2.jpg'" style="height: 140px">
-                 <div class="absolute-bottom text-subtitle2 text-center">
-                   {{ course.batch?.name || 'Unknown Grade' }} - {{ course.subject?.name || 'Unknown Subject' }}
-                 </div>
+               <q-card-section class="col relative-position">
                  <div class="absolute-top-right q-pa-sm">
-                    <q-chip :color="getStatusColor(course.status)" text-color="white" size="sm" icon="info">
-                        {{ course.status ? course.status.toUpperCase() : 'UNKNOWN' }}
+                    <q-chip :color="getStatusColor(course.status)" text-color="white" size="xs" icon="info">
+                        {{ course.status === 'pending' ? 'PENDING' : (course.status ? course.status.toUpperCase() : 'UNKNOWN') }}
                     </q-chip>
                  </div>
-               </q-img>
-
-               <q-card-section class="col">
-                 <div class="text-h6 ellipsis">{{ course.name }}</div>
-                 <div class="text-subtitle2 text-grey-8 row items-center">
+                 <div class="text-h6 ellipsis q-pr-xl">{{ course.name }}</div>
+                 <div class="text-subtitle2 text-primary">{{ course.batch?.name || 'Unknown Grade' }} - {{ course.subject?.name || 'Unknown Subject' }}</div>
+                 <div class="text-subtitle2 text-grey-8 row items-center q-mt-sm">
                    <q-icon name="person" class="q-mr-xs" /> {{ course.teacher?.name || 'No Teacher' }}
+                 </div>
+                 <div class="text-subtitle2 text-grey-8 row items-center q-mt-xs">
+                   <q-icon name="meeting_room" class="q-mr-xs" /> {{ course.hall?.name || 'No Hall' }}
+                 </div>
+                 <div class="text-subtitle2 text-grey-8 row items-center q-mt-xs">
+                   <q-icon name="group" class="q-mr-xs" /> {{ course.students_count || 0 }} Students
                  </div>
                  <div class="text-caption text-grey q-mt-xs" v-if="course.admin_note">
                      <q-icon name="note" /> Note: {{ course.admin_note }}
@@ -118,16 +130,121 @@
       </q-card>
     </q-dialog>
 
-    <!-- Add/Edit Dialog Placeholder (Logic needs to be updated for Backend IDs) -->
-    <q-dialog v-model="showAddDialog">
-       <q-card>
+    <!-- Add/Edit Dialog -->
+    <q-dialog v-model="showAddDialog" persistent>
+       <q-card style="min-width: 600px">
            <q-card-section>
-               <div class="text-h6">Add/Edit Course</div>
-               <div class="text-caption text-red">Note: UI needs to fetch Subjects/Batches IDs to work with Backend. Currently blocked until those APIs are ready. Please approve courses created by Teachers/Seeders.</div>
+               <div class="text-h6">{{ isEditMode ? 'Edit Course' : 'Create New Course' }}</div>
            </q-card-section>
-           <q-card-actions align="right">
-               <q-btn flat label="Close" v-close-popup />
-           </q-card-actions>
+
+           <q-separator />
+
+           <q-card-section class="scroll" style="max-height: 70vh">
+               <q-form @submit="saveCourse" class="q-gutter-md">
+                   
+                   <!-- Teacher Select -->
+                   <q-select
+                        outlined
+                        v-model="form.teacher"
+                        :options="teacherOptions"
+                        option-label="name"
+                        label="Select Teacher *"
+                        use-input
+                        @filter="filterTeachers"
+                        @update:model-value="onTeacherSelect"
+                        :rules="[val => !!val || 'Teacher is required']"
+                   >
+                     <template v-slot:option="scope">
+                        <q-item v-bind="scope.itemProps">
+                          <q-item-section>
+                            <q-item-label>{{ scope.opt.name }}</q-item-label>
+                            <q-item-label caption>{{ scope.opt.email }} | {{ scope.opt.phone }}</q-item-label>
+                          </q-item-section>
+                        </q-item>
+                     </template>
+                     <template v-slot:no-option>
+                        <q-item><q-item-section class="text-grey">No results</q-item-section></q-item>
+                     </template>
+                   </q-select>
+
+                   <div class="row q-col-gutter-sm">
+                       <div class="col-6">
+                           <!-- Grade/Batch -->
+                           <q-select 
+                                outlined 
+                                v-model="form.batch" 
+                                :options="batches" 
+                                option-label="name" 
+                                label="Grade/Batch *" 
+                                :rules="[val => !!val || 'Required']" 
+                           />
+                       </div>
+                       <div class="col-6">
+                           <!-- Subject (Filtered) -->
+                           <q-select 
+                                outlined 
+                                v-model="form.subject" 
+                                :options="filteredSubjects" 
+                                option-label="name" 
+                                label="Subject *" 
+                                :rules="[val => !!val || 'Required']"
+                                hint="Auto-filtered based on teacher's expertise"
+                           />
+                       </div>
+                   </div>
+
+                   <!-- Hall & Fee -->
+                   <div class="row q-col-gutter-sm">
+                       <div class="col-6">
+                            <q-select 
+                                outlined 
+                                v-model="form.hall" 
+                                :options="halls" 
+                                option-label="name" 
+                                label="Select Hall *" 
+                                :rules="[val => !!val || 'Required']" 
+                            />
+                       </div>
+                       <div class="col-6">
+                            <q-input 
+                                outlined 
+                                v-model="form.fee" 
+                                label="Course Fee (LKR) *" 
+                                type="number" 
+                                prefix="LKR"
+                                :rules="[val => val > 0 || 'Invalid Amount']" 
+                            />
+                       </div>
+                   </div>
+
+                   <q-separator class="q-my-sm" />
+                   <div class="text-subtitle2 text-grey-8">Class Schedule</div>
+
+                   <div class="row q-col-gutter-sm">
+                       <div class="col-4">
+                           <q-select 
+                                outlined 
+                                v-model="form.day" 
+                                :options="['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']" 
+                                label="Day" 
+                           />
+                       </div>
+                       <div class="col-4">
+                            <q-input outlined v-model="form.startTime" type="time" label="Start Time" />
+                       </div>
+                       <div class="col-4">
+                            <q-input outlined v-model="form.endTime" type="time" label="End Time" />
+                       </div>
+                   </div>
+
+                   <q-input v-model="form.admin_note" outlined type="textarea" label="Admin Note / Remarks" rows="2" />
+
+                   <div class="row justify-end q-mt-md">
+                       <q-btn label="Cancel" flat color="grey" v-close-popup />
+                       <q-btn :label="isEditMode ? 'Update Course' : 'Create Course'" type="submit" color="primary" :loading="submitting" />
+                   </div>
+               </q-form>
+           </q-card-section>
        </q-card>
     </q-dialog>
 
@@ -138,23 +255,48 @@
 import { ref, computed, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
 import { useCourseStore } from 'stores/course-store'
+import { useUserStore } from 'stores/user-store'
 import { storeToRefs } from 'pinia'
 
 const $q = useQuasar()
 const courseStore = useCourseStore()
-const { courses, loading } = storeToRefs(courseStore)
+const userStore = useUserStore()
+const { courses, loading, subjects, batches, halls } = storeToRefs(courseStore)
+const { teachers } = storeToRefs(userStore)
 
 const statusTab = ref('all')
 const search = ref('')
 const showOnlyVacancies = ref(false)
 
-// Review Logic
+// Review Logic Refs
 const reviewDialog = ref(false)
 const reviewingCourse = ref(null)
 const reviewNote = ref('')
 
-onMounted(() => {
+// Add/Edit Logic Refs
+const showAddDialog = ref(false)
+const isEditMode = ref(false)
+const submitting = ref(false)
+
+const form = ref({
+    teacher: null,
+    batch: null,
+    subject: null,
+    hall: null,
+    fee: '',
+    day: 'Monday',
+    startTime: '08:00',
+    endTime: '10:00',
+    admin_note: ''
+})
+
+const teacherOptions = ref([])
+
+onMounted(async () => {
     courseStore.fetchCourses()
+    courseStore.fetchMetadata()
+    await userStore.fetchTeachers()
+    teacherOptions.value = teachers.value
 })
 
 const filteredCourses = computed(() => {
@@ -165,7 +307,7 @@ const filteredCourses = computed(() => {
         // Search
         if (search.value) {
             const s = search.value.toLowerCase()
-            if (!c.name.toLowerCase().includes(s) && !c.teacher?.name.toLowerCase().includes(s)) return false
+            if (!c.name.toLowerCase().includes(s) && !c.teacher_name?.toLowerCase().includes(s)) return false
         }
         
         return true
@@ -181,10 +323,102 @@ function getStatusColor(status) {
 function formatSchedule(schedule) {
     if (!schedule) return 'Not Set'
     if (typeof schedule === 'string') return schedule
-    // If array or object, format nicely
+    if (schedule.day) return `${schedule.day} ${schedule.start || ''}-${schedule.end || ''}`
     return JSON.stringify(schedule)
 }
 
+function filterTeachers (val, update) {
+    if (val === '') {
+        update(() => {
+            teacherOptions.value = teachers.value
+        })
+        return
+    }
+    update(() => {
+        const needle = val.toLowerCase()
+        teacherOptions.value = teachers.value.filter(v => v.name.toLowerCase().indexOf(needle) > -1)
+    })
+}
+
+const filteredSubjects = computed(() => {
+    if (!form.value.teacher || !form.value.teacher.subjects || form.value.teacher.subjects.length === 0) {
+        return subjects.value
+    }
+    const tSubjects = form.value.teacher.subjects.map(s => String(s).toLowerCase())
+    return subjects.value.filter(sub => tSubjects.includes(sub.name.toLowerCase()) || tSubjects.includes(String(sub.id)))
+})
+
+function onTeacherSelect() {
+    form.value.subject = null 
+}
+
+function openAddDialog() {
+    isEditMode.value = false
+    resetForm()
+    showAddDialog.value = true
+}
+
+function editCourse(course) {
+    isEditMode.value = true
+    const t = teachers.value.find(u => u.name === course.teacher_name || u.id === course.teacher_id)
+    const b = batches.value.find(x => x.id === course.batch_id || x.name === course.batch?.name)
+    const s = subjects.value.find(x => x.id === course.subject_id || x.name === course.subject?.name)
+    const h = halls.value.find(x => x.id === course.hall_id)
+
+    form.value = {
+        id: course.id,
+        teacher: t || null,
+        batch: b || null,
+        subject: s || null,
+        hall: h || null,
+        fee: course.fee_amount,
+        day: course.schedule?.day || 'Monday',
+        startTime: course.schedule?.start || '08:00',
+        endTime: course.schedule?.end || '10:00',
+        admin_note: course.admin_note
+    }
+    showAddDialog.value = true
+}
+
+async function saveCourse() {
+    submitting.value = true
+    try {
+        const payload = {
+            name: `${form.value.batch?.name} - ${form.value.subject?.name}`,
+            teacher_id: form.value.teacher?.id,
+            batch_id: form.value.batch?.id,
+            subject_id: form.value.subject?.id,
+            hall_id: form.value.hall?.id,
+            fee_amount: form.value.fee,
+            schedule: { day: form.value.day, start: form.value.startTime, end: form.value.endTime, type: 'recurring' },
+            admin_note: form.value.admin_note,
+            status: 'approved'
+        }
+
+        if (isEditMode.value) {
+             $q.notify({ type: 'warning', message: 'Edit logic requires update endpoint. Creating new for now.' })
+             await courseStore.addCourse(payload)
+        } else {
+            await courseStore.addCourse(payload)
+            $q.notify({ type: 'positive', message: 'Course Created Successfully' })
+        }
+        showAddDialog.value = false
+    } catch (e) {
+        console.error(e)
+        $q.notify({ type: 'negative', message: 'Failed to save course' })
+    } finally {
+        submitting.value = false
+    }
+}
+
+function resetForm() {
+    form.value = {
+        teacher: null, batch: null, subject: null, hall: null,
+        fee: '', day: 'Monday', startTime: '08:00', endTime: '10:00', admin_note: ''
+    }
+}
+
+// Review Functions
 function openReviewDialog(course) {
     reviewingCourse.value = course
     reviewNote.value = course.admin_note || ''
@@ -209,18 +443,23 @@ function deleteCourse(id) {
      })
 }
 
-// Disable Add/Edit for this step as validation makes it complex without proper dropdown data
-const showAddDialog = ref(false)
-function openAddDialog() {
-    showAddDialog.value = true
-}
-function editCourse(course) {
-    console.log('Edit', course)
-    // Implement edit later
-    showAddDialog.value = true
+function bulkDelete() {
+     $q.dialog({ title: 'Confirm', message: 'Delete ALL visible courses? This cannot be undone.', cancel: true, color: 'negative' }).onOk(async () => {
+         const ids = filteredCourses.value.map(c => c.id)
+         await courseStore.bulkAction('delete', ids)
+         $q.notify({ type: 'positive', message: 'Deleted All' })
+     })
 }
 
+function bulkApprove() {
+     $q.dialog({ title: 'Confirm', message: 'Approve ALL pending requests?', cancel: true, color: 'positive' }).onOk(async () => {
+         const ids = filteredCourses.value.map(c => c.id)
+         await courseStore.bulkAction('approve', ids)
+         $q.notify({ type: 'positive', message: 'Approved All' })
+     })
+}
 </script>
+
 <style scoped>
 .my-card {
     transition: all 0.3s;

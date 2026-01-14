@@ -45,37 +45,10 @@ class EnrollmentController extends Controller
     {
         $user = $request->user();
 
-        $courses = DB::table('enrollments')
-            ->join('courses', 'enrollments.course_id', '=', 'courses.id')
-            ->join('users as teachers', 'courses.teacher_id', '=', 'teachers.id')
-            ->where('enrollments.user_id', $user->id)
-            ->where('enrollments.status', 'active')
-            ->select(
-                'courses.id',
-                'courses.name as title',
-                'teachers.name as teacher',
-                'courses.schedule',
-                'courses.cover_image_url as image',
-                'courses.fee_amount',
-                'enrollments.enrolled_at'
-            )
-            ->get();
+        // Use Eloquent relationship defined in User model
+        $courses = $user->courses()->with(['teacher', 'subject', 'batch', 'hall'])->get();
 
-        // Transform for frontend
-        $formatted = $courses->map(function($c) {
-            return [
-                'id' => $c->id,
-                'title' => $c->title,
-                'teacher' => $c->teacher,
-                'image' => $c->image ?? 'https://cdn.quasar.dev/img/parallax2.jpg', // Dummy if null
-                'schedule' => is_string($c->schedule) ? $c->schedule : 'TBA', // Simplified
-                'attendance' => rand(60, 100), // Dummy for now
-                'nextClass' => 'Tomorrow', // Dummy logic
-                'isLive' => false
-            ];
-        });
-
-        return response()->json($formatted);
+        return response()->json(['data' => $courses]);
     }
     
     // Drop a course

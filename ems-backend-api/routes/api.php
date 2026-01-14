@@ -21,8 +21,13 @@ Route::prefix('v1')->group(function () {
 
     // Tenant / Institute Routes 
     // (Note: In production, these should be inside the tenant.php routes file and protected by tenancy middleware)
+    Route::post('courses/bulk', [CourseController::class, 'bulkAction']);
     Route::apiResource('courses', CourseController::class);
     Route::put('courses/{id}/status', [CourseController::class, 'updateStatus']);
+    Route::apiResource('batches', App\Http\Controllers\Api\V1\BatchController::class);
+    Route::get('subjects', [App\Http\Controllers\Api\V1\AcademicController::class, 'getAllSubjects']);
+    Route::apiResource('halls', App\Http\Controllers\Api\V1\HallController::class);
+    Route::post('halls/check', [App\Http\Controllers\Api\V1\HallController::class, 'checkAvailability']);
 
     // Academic Routes (Grades & Subjects)
     Route::get('grades', [App\Http\Controllers\Api\V1\AcademicController::class, 'getGrades']);
@@ -33,6 +38,11 @@ Route::prefix('v1')->group(function () {
         Route::post('enroll', [App\Http\Controllers\Api\V1\EnrollmentController::class, 'enroll']);
         Route::get('my-courses', [App\Http\Controllers\Api\V1\EnrollmentController::class, 'myCourses']);
         Route::post('courses/{id}/drop', [App\Http\Controllers\Api\V1\EnrollmentController::class, 'drop']);
+        
+        // Attendance
+        Route::get('attendance/students', [App\Http\Controllers\Api\V1\AttendanceController::class, 'getStudents']);
+        Route::post('attendance', [App\Http\Controllers\Api\V1\AttendanceController::class, 'store']);
+        Route::get('attendance/my-history', [App\Http\Controllers\Api\V1\AttendanceController::class, 'myAttendance']);
     });
 });
 

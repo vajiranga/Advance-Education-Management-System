@@ -16,7 +16,23 @@ export const useAuthStore = defineStore('auth', {
 
     actions: {
         // Called when MainLayout mounts or on app init
+        // Called when MainLayout mounts or on app init
         init() {
+            // Check for token in URL (SSO from Landing)
+            const urlParams = new URLSearchParams(window.location.search)
+            const token = urlParams.get('token')
+
+            if (token) {
+                // Determine user role and redirect properly if needed
+                // But addAccountFromToken fetches user, so we let it handle logic
+                this.addAccountFromToken(token)
+
+                // Clean URL
+                const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+                window.history.replaceState({ path: newUrl }, '', newUrl);
+                return
+            }
+
             this.setAxiosHeader()
             // Optional: verify token validity
         },
@@ -88,12 +104,12 @@ export const useAuthStore = defineStore('auth', {
                 this.persist()
 
                 if (this.accounts.length === 0) {
-                    window.location.href = 'http://localhost:9000/login'
+                    window.location.href = 'http://localhost:9002'
                 } else {
                     window.location.reload()
                 }
             } else {
-                window.location.href = 'http://localhost:9000/login'
+                window.location.href = 'http://localhost:9002'
             }
         },
 

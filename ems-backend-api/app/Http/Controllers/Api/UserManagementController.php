@@ -65,20 +65,15 @@ class UserManagementController extends Controller
         }
 
         $username = null;
-        if ($request->role === 'student') {
-            // Generate index
-            $year = date('Y');
-            $rnd = rand(1000, 9999);
-            $username = "STU$year$rnd"; 
-            // Simplified generation for admin add, can use dedicated method if preferred
-            while(User::where('username', $username)->exists()){
-                 $rnd = rand(1000, 9999);
-                 $username = "STU$year$rnd";
-            }
-        } elseif ($request->role === 'parent') {
-             $username = 'PAR-' . rand(1000,9999);
-        } elseif ($request->role === 'teacher') {
-             $username = 'TCH-' . rand(1000,9999);
+        $prefix = '';
+        if ($request->role === 'student') $prefix = 'STU';
+        elseif ($request->role === 'teacher') $prefix = 'TCH';
+        elseif ($request->role === 'parent') $prefix = 'PAR';
+
+        if ($prefix) {
+             do {
+                $username = $prefix . date('Y') . rand(1000, 9999);
+             } while (User::where('username', $username)->exists());
         }
 
         $user = User::create([

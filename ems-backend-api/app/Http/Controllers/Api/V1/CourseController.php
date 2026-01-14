@@ -26,6 +26,10 @@ class CourseController extends Controller
             $query->where('teacher_id', $request->query('teacher_id'));
         }
 
+        if ($request->has('status')) {
+            $query->where('status', $request->query('status'));
+        }
+
         // Visibility Logic by Role
         if ($user && $user->role === 'student') {
             $query->where('status', 'approved');
@@ -34,7 +38,7 @@ class CourseController extends Controller
         // If fetching general catalog, maybe only approved?
         // Admin sees all.
 
-        return response()->json($query->with(['subject', 'batch', 'teacher'])->orderBy('created_at', 'desc')->paginate(20));
+        return response()->json($query->with(['subject', 'batch', 'teacher', 'hall'])->withCount('students')->orderBy('created_at', 'desc')->paginate(20));
     }
 
     /**
@@ -124,7 +128,52 @@ class CourseController extends Controller
      */
     public function show(string $id)
     {
-        $course = Course::with('modules.contents')->findOrFail($id);
+        $course = Course::with(['subject', 'batch', 'teacher', 'hall'])->findOrFail($id);
         return response()->json($course);
+    }
+
+    /**
+     * Delete Course
+     */
+    public function destroy(string $id)
+    {
+        $course = Course::findOrFail($id);
+        $course->delete();
+        return response()->json(['message' => 'Course deleted']);
+    }
+
+    /**
+     * Bulk Actions
+     */
+    public function bulkAction(Request $request) 
+    {
+        $request->validate([
+            'action' => 'required|in:delete,approve',
+            'ids' => 'required|array',
+            // 'ids.*' => 'exists:courses,id' // Removed to allow robust deletion even if some are missing
+        ]);
+
+        if ($request->action === 'delete') {
+            Course::whereIn('id', $request->ids)->delete();
+            return response()->json(['message' => 'Courses deleted']);
+        }
+
+        if ($request->action === 'approve') {
+            Course::whereIn('id', $request->ids)->update(['status' => 'approved', 'admin_note' => 'Bulk Approved']);
+            // Notify?? (Maybe skip or send generic)
+             $courses = Course::whereIn('id', $request->ids)->get();
+             foreach($courses as $course) {
+                 Notification::create([
+                     'user_id' => $course->teacher_id,
+                     'type' => 'class_status_update',
+                     'title' => 'Class Approved',
+                     'message' => "Your class '{$course->name}' was Approved by Admin (Bulk Action).",
+                     'data' => json_encode(['course_id' => $course->id])
+                 ]);
+             }
+            return response()->json(['message' => 'Courses approved']);
+        }
+
+        return response()->json(['message' => 'Invalid action'], 400);
     }
 }

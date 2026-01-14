@@ -43,10 +43,14 @@ class AuthController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        // Generate Index Number for Students
+        // Generate Username / Index Number
         $username = null;
         if ($request->role === 'student') {
-            $username = $this->generateIndexNumber();
+            $username = $this->generateUsername('STU');
+        } elseif ($request->role === 'teacher') {
+            $username = $this->generateUsername('TCH');
+        } elseif ($request->role === 'parent') {
+            $username = $this->generateUsername('PAR');
         }
 
         $user = User::create([
@@ -194,15 +198,14 @@ class AuthController extends Controller
         ]);
     }
 
-    private function generateIndexNumber()
+    private function generateUsername($prefix)
     {
-        // Format: STU + Year + 4 Random Digits (e.g. STU20261234)
-        // Check uniqueness
+        // Format: PREFIX + Year + 4 Random Digits (e.g. STU20261234)
         do {
-            $index = 'STU' . date('Y') . rand(1000, 9999);
-        } while (User::where('username', $index)->exists());
+            $username = $prefix . date('Y') . rand(1000, 9999);
+        } while (User::where('username', $username)->exists());
         
-        return $index;
+        return $username;
     }
 
     private function getRedirectUrl($role)

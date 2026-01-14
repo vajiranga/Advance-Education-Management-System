@@ -16,11 +16,11 @@
             <q-badge floating color="orange" rounded dot />
           </q-btn>
           <div class="column items-end q-mr-sm display-xs-none">
-             <div class="text-subtitle2" style="line-height: 1.2">Mr. Bandara</div>
-             <div class="text-caption opacity-80" style="font-size: 10px;">Senior Teacher</div>
+             <div class="text-subtitle2" style="line-height: 1.2">{{ authStore.user?.name || 'Teacher' }}</div>
+             <div class="text-caption opacity-80" style="font-size: 10px;">{{ authStore.user?.username || 'ID: ???' }}</div>
           </div>
           <q-avatar size="36px" class="cursor-pointer bg-white text-teal">
-            <span class="text-weight-bold">B</span>
+            <span class="text-weight-bold">{{ authStore.user?.name?.charAt(0) || 'T' }}</span>
           </q-avatar>
         </div>
       </q-toolbar>
@@ -35,11 +35,11 @@
       <div class="q-pa-md bg-teal-1">
         <div class="row items-center q-pa-sm">
            <q-avatar size="48px">
-             <img src="https://cdn.quasar.dev/img/avatar1.jpg">
+             <img src="https://cdn.quasar.dev/img/avatar2.jpg">
            </q-avatar>
            <div class="q-ml-md">
-             <div class="text-weight-bold text-subtitle1">Mr. Bandara</div>
-             <div class="text-caption text-grey-8">Mathematics Dept.</div>
+             <div class="text-weight-bold text-subtitle1">{{ authStore.user?.name || 'Teacher' }}</div>
+             <div class="text-caption text-grey-8">{{ authStore.user?.username }}</div>
            </div>
         </div>
       </div>
@@ -74,7 +74,7 @@
 
         <q-separator class="q-my-md" />
 
-        <q-item clickable v-ripple class="text-red">
+        <q-item clickable v-ripple class="text-red" @click="authStore.logout()">
           <q-item-section avatar><q-icon name="logout" /></q-item-section>
           <q-item-section>Logout</q-item-section>
         </q-item>
@@ -89,8 +89,10 @@
 
 <script setup>
 import { ref } from 'vue'
+import { useAuthStore } from 'stores/auth-store'
 
 const leftDrawerOpen = ref(false)
+const authStore = useAuthStore()
 
 function toggleLeftDrawer () {
   leftDrawerOpen.value = !leftDrawerOpen.value

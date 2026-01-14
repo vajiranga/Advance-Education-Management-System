@@ -11,6 +11,7 @@ const routes = [
       { path: 'dashboard', component: () => import('pages/IndexPage.vue') },
       { path: 'courses', component: () => import('pages/StudentCoursesPage.vue') },
       { path: 'exams', component: () => import('pages/StudentExamsPage.vue') },
+      { path: 'attendance', component: () => import('pages/StudentAttendancePage.vue') },
       { path: 'payments', component: () => import('pages/StudentPaymentsPage.vue') },
       { path: 'watch/:id', component: () => import('pages/PlayerPage.vue') },
       { path: 'profile', component: () => import('pages/student/StudentProfilePage.vue') },

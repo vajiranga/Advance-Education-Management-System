@@ -66,4 +66,22 @@ class AcademicController extends Controller
         $subjects = DB::table('subjects')->where('grade_id', $gradeId)->get();
         return response()->json($subjects);
     }
+
+    public function getAllSubjects()
+    {
+        $subjects = DB::table('subjects')->get();
+        if ($subjects->isEmpty()) {
+            $defaults = [
+                ['name' => 'Mathematics', 'code' => 'MATH', 'created_at' => now(), 'updated_at' => now()],
+                ['name' => 'Science', 'code' => 'SCI', 'created_at' => now(), 'updated_at' => now()],
+                ['name' => 'English', 'code' => 'ENG', 'created_at' => now(), 'updated_at' => now()],
+                ['name' => 'Sinhala', 'code' => 'SIN', 'created_at' => now(), 'updated_at' => now()],
+                ['name' => 'History', 'code' => 'HIS', 'created_at' => now(), 'updated_at' => now()],
+                ['name' => 'ICT', 'code' => 'ICT', 'created_at' => now(), 'updated_at' => now()]
+            ];
+            DB::table('subjects')->insert($defaults);
+            $subjects = DB::table('subjects')->get();
+        }
+        return response()->json($subjects);
+    }
 }

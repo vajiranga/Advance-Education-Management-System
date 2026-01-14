@@ -64,4 +64,11 @@ class User extends Authenticatable
             'subjects' => 'array',
         ];
     }
+
+    public function courses()
+    {
+        return $this->belongsToMany(Course::class, 'enrollments', 'user_id', 'course_id')
+                    ->withPivot('status', 'enrolled_at')
+                    ->wherePivot('status', 'active');
+    }
 }

@@ -26,4 +26,16 @@ class Course extends Model
     public function modules() {
         return $this->hasMany(CourseModule::class);
     }
+
+    public function enrollments() {
+        return $this->hasMany(Enrollment::class);
+    }
+
+    public function students() {
+        return $this->belongsToMany(User::class, 'enrollments', 'course_id', 'user_id')->withPivot('status');
+    }
+
+    public function hall() {
+        return $this->belongsTo(Hall::class);
+    }
 }
