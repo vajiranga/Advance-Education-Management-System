@@ -35,38 +35,82 @@
     </q-card>
 
     <!-- Schedule Section -->
+    <!-- Schedule Section (Calendar) -->
     <div class="q-mb-lg">
        <div class="text-h6 text-weight-bold q-mb-sm">My Class Schedule</div>
-       <q-card flat bordered class="bg-white">
-           <q-tabs v-model="selectedDay" dense active-color="primary" indicator-color="primary" class="text-grey" align="justify" :breakpoint="0">
-                <q-tab v-for="day in days" :key="day" :name="day" :label="day.substring(0,3)" />
-           </q-tabs>
-           <q-separator />
-           <q-tab-panels v-model="selectedDay" animated>
-                <q-tab-panel v-for="day in days" :key="day" :name="day" class="q-pa-md">
-                     <div v-if="getClassesForDay(day).length === 0" class="text-center text-grey q-py-sm">
-                         <q-icon name="event_busy" size="sm" /> No classes scheduled for {{ day }}
-                     </div>
-                     <q-list separator v-else>
-                         <q-item v-for="cls in getClassesForDay(day)" :key="cls.id" clickable v-ripple class="rounded-borders q-mb-xs">
-                             <q-item-section avatar>
-                                 <q-avatar color="blue-1" text-color="blue" font-size="14px">{{ cls.schedule?.start || 'TBA' }}</q-avatar>
-                             </q-item-section>
-                             <q-item-section>
-                                 <q-item-label class="text-weight-bold">{{ cls.name }}</q-item-label>
-                                 <q-item-label caption>{{ cls.teacher?.name }} | {{ cls.hall?.name || 'No Hall' }}</q-item-label>
-                             </q-item-section>
-                             <q-item-section side>
-                                 <q-chip size="sm" color="green-1" text-color="green">Active</q-chip>
-                             </q-item-section>
-                         </q-item>
-                     </q-list>
-                </q-tab-panel>
-           </q-tab-panels>
-       </q-card>
+       <div class="flex justify-center">
+           <q-date
+             v-model="calendarDate"
+             :key="myCourses.length"
+             minimal
+             flat
+             bordered
+             class="full-width"
+             style="max-width: 800px"
+             today-btn
+             @update:model-value="onDateClick"
+           >
+             <template v-slot:default="scope">
+                <div v-if="scope"
+                   class="fit column items-center justify-center relative-position q-pa-xs rounded-borders cursor-pointer"
+                   :class="getDayClass(scope)"
+                   @click="onDateClick(scope.date)"
+                >
+                   <div :class="scope.today ? 'text-bold' : ''">
+                      {{ scope.day }}
+                   </div>
+                   <div v-if="getDayBadge(scope.date)" class="q-mt-xs bg-primary" style="width: 4px; height: 4px; border-radius: 50%"></div>
+                   <q-badge
+                      v-if="getDayBadge(scope.date)"
+                      rounded
+                      color="red"
+                      text-color="white"
+                      floating
+                      transparent
+                      style="top: 2px; right: 2px; transform: scale(0.8);"
+                   >
+                       {{ getDayBadge(scope.date) }}
+                   </q-badge>
+                </div>
+             </template>
+           </q-date>
+       </div>
     </div>
 
-    <!-- Your Classes -->
+    <!-- Date Details Dialog -->
+    <q-dialog v-model="showDateDialog">
+        <q-card style="min-width: 350px">
+            <q-card-section class="row items-center justify-between bg-primary text-white">
+                <div class="text-h6">{{ activeDate }}</div>
+                <q-btn flat round dense icon="close" v-close-popup />
+            </q-card-section>
+            <q-card-section class="q-pa-md">
+                <div v-if="selectedDateClasses.length === 0" class="text-grey text-center q-py-md">
+                    No classes scheduled for this date.
+                </div>
+                <q-list separator v-else>
+                     <q-item v-for="cls in selectedDateClasses" :key="cls.id">
+                         <q-item-section>
+                             <q-item-label class="text-weight-bold">{{ cls.name }}</q-item-label>
+                             <q-item-label caption class="text-grey-7">
+                                 {{ formatSchedule(cls.schedule) }}
+                             </q-item-label>
+                             <q-item-label caption>
+                                 {{ cls.teacher?.name }} | {{ cls.hall?.name || 'No Hall' }}
+                             </q-item-label>
+                         </q-item-section>
+                         <q-item-section side>
+                             <q-chip size="sm" :color="cls.type === 'extra' ? 'orange' : 'blue-1'" :text-color="cls.type === 'extra' ? 'white' : 'blue'">
+                                 {{ cls.type === 'extra' ? 'Extra' : 'Regular' }}
+                             </q-chip>
+                         </q-item-section>
+                     </q-item>
+                </q-list>
+            </q-card-section>
+        </q-card>
+    </q-dialog>
+
+    <!-- Your Regular Classes -->
     <div class="q-mb-xl">
       <div class="row items-center justify-between q-mb-md">
         <div class="text-h6 text-weight-bold">Your Classes</div>
@@ -78,7 +122,7 @@
       </div>
       
       <div class="row q-col-gutter-md" v-else>
-        <div class="col-12 col-sm-6 col-md-4" v-for="course in myCourses" :key="course.id">
+        <div class="col-12 col-sm-6 col-md-4" v-for="course in regularCourses" :key="course.id">
            <q-card class="my-card no-shadow border-light hover-effect full-height column">
              <q-card-section class="q-pb-sm col-grow relative-position">
                 <div class="absolute-top-right q-pa-sm">
@@ -116,8 +160,72 @@
              </q-card-actions>
            </q-card>
         </div>
-        <div v-if="myCourses.length === 0" class="col-12 text-center text-grey q-py-lg">
-            No enrolled classes yet.
+        <div v-if="regularCourses.length === 0" class="col-12 text-center text-grey q-py-lg">
+            No regular classes enrolled.
+        </div>
+      </div>
+    </div>
+
+    <!-- Upcoming Extra Classes Section -->
+    <div class="q-mb-xl" v-if="upcomingExtraCourses.length > 0">
+      <div class="row items-center justify-between q-mb-md">
+        <div class="text-h6 text-weight-bold text-orange-9">Upcoming Extra Classes</div>
+      </div>
+      
+      <div class="row q-col-gutter-md">
+        <div class="col-12 col-sm-6 col-md-4" v-for="course in upcomingExtraCourses" :key="course.id">
+           <q-card class="my-card no-shadow border-light hover-effect full-height column border-top-orange">
+             <q-card-section class="q-pb-sm col-grow relative-position">
+                <div class="absolute-top-right q-pa-sm">
+                   <q-chip color="orange-1" text-color="orange" size="xs" icon="star">Upcoming</q-chip>
+                </div>
+                <div class="text-h6 text-weight-bold ellipsis q-pr-xl">{{ course.name }}</div>
+                <div class="text-subtitle2 text-grey-8">For: {{ course.parent_course?.name }}</div>
+                
+                <div class="text-subtitle2 text-grey-8 row items-center q-mt-sm">
+                  <q-icon name="event" size="xs" class="q-mr-xs" />
+                  {{ course.schedule?.date }}
+                </div>
+                <div class="text-subtitle2 text-grey-8 row items-center q-mt-xs">
+                  <q-icon name="schedule" size="xs" class="q-mr-xs" />
+                  {{ course.schedule?.start }} - {{ course.schedule?.end }}
+                </div>
+                <div class="text-subtitle2 text-grey-8 row items-center q-mt-xs">
+                  <q-icon name="meeting_room" class="q-mr-xs" />
+                  {{ course.hall?.name || 'No Hall' }}
+                </div>
+             </q-card-section>
+           </q-card>
+        </div>
+      </div>
+    </div>
+
+    <!-- Past Extra Classes Section -->
+    <div class="q-mb-xl" v-if="pastExtraCourses.length > 0">
+      <div class="row items-center justify-between q-mb-md">
+        <div class="text-h6 text-weight-bold text-grey-7">Past Extra Classes</div>
+      </div>
+      
+      <div class="row q-col-gutter-md">
+        <div class="col-12 col-sm-6 col-md-4" v-for="course in pastExtraCourses" :key="course.id">
+           <q-card class="my-card no-shadow border-light full-height column bg-grey-1">
+             <q-card-section class="q-pb-sm col-grow relative-position">
+                <div class="absolute-top-right q-pa-sm">
+                   <q-chip color="grey-3" text-color="grey-8" size="xs" icon="history">Ended</q-chip>
+                </div>
+                <div class="text-h6 text-weight-bold ellipsis q-pr-xl text-grey-8">{{ course.name }}</div>
+                <div class="text-subtitle2 text-grey-6">For: {{ course.parent_course?.name }}</div>
+                
+                <div class="text-subtitle2 text-grey-6 row items-center q-mt-sm">
+                  <q-icon name="event" size="xs" class="q-mr-xs" />
+                  {{ course.schedule?.date }}
+                </div>
+                <div class="text-subtitle2 text-grey-6 row items-center q-mt-xs">
+                  <q-icon name="schedule" size="xs" class="q-mr-xs" />
+                  {{ course.schedule?.start }} - {{ course.schedule?.end }}
+                </div>
+             </q-card-section>
+           </q-card>
         </div>
       </div>
     </div>
@@ -175,7 +283,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, computed } from 'vue'
 import { useAuthStore } from 'stores/auth-store'
 import { useStudentStore } from 'stores/student-store'
 import { storeToRefs } from 'pinia'
@@ -186,24 +294,106 @@ const authStore = useAuthStore()
 const studentStore = useStudentStore()
 const { myCourses, allCourses, loading } = storeToRefs(studentStore)
 
-const selectedDay = ref(new Date().toLocaleDateString('en-US', { weekday: 'long' }))
-const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+const regularCourses = computed(() => (myCourses.value || []).filter(c => c.type === 'regular' || !c.type))
+const extraCourses = computed(() => (myCourses.value || []).filter(c => c.type === 'extra'))
 
-function getClassesForDay(day) {
+const upcomingExtraCourses = computed(() => {
+    const today = new Date().toISOString().slice(0, 10)
+    return extraCourses.value.filter(c => {
+         const d = c.schedule?.date || ''
+         return d >= today
+    }).sort((a,b) => (a.schedule?.date || '').localeCompare(b.schedule?.date))
+})
+
+const pastExtraCourses = computed(() => {
+    const today = new Date().toISOString().slice(0, 10)
+    return extraCourses.value.filter(c => {
+         const d = c.schedule?.date || ''
+         return d < today
+    }).sort((a,b) => (b.schedule?.date || '').localeCompare(a.schedule?.date))
+})
+
+const calendarDate = ref(new Date().toISOString().slice(0, 10).replace(/-/g, '/'))
+const showDateDialog = ref(false)
+const selectedDateClasses = ref([])
+const activeDate = ref('')
+
+function getClassesForDate(dateStr) {
     if (!myCourses.value) return []
-    return myCourses.value.filter(c => {
-         // Handle different schedule formats
+    
+    // Safe parse YYYY/MM/DD
+    const parts = dateStr.split('/')
+    const y = parseInt(parts[0])
+    const m = parseInt(parts[1])
+    const d = parseInt(parts[2])
+    const date = new Date(y, m - 1, d)
+    
+    // Manual Day Lookup
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+    const dayName = days[date.getDay()]
+    
+    const normalizedDate = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`
+
+    // Parse Regular (Check Day OR Date)
+    const regular = regularCourses.value.filter(c => {
          let s = c.schedule
+         if (typeof s === 'string') { try { s = JSON.parse(s) } catch { return false } }
          if (!s) return false
-         if (typeof s === 'string') {
-             try { s = JSON.parse(s) } catch { return s.includes(day) }
-         }
-         return s.day === day || s.date === day // Basic check
-    }).sort((a,b) => {
-         let t1 = typeof a.schedule === 'object' ? a.schedule.start : ''
-         let t2 = typeof b.schedule === 'object' ? b.schedule.start : ''
-         return t1.localeCompare(t2)
+         
+         // Match Recurring Day
+         if (s.day && s.day === dayName) return true
+         
+         // Match Specific Date (if regular one-off)
+         if (s.date && s.date === normalizedDate) return true
+         
+         return false
     })
+
+    const extra = extraCourses.value.filter(c => {
+         let s = c.schedule
+         if (typeof s === 'string') { try { s = JSON.parse(s) } catch { return false } }
+         return s?.date === normalizedDate
+    })
+    
+    return [...regular, ...extra].sort((a,b) => {
+         // Sort by time
+         const getStart = (c) => {
+             let s = typeof c.schedule === 'string' ? JSON.parse(c.schedule) : c.schedule
+             return s?.start || ''
+         }
+         return getStart(a).localeCompare(getStart(b))
+    })
+}
+
+function onDateClick(date) {
+    activeDate.value = date
+    selectedDateClasses.value = getClassesForDate(date)
+    showDateDialog.value = true
+}
+
+function getDayBadge(date) {
+    const classes = getClassesForDate(date)
+    return classes.length > 0 ? classes.length : null
+}
+
+function getDayClass(scope) {
+    if (!scope) return ''
+    if (scope.selected) return 'bg-primary text-white'
+    // check if today
+    const today = new Date().toISOString().slice(0, 10).replace(/-/g, '/')
+    if (scope.date === today) return 'border-today'
+    
+    // Check types
+    const classes = getClassesForDate(scope.date)
+    if (classes.length === 0) return ''
+    
+    const hasRegular = classes.some(c => (!c.type || c.type === 'regular'))
+    const hasExtra = classes.some(c => c.type === 'extra')
+    
+    if (hasRegular && hasExtra) return 'bg-purple-1 text-purple'
+    if (hasRegular) return 'bg-blue-1 text-blue'
+    if (hasExtra) return 'bg-orange-1 text-orange'
+    return ''
 }
 
 function isEnrolled(courseId) {
@@ -262,5 +452,10 @@ function formatSchedule(schedule) {
   transform: translateY(-2px);
   transition: all 0.2s ease;
   box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
+}
+.border-today {
+    border: 2px solid var(--q-primary);
+    font-weight: bold;
+    border-radius: 4px;
 }
 </style>

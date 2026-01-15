@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Course extends Model
 {
+    use SoftDeletes;
     protected $guarded = [];
     protected $casts = [
         'schedule' => 'array'
@@ -37,5 +40,13 @@ class Course extends Model
 
     public function hall() {
         return $this->belongsTo(Hall::class);
+    }
+    
+    public function parentCourse() {
+        return $this->belongsTo(Course::class, 'parent_course_id');
+    }
+
+    public function extraClasses() {
+        return $this->hasMany(Course::class, 'parent_course_id');
     }
 }

@@ -5,14 +5,17 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Attendance extends Model
+class Payment extends Model
 {
     use HasFactory;
 
     protected $fillable = [
         'course_id',
         'user_id',
-        'date',
+        'amount',
+        'month',
+        'paid_at',
+        'type',
         'status',
         'note'
     ];

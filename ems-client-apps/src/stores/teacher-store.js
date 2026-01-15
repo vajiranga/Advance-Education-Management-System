@@ -19,6 +19,32 @@ export const useTeacherStore = defineStore('teacher', () => {
         }
     }
 
+    async function updateClass(id, payload) {
+        loading.value = true
+        try {
+            await api.put(`/v1/courses/${id}`, payload)
+            return { success: true }
+        } catch (e) {
+            console.error(e)
+            return { success: false, error: e.response?.data?.message || 'Error occurred' }
+        } finally {
+            loading.value = false
+        }
+    }
+
+    async function deleteClass(id) {
+        loading.value = true
+        try {
+            await api.delete(`/v1/courses/${id}`)
+            return { success: true }
+        } catch (e) {
+            console.error(e)
+            return { success: false, error: e.response?.data?.message || 'Error occurred' }
+        } finally {
+            loading.value = false
+        }
+    }
+
     async function fetchCourses(params = {}) {
         loading.value = true
         try {
@@ -84,5 +110,5 @@ export const useTeacherStore = defineStore('teacher', () => {
         }
     }
 
-    return { createClass, fetchCourses, fetchBatches, fetchSubjects, checkHallAvailability, fetchStudentsForAttendance, saveAttendance, loading, courses }
+    return { createClass, updateClass, deleteClass, fetchCourses, fetchBatches, fetchSubjects, checkHallAvailability, fetchStudentsForAttendance, saveAttendance, loading, courses }
 })

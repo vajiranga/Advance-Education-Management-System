@@ -63,6 +63,9 @@ import { useRouter } from 'vue-router'
 import * as THREE from 'three'
 import NET from 'vanta/dist/vanta.net.min'
 
+import { useAuthStore } from 'stores/auth-store'
+import { useQuasar } from 'quasar'
+
 const vantaRef = ref(null)
 const vantaEffect = ref(null)
 
@@ -70,6 +73,8 @@ const email = ref('')
 const password = ref('')
 const rememberMe = ref(false)
 const router = useRouter()
+const authStore = useAuthStore()
+const $q = useQuasar()
 
 onMounted(() => {
   vantaEffect.value = NET({
@@ -96,10 +101,15 @@ onBeforeUnmount(() => {
   }
 })
 
-const onSubmit = () => {
-  // TODO: Add actual API integration
-  console.log('Login attempt:', email.value)
-  router.push('/dashboard')
+const onSubmit = async () => {
+  try {
+      await authStore.login(email.value, password.value)
+      $q.notify({ type: 'positive', message: 'Welcome Back!' })
+      router.push('/dashboard')
+  } catch (e) {
+      console.error(e)
+      $q.notify({ type: 'negative', message: 'Login Failed. Check credentials.' })
+  }
 }
 </script>
 

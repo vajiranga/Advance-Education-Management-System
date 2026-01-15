@@ -69,7 +69,7 @@
     <div class="row q-col-gutter-lg">
        <!-- Schedule -->
        <div class="col-12 col-md-8">
-          <q-card class="no-shadow border-light full-height">
+          <q-card class="no-shadow border-light">
              <q-card-section class="row items-center justify-between">
                 <div class="text-h6">Today's Schedule</div>
                 <q-chip outline color="teal" label="Thursday, 8th Jan" icon="calendar_today" />
@@ -85,13 +85,94 @@
                       <q-item-label caption><q-icon name="meeting_room" /> {{ cls.hall }}</q-item-label>
                    </q-item-section>
                    <q-item-section side>
-                       <q-btn v-if="cls.status === 'upcoming'" md color="teal" label="Start Class" icon="play_arrow" unelevated />
-                       <q-chip v-else color="green-1" text-color="green" label="Completed" />
+                       <div class="row items-center q-gutter-sm">
+                           <q-btn flat round icon="groups" color="primary" @click="viewStudents(cls.id)">
+                               <q-tooltip>View Students</q-tooltip>
+                           </q-btn>
+                           <q-btn v-if="cls.status === 'upcoming'" md color="teal" label="Start Class" icon="play_arrow" unelevated />
+                           <q-chip v-else color="green-1" text-color="green" label="Completed" />
+                       </div>
                    </q-item-section>
                 </q-item>
              </q-list>
           </q-card>
+       
+       <!-- My Extra Classes -->
+       <div v-if="(upcomingExtraCourses || []).length > 0" class="q-mt-lg">
+           <div class="text-h6 q-mb-sm text-teal">Upcoming Extra Classes</div>
+           <q-list bordered separator class="bg-white rounded-borders">
+               <q-item v-for="cls in upcomingExtraCourses" :key="cls.id">
+                   <q-item-section avatar>
+                       <q-avatar color="teal-1" text-color="teal" icon="event" />
+                   </q-item-section>
+                   <q-item-section>
+                       <q-item-label class="text-weight-bold">{{ cls.name }}</q-item-label>
+                       <q-item-label caption>
+                           {{ typeof cls.schedule === 'string' ? JSON.parse(cls.schedule).date : cls.schedule.date }} | 
+                           {{ typeof cls.schedule === 'string' ? JSON.parse(cls.schedule).start : cls.schedule.start }}
+                       </q-item-label>
+                   </q-item-section>
+                   <q-item-section side>
+                       <div class="row items-center q-gutter-xs">
+                           <q-chip size="sm" color="orange" text-color="white" :label="cls.status === 'approved' ? 'Approved' : 'Pending'" />
+                           <q-btn flat round dense icon="more_vert">
+                               <q-menu>
+                                   <q-list style="min-width: 100px">
+                                       <q-item clickable v-close-popup @click="viewStudents(cls.id)">
+                                           <q-item-section>View Students</q-item-section>
+                                       </q-item>
+                                       <q-item clickable v-close-popup @click="openEditClassDialog(cls)">
+                                           <q-item-section>Edit</q-item-section>
+                                       </q-item>
+                                       <q-item clickable v-close-popup @click="deleteClassHandler(cls)" class="text-negative">
+                                           <q-item-section>Delete</q-item-section>
+                                       </q-item>
+                                   </q-list>
+                               </q-menu>
+                           </q-btn>
+                       </div>
+                   </q-item-section>
+               </q-item>
+           </q-list>
        </div>
+
+       <div v-if="(pastExtraCourses || []).length > 0" class="q-mt-md">
+           <div class="text-h6 q-mb-sm text-grey">Past Extra Classes</div>
+           <q-list bordered separator class="bg-white rounded-borders">
+               <q-item v-for="cls in pastExtraCourses" :key="cls.id" class="bg-grey-1">
+                   <q-item-section avatar>
+                       <q-avatar color="grey-3" text-color="grey-7" icon="history" />
+                   </q-item-section>
+                   <q-item-section>
+                       <q-item-label class="text-grey-8">{{ cls.name }}</q-item-label>
+                       <q-item-label caption>
+                           {{ typeof cls.schedule === 'string' ? JSON.parse(cls.schedule).date : cls.schedule.date }}
+                       </q-item-label>
+                   </q-item-section>
+                   <q-item-section side>
+                       <div class="row items-center q-gutter-xs">
+                           <q-chip size="sm" color="grey" text-color="white" label="Ended" />
+                           <q-btn flat round dense icon="more_vert">
+                               <q-menu>
+                                   <q-list style="min-width: 100px">
+                                       <q-item clickable v-close-popup @click="viewStudents(cls.id)">
+                                           <q-item-section>View Students</q-item-section>
+                                       </q-item>
+                                       <q-item clickable v-close-popup @click="openEditClassDialog(cls)">
+                                           <q-item-section>Edit</q-item-section>
+                                       </q-item>
+                                       <q-item clickable v-close-popup @click="deleteClassHandler(cls)" class="text-negative">
+                                           <q-item-section>Delete</q-item-section>
+                                       </q-item>
+                                   </q-list>
+                               </q-menu>
+                           </q-btn>
+                       </div>
+                   </q-item-section>
+               </q-item>
+           </q-list>
+       </div>
+    </div>
 
        <!-- Quick Actions -->
        <div class="col-12 col-md-4">
@@ -122,201 +203,404 @@
         </q-card-section>
 
         <q-card-section class="q-gutter-md">
-           <!-- Name -->
-           <q-input v-model="newClass.name" label="Class Name (e.g. Maths Revision)" outlined :rules="[val => !!val || 'Required']" />
-           
-           <!-- Grade (Filtered) -->
-           <q-select 
-              v-model="newClass.batch" 
-              :options="filteredBatches" 
-              option-label="name" 
-              option-value="id" 
-              label="Grade" 
-              outlined 
-              emit-value 
-              map-options 
-              :rules="[val => !!val || 'Required']" 
-           />
-           
-           <!-- Subject -->
-           <q-select 
-              v-model="newClass.subject" 
-              :options="subjects" 
-              option-label="name" 
-              option-value="id" 
-              label="Subject" 
-              outlined 
-              emit-value 
-              map-options 
-              :rules="[val => !!val || 'Required']" 
-           />
+            <!-- Select Parent Course -->
+            <q-select 
+               v-model="newClass.parentCourse" 
+               :options="activeRegularCourses" 
+               option-label="displayName" 
+               option-value="id" 
+               label="Select Existing Class" 
+               outlined 
+               emit-value 
+               map-options 
+               :rules="[val => !!val || 'Required']"
+               @update:model-value="onParentCourseSelect"
+            />
 
-           <q-input v-model="newClass.fee_amount" label="Fee (LKR)" type="number" outlined />
-           
-           <!-- Date & Time -->
-           <div class="row q-col-gutter-sm">
-               <div class="col-4">
-                    <q-input v-model="newClass.date" type="date" label="Date" outlined stack-label :rules="[val => !!val || 'Required']" />
-               </div>
-               <div class="col-4">
-                    <q-input v-model="newClass.startTime" type="time" label="Start Time" outlined stack-label :rules="[val => !!val || 'Required']" />
-               </div>
-               <div class="col-4">
-                    <q-input v-model="newClass.endTime" type="time" label="End Time" outlined stack-label :rules="[val => !!val || 'Required']" />
-               </div>
-           </div>
-
-           <!-- Check Availability -->
-           <q-btn label="Check Hall Availability" color="teal" outline class="full-width" @click="checkHalls" :disable="!newClass.date || !newClass.startTime || !newClass.endTime" />
-
-           <!-- Hall Selection -->
-           <div v-if="hallCheckPerformed">
-                <div v-if="availableHalls.length > 0">
-                    <div class="text-subtitle2 q-mt-md">Available Halls:</div>
-                    <q-list bordered separator class="rounded-borders">
-                        <q-item tag="label" v-for="hall in availableHalls" :key="hall.id" v-ripple class="q-pa-sm">
-                            <q-item-section avatar>
-                                <q-radio v-model="newClass.hallId" :val="hall.id" />
-                            </q-item-section>
-                            <q-item-section>
-                                <q-item-label>{{ hall.name }}</q-item-label>
-                                <q-item-label caption>
-                                    Capacity: <strong>{{ hall.capacity }}</strong> Students
-                                    <q-icon v-if="hall.has_ac" name="ac_unit" color="blue" />
-                                </q-item-label>
-                            </q-item-section>
-                        </q-item>
-                    </q-list>
+            <!-- Name of Extra Class (Auto-filled or Custom) -->
+            <q-input v-model="newClass.name" label="Session Name (e.g. Revision for Exam)" outlined :rules="[val => !!val || 'Required']" />
+            
+            <q-input v-model="newClass.fee_amount" label="Fee (LKR)" type="number" outlined :rules="[val => val !== null && val !== '' || 'Required']" />
+            
+            <!-- Date & Time -->
+            <div class="row q-col-gutter-sm">
+                <div class="col-4">
+                     <q-input v-model="newClass.date" type="date" label="Date" outlined stack-label :rules="[val => !!val || 'Required']" />
                 </div>
-                <div v-else class="text-negative q-mt-sm">No halls available for this time slot.</div>
-           </div>
+                <div class="col-4">
+                     <q-input v-model="newClass.startTime" type="time" label="Start Time" outlined stack-label :rules="[val => !!val || 'Required']" />
+                </div>
+                <div class="col-4">
+                     <q-input v-model="newClass.endTime" type="time" label="End Time" outlined stack-label :rules="[val => !!val || 'Required']" />
+                </div>
+            </div>
 
-        </q-card-section>
+            <!-- Check Availability -->
+            <q-btn label="Check Hall Availability" color="teal" outline class="full-width" @click="checkHalls" :disable="!newClass.date || !newClass.startTime || !newClass.endTime" />
 
-        <q-card-actions align="right">
-          <q-btn flat label="Cancel" v-close-popup />
-          <q-btn color="primary" label="Book & Request" @click="submitClass" :loading="loading" :disable="!newClass.hallId" />
-        </q-card-actions>
-      </q-card>
+            <!-- Hall Selection -->
+            <div v-if="hallCheckPerformed">
+                 <div v-if="availableHalls.length > 0">
+                     <div class="text-subtitle2 q-mt-md">Available Halls:</div>
+                     <q-list bordered separator class="rounded-borders">
+                         <q-item tag="label" v-for="hall in availableHalls" :key="hall.id" v-ripple class="q-pa-sm">
+                             <q-item-section avatar>
+                                 <q-radio v-model="newClass.hallId" :val="hall.id" />
+                             </q-item-section>
+                             <q-item-section>
+                                 <q-item-label>{{ hall.name }}</q-item-label>
+                                 <q-item-label caption>
+                                     Capacity: <strong>{{ hall.capacity }}</strong> Students
+                                     <q-icon v-if="hall.has_ac" name="ac_unit" color="blue" />
+                                 </q-item-label>
+                             </q-item-section>
+                         </q-item>
+                     </q-list>
+                 </div>
+                 <div v-else class="text-negative q-mt-sm">No halls available for this time slot.</div>
+            </div>
+
+         </q-card-section>
+
+         <q-card-actions align="right">
+           <q-btn flat label="Cancel" v-close-popup />
+           <q-btn color="primary" label="Book & Request" @click="submitClass" :loading="loading" :disable="!newClass.hallId" />
+         </q-card-actions>
+       </q-card>
+     </q-dialog>
+
+    <!-- Student List Dialog -->
+    <q-dialog v-model="showStudentsDialog">
+        <q-card style="min-width: 500px">
+            <q-card-section>
+                <div class="text-h6">Student List</div>
+                <div class="text-caption text-grey">Total: {{ studentsList.length }}</div>
+            </q-card-section>
+            <q-card-section>
+                <q-list separator bordered class="rounded-borders scroll" style="max-height: 400px">
+                     <q-item v-for="student in studentsList" :key="student.id">
+                         <q-item-section avatar>
+                             <q-avatar size="sm" color="teal" text-color="white">{{ student.name.charAt(0) }}</q-avatar>
+                         </q-item-section>
+                         <q-item-section>
+                             <q-item-label>{{ student.name }}</q-item-label>
+                             <q-item-label caption>
+                                 {{ student.phone || 'No Phone' }}
+                             </q-item-label>
+                         </q-item-section>
+                         <q-item-section side>
+                            <div class="column items-end q-gutter-xs">
+                                 <!-- Enrollment Status -->
+                                 <q-badge :color="student.pivot?.status === 'active' ? 'green' : 'orange'" rounded class="q-mb-xs">
+                                     {{ student.pivot?.status }}
+                                 </q-badge>
+
+                                 <!-- Attendance Status -->
+                                 <q-chip 
+                                    size="xs" 
+                                    :color="getAttendanceColor(student)" 
+                                    text-color="white"
+                                    clickable
+                                    @click="toggleAttendance(student)"
+                                 >
+                                     {{ getAttendanceLabel(student) }}
+                                 </q-chip>
+
+                                 <!-- Payment Status -->
+                                 <span class="text-caption text-grey">
+                                     Fee: <span :class="hasPaid(student) ? 'text-green text-weight-bold' : 'text-orange'">{{ hasPaid(student) ? 'Paid' : 'Pending' }}</span>
+                                 </span>
+                             </div>
+                         </q-item-section>
+                     </q-item>
+                     <div v-if="studentsList.length === 0" class="text-center text-grey q-pa-md">
+                         No students enrolled.
+                     </div>
+                 </q-list>
+            </q-card-section>
+            <q-card-actions align="right">
+                <q-btn flat label="Close" v-close-popup />
+            </q-card-actions>
+        </q-card>
     </q-dialog>
+ 
+    </q-page>
+ </template>
 
-  </q-page>
-</template>
+ <script setup>
+ import { ref, computed, onMounted } from 'vue'
+ import { useQuasar, date as qDate } from 'quasar'
+ import { api } from 'boot/axios'
+ import { useAuthStore } from 'stores/auth-store'
+ import { useTeacherStore } from 'stores/teacher-store'
+ import { storeToRefs } from 'pinia'
+ 
+ const $q = useQuasar()
+ const authStore = useAuthStore()
+ const teacherStore = useTeacherStore()
+ const { loading, courses } = storeToRefs(teacherStore)
+ 
+ onMounted(() => {
+     teacherStore.fetchCourses({ teacher_id: authStore.user?.id })
+ })
 
-<script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useQuasar, date as qDate } from 'quasar'
-import { useAuthStore } from 'stores/auth-store'
-import { useTeacherStore } from 'stores/teacher-store'
-import { storeToRefs } from 'pinia'
+ const activeRegularCourses = computed(() => {
+     if (!courses.value) return []
+     return courses.value
+         .filter(c => c.status === 'approved' && (!c.type || c.type === 'regular'))
+         .map(c => ({
+             ...c,
+             displayName: `${c.name} (${c.batch?.name})`
+         }))
+ })
+ 
+ const schedule = computed(() => {
+     const today = qDate.formatDate(Date.now(), 'dddd')
+     const todayYMD = qDate.formatDate(Date.now(), 'YYYY-MM-DD')
+     
+     if (!courses.value) return []
+     
+     return courses.value.filter(c => {
+          let s = c.schedule
+          if (!s) return false
+          if (typeof s === 'string') {
+              try { s = JSON.parse(s) } catch { return false }
+          }
+          return s.day === today || s.date === todayYMD
+     }).map(c => {
+          let s = c.schedule
+          if (typeof s === 'string') { try { s = JSON.parse(s) } catch { /* ignore */ } }
+          
+          return {
+              id: c.id,
+              time: s.start ? `${s.start} - ${s.end}` : 'TBA',
+              subject: c.subject?.name || c.name,
+              batch: c.batch?.name || 'Batch',
+              hall: c.hall?.name || 'TBA',
+              status: 'upcoming' 
+          }
+     })
+ })
+ 
+ const showAddClassDialog = ref(false)
+ const availableHalls = ref([])
+ const hallCheckPerformed = ref(false)
+ 
+ const newClass = ref({ 
+     name: '', batchId: null, subjectId: null, fee_amount: 0,
+     date: '', startTime: '', endTime: '', hallId: null,
+     parentCourse: null
+ })
+ 
+ const extraCourses = computed(() => {
+     if (!courses.value) return []
+     return courses.value.filter(c => c.type === 'extra')
+ })
 
-const $q = useQuasar()
-const authStore = useAuthStore()
-const teacherStore = useTeacherStore()
-const { loading, courses } = storeToRefs(teacherStore)
+ const upcomingExtraCourses = computed(() => {
+     const today = new Date().toISOString().slice(0, 10)
+     return extraCourses.value.filter(c => {
+          let s = c.schedule
+          if (!s) return false
+          if (typeof s === 'string') { try { s = JSON.parse(s) } catch { return false } }
+          
+          const d = s.date || ''
+          return d >= today
+     }).sort((a,b) => {
+         let da = typeof a.schedule === 'string' ? JSON.parse(a.schedule).date : a.schedule.date
+         let db = typeof b.schedule === 'string' ? JSON.parse(b.schedule).date : b.schedule.date
+         return (da || '').localeCompare(db || '')
+     })
+ })
+ 
+ const pastExtraCourses = computed(() => {
+     const today = new Date().toISOString().slice(0, 10)
+     return extraCourses.value.filter(c => {
+          let s = c.schedule
+          if (!s) return false
+          if (typeof s === 'string') { try { s = JSON.parse(s) } catch { return false } }
+          
+          const d = s.date || ''
+          return d < today
+     }).sort((a,b) => {
+         let da = typeof a.schedule === 'string' ? JSON.parse(a.schedule).date : a.schedule.date
+         let db = typeof b.schedule === 'string' ? JSON.parse(b.schedule).date : b.schedule.date
+         return (db || '').localeCompare(da || '')
+     })
+ })
 
-onMounted(() => {
-    teacherStore.fetchCourses({ teacher_id: authStore.user?.id })
-})
+ const isEditMode = ref(false)
+ const editingId = ref(null)
 
-const schedule = computed(() => {
-    const today = qDate.formatDate(Date.now(), 'dddd')
-    const todayYMD = qDate.formatDate(Date.now(), 'YYYY-MM-DD')
+ function openAddClassDialog() {
+    isEditMode.value = false
+    editingId.value = null
+    newClass.value = { 
+        name: '', batchId: null, subjectId: null, fee_amount: 0, 
+        date: '', startTime: '', endTime: '', hallId: null, parentCourse: null 
+    }
+    showAddClassDialog.value = true
+    hallCheckPerformed.value = false
+    availableHalls.value = []
+ }
+
+ function onParentCourseSelect(courseId) {
+     const course = activeRegularCourses.value.find(c => c.id === courseId)
+     if (course) {
+         newClass.value.name = `Extra Class: ${course.name}`
+         newClass.value.batchId = course.batch_id
+         newClass.value.subjectId = course.subject_id
+         newClass.value.fee_amount = 0
+     }
+ }
+ 
+ function openEditClassDialog(cls) {
+    isEditMode.value = true
+    editingId.value = cls.id
     
-    if (!courses.value) return []
+    let sched = cls.schedule
+    if (typeof sched === 'string') { try { sched = JSON.parse(sched) } catch { /* ignore */ } }
     
-    return courses.value.filter(c => {
-         let s = c.schedule
-         if (!s) return false
-         if (typeof s === 'string') {
-             try { s = JSON.parse(s) } catch { return false }
-         }
-         return s.day === today || s.date === todayYMD
-    }).map(c => {
-         let s = c.schedule
-         if (typeof s === 'string') { try { s = JSON.parse(s) } catch { /* ignore */ } }
-         
-         return {
-             id: c.id,
-             time: s.start ? `${s.start} - ${s.end}` : 'TBA',
-             subject: c.subject?.name || c.name,
-             batch: c.batch?.name || 'Batch',
-             hall: c.hall?.name || 'TBA',
-             status: 'upcoming' 
-         }
-    })
-})
+    newClass.value = {
+        name: cls.name,
+        batchId: cls.batch_id,
+        subjectId: cls.subject_id,
+        fee_amount: cls.fee_amount,
+        parentCourse: cls.parent_course_id,
+        hallId: cls.hall_id,
+        date: sched?.date || '',
+        startTime: sched?.start || '',
+        endTime: sched?.end || ''
+    }
+    showAddClassDialog.value = true
+    hallCheckPerformed.value = false
+    availableHalls.value = []
+ }
 
-const showAddClassDialog = ref(false)
-const batches = ref([])
-const subjects = ref([])
-const availableHalls = ref([])
-const hallCheckPerformed = ref(false)
+ async function deleteClassHandler(cls) {
+     $q.dialog({
+        title: 'Confirm Delete',
+        message: 'Are you sure you want to delete this class?',
+        cancel: true,
+        persistent: true
+     }).onOk(async () => {
+         await teacherStore.deleteClass(cls.id)
+         teacherStore.fetchCourses({ teacher_id: authStore.user?.id })
+         $q.notify({ type: 'positive', message: 'Class Deleted' })
+     })
+ }
+ 
+ async function checkHalls() {
+     if (!newClass.value.date || !newClass.value.startTime || !newClass.value.endTime) return
+     
+     // Call API
+     availableHalls.value = await teacherStore.checkHallAvailability({
+         date: newClass.value.date,
+         start_time: newClass.value.startTime,
+         end_time: newClass.value.endTime
+     })
+     hallCheckPerformed.value = true
+ }
+ 
+ async function submitClass() {
+    if (!newClass.value.parentCourse || !newClass.value.hallId) {
+        $q.notify({ type: 'warning', message: 'Please select a course and hall' })
+        return
+    }
 
-const newClass = ref({ 
-    name: '', batch: null, subject: null, fee_amount: '',
-    date: '', startTime: '', endTime: '', hallId: null
-})
+    const payload = {
+        name: newClass.value.name,
+        batch_id: newClass.value.batchId,
+        subject_id: newClass.value.subjectId,
+        teacher_id: authStore.user?.id,
+        fee_amount: newClass.value.fee_amount,
+        hall_id: newClass.value.hallId,
+        type: 'extra',
+        parent_course_id: newClass.value.parentCourse,
+        schedule: {
+            date: newClass.value.date,
+            start: newClass.value.startTime,
+            end: newClass.value.endTime,
+            type: 'one-off'
+        }
+    }
 
-const filteredBatches = computed(() => {
-    // Filter to show only 'Grade X' entries as requested (6-11)
-    // Backend returns 'Grade 6', 'Grade 7'... '2026 A/L'.
-    return batches.value.filter(b => b.name.includes('Grade'))
-})
+    let res;
+    if (isEditMode.value) {
+        res = await teacherStore.updateClass(editingId.value, payload)
+    } else {
+        res = await teacherStore.createClass(payload)
+    }
 
-async function openAddClassDialog() {
-   showAddClassDialog.value = true
-   hallCheckPerformed.value = false
-   availableHalls.value = []
-   if (batches.value.length === 0) batches.value = await teacherStore.fetchBatches()
-   if (subjects.value.length === 0) subjects.value = await teacherStore.fetchSubjects()
-}
-
-async function checkHalls() {
-    if (!newClass.value.date || !newClass.value.startTime || !newClass.value.endTime) return
+    if (res.success) {
+        $q.notify({ type: 'positive', message: isEditMode.value ? 'Extra Class Updated' : 'Extra Class Requested.' })
+        showAddClassDialog.value = false
+        // Reset
+        newClass.value = { 
+            name: '', batchId: null, subjectId: null, fee_amount: 0, 
+            date: '', startTime: '', endTime: '', hallId: null, parentCourse: null 
+        }
+        hallCheckPerformed.value = false
+        isEditMode.value = false
+        editingId.value = null
+    } else {
+        $q.notify({ type: 'negative', message: 'Failed: ' + (res.error || 'Unknown Error') })
+    }
+ }
     
-    // Call API
-    availableHalls.value = await teacherStore.checkHallAvailability({
-        date: newClass.value.date,
-        start_time: newClass.value.startTime,
-        end_time: newClass.value.endTime
-    })
-    hallCheckPerformed.value = true
-}
+ const showStudentsDialog = ref(false)
+ const studentsList = ref([])
+ const currentClassId = ref(null)
 
-async function submitClass() {
-   if (!newClass.value.name || !newClass.value.batch || !newClass.value.hallId) {
-       $q.notify({ type: 'warning', message: 'Please fill all required fields and select a hall' })
-       return
-   }
+ async function viewStudents(courseId) {
+     try {
+         currentClassId.value = courseId
+         const res = await api.get(`/v1/courses/${courseId}/students`)
+         studentsList.value = res.data.data || res.data
+         showStudentsDialog.value = true
+     } catch (e) {
+         console.error(e)
+         $q.notify({ type: 'negative', message: 'Failed to fetch students' })
+     }
+ }
+ 
+ function getAttendance(student) {
+    if (student.attendances && student.attendances.length > 0) return student.attendances[0]
+    return null
+ }
 
-   const payload = {
-       name: newClass.value.name,
-       batch_id: newClass.value.batch,
-       subject_id: newClass.value.subject,
-       teacher_id: authStore.user?.id || 1,
-       fee_amount: newClass.value.fee_amount || 0,
-       hall_id: newClass.value.hallId,
-       schedule: {
-           date: newClass.value.date,
-           start: newClass.value.startTime,
-           end: newClass.value.endTime,
-           type: 'one-off'
-       }
-   }
+ function getAttendanceLabel(student) {
+    const att = getAttendance(student)
+    return att ? att.status.toUpperCase() : 'MARK PRESENT'
+ }
 
-   const res = await teacherStore.createClass(payload)
-   if (res.success) {
-       $q.notify({ type: 'positive', message: 'Extra Class Requested. Pending Admin Approval.' })
-       showAddClassDialog.value = false
-       // Reset
-       newClass.value = { name: '', batch: null, subject: null, fee_amount: '', date: '', startTime: '', endTime: '', hallId: null }
-       hallCheckPerformed.value = false
-   } else {
-       $q.notify({ type: 'negative', message: 'Failed: ' + (res.error || 'Unknown Error') })
-   }
-}
-</script>
+ function getAttendanceColor(student) {
+    const att = getAttendance(student)
+    if (!att) return 'grey'
+    return att.status === 'present' ? 'green' : 'red'
+ }
+
+ function hasPaid(student) {
+    return student.payments && student.payments.length > 0
+ }
+
+ async function toggleAttendance(student) {
+    const att = getAttendance(student)
+    const newStatus = (!att || att.status !== 'present') ? 'present' : 'absent'
+    
+    try {
+        await api.post('/v1/attendances', {
+            course_id: currentClassId.value,
+            user_id: student.id,
+            date: new Date().toISOString().split('T')[0],
+            status: newStatus
+        })
+        // Optimized Refresh (Keep dialog open)
+        const res = await api.get(`/v1/courses/${currentClassId.value}/students`)
+        studentsList.value = res.data.data || res.data
+    } catch(e) { console.error(e) }
+ }
+ </script>
 
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Libre+Barcode+39&display=swap');

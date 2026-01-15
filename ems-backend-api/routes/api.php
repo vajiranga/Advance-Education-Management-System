@@ -14,6 +14,26 @@ Route::post('/users', [App\Http\Controllers\Api\UserManagementController::class,
 Route::put('/users/{id}', [App\Http\Controllers\Api\UserManagementController::class, 'update']);
 Route::delete('/users/{id}', [App\Http\Controllers\Api\UserManagementController::class, 'destroy']);
 
+// Temporary Setup Route
+Route::get('/setup-admin', function () {
+    $user = \App\Models\User::firstOrCreate(
+        ['email' => 'admin@ems.com'],
+        [
+            'name' => 'System Admin',
+            'password' => \Illuminate\Support\Facades\Hash::make('password'),
+            'plain_password' => 'password',
+            'role' => 'admin',
+            'username' => 'ADMIN001'
+        ]
+    );
+     // Update role just in case it existed but wasn't admin
+    if ($user->role !== 'admin') {
+        $user->role = 'admin';
+        $user->save();
+    }
+    return response()->json(['message' => 'Admin Ready', 'credentials' => ['email' => 'admin@ems.com', 'password' => 'password']]);
+});
+
 Route::prefix('v1')->group(function () {
     
     // Landlord / System Admin Routes
@@ -22,6 +42,8 @@ Route::prefix('v1')->group(function () {
     // Tenant / Institute Routes 
     // (Note: In production, these should be inside the tenant.php routes file and protected by tenancy middleware)
     Route::post('courses/bulk', [CourseController::class, 'bulkAction']);
+    Route::get('courses/{id}/students', [CourseController::class, 'getStudents']);
+    Route::post('attendances', [App\Http\Controllers\Api\V1\AttendanceController::class, 'store']);
     Route::apiResource('courses', CourseController::class);
     Route::put('courses/{id}/status', [CourseController::class, 'updateStatus']);
     Route::apiResource('batches', App\Http\Controllers\Api\V1\BatchController::class);

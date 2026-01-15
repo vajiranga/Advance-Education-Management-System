@@ -27,18 +27,33 @@ class CourseController extends Controller
         }
 
         if ($request->has('status')) {
-            $query->where('status', $request->query('status'));
+            if ($request->query('status') === 'deleted') {
+                $query->onlyTrashed();
+            } else {
+                $query->where('status', $request->query('status'));
+            }
+        }
+
+        if ($request->has('type')) {
+            $query->where('type', $request->query('type'));
+        } else {
+            // Default to regular for general lists
+            if (!$request->has('teacher_id') && (!$user || $user->role === 'student')) {
+                $query->where('type', 'regular');
+            }
+        }
+        
+        // Parent Course Filter (for fetching extras of a course)
+        if ($request->has('parent_course_id')) {
+             $query->where('parent_course_id', $request->query('parent_course_id'));
         }
 
         // Visibility Logic by Role
         if ($user && $user->role === 'student') {
             $query->where('status', 'approved');
         } 
-        // Teachers: If fetching "My Classes", they see all. 
-        // If fetching general catalog, maybe only approved?
-        // Admin sees all.
 
-        return response()->json($query->with(['subject', 'batch', 'teacher', 'hall'])->withCount('students')->orderBy('created_at', 'desc')->paginate(20));
+        return response()->json($query->with(['subject', 'batch', 'teacher', 'hall', 'parentCourse'])->withCount('students')->orderBy('created_at', 'desc')->paginate(20));
     }
 
     /**
@@ -53,10 +68,17 @@ class CourseController extends Controller
             'teacher_id' => 'required|exists:users,id',
             'fee_amount' => 'required|numeric|min:0',
             'schedule' => 'nullable', 
-            'cover_image_url' => 'nullable|string'
+            'cover_image_url' => 'nullable|string',
+            'type' => 'nullable|in:regular,extra',
+            'parent_course_id' => 'nullable|exists:courses,id'
         ]);
 
         $user = $request->user();
+        
+        // If extra class, ensure parent is valid
+        if (($request->type === 'extra') && !$request->parent_course_id) {
+             return response()->json(['message' => 'Parent Course required for Extra Class'], 422);
+        }
         
         // Determine Status logic
         $status = 'pending';
@@ -133,6 +155,48 @@ class CourseController extends Controller
     }
 
     /**
+     * Update Course
+     */
+    public function update(Request $request, $id)
+    {
+        $course = Course::findOrFail($id);
+        
+        $validated = $request->validate([
+            'name' => 'nullable|string|max:255',
+            'subject_id' => 'nullable|exists:subjects,id',
+            'batch_id' => 'nullable|exists:batches,id',
+            'fee_amount' => 'nullable|numeric|min:0',
+            'schedule' => 'nullable', 
+            'hall_id' => 'nullable|exists:halls,id'
+        ]);
+
+        $course->fill($validated);
+        
+        // If updated by teacher, set status to pending for review
+        $user = $request->user();
+        if ($user && $user->role !== 'admin' && $user->role !== 'super_admin') {
+            $course->status = 'pending';
+            $course->admin_note = 'Course Updated by Teacher';
+            
+            // Notify Admin
+             $admins = User::whereIn('role', ['admin', 'super_admin'])->get();
+             foreach($admins as $admin) {
+                 Notification::create([
+                     'user_id' => $admin->id,
+                     'type' => 'class_update_request',
+                     'title' => 'Class Updated',
+                     'message' => "Teacher has updated class: {$course->name}",
+                     'data' => json_encode(['course_id' => $course->id])
+                 ]);
+             }
+        }
+
+        $course->save();
+        
+        return response()->json(['message' => 'Course updated', 'course' => $course]);
+    }
+
+    /**
      * Delete Course
      */
     public function destroy(string $id)
@@ -141,10 +205,37 @@ class CourseController extends Controller
         $course->delete();
         return response()->json(['message' => 'Course deleted']);
     }
-
     /**
      * Bulk Actions
      */
+    public function getStudents(Request $request, $id)
+    {
+        $course = Course::findOrFail($id);
+        
+        $query = $course->students();
+
+        if ($request->has('status')) {
+             $query->wherePivot('status', $request->query('status'));
+        }
+        
+        // Enrich with Today's Attendance and Monthly Payment
+        $today = now()->format('Y-m-d');
+        $thisMonth = now()->format('Y-m'); // "2026-01"
+
+        $query->with([
+            'attendances' => function($q) use ($id, $today) {
+                 $q->where('course_id', $id)->where('date', $today);
+            },
+            'payments' => function($q) use ($id, $thisMonth) {
+                 $q->where('course_id', $id)->where('month', $thisMonth);
+            }
+        ]);
+
+        $students = $query->withPivot('status', 'enrolled_at', 'created_at', 'updated_at')->get();
+
+        return response()->json(['data' => $students]);
+    }
+
     public function bulkAction(Request $request) 
     {
         $request->validate([

@@ -25,5 +25,22 @@ export default function (/* { store, ssrContext } */) {
     history: createHistory(process.env.VUE_ROUTER_BASE)
   })
 
+  Router.beforeEach((to, from, next) => {
+    // Lazy load store to avoid circular dependency or early init issues
+    // Note: In Quasar, we can import store here if needed, or check localStorage directly for speed,
+    // but using store is cleaner. We need to import useAuthStore at top.
+    // However, inside this function 'store' (Pinia instance) is available via closure if we use it, 
+    // but 'export default function (/* { store } */)' is currently commented out.
+    // Let's use localStorage fallback for simplicity if store access is slightly complex here without imports.
+    // BETTER: Import useAuthStore.
+
+    const token = localStorage.getItem('token')
+    if (to.path !== '/login' && !token) {
+      next('/login')
+    } else {
+      next()
+    }
+  })
+
   return Router
 }

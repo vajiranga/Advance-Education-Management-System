@@ -145,8 +145,8 @@ function loadCourses() {
     teacherStore.fetchCourses({ teacher_id: authStore.user?.id })
 }
 
-const activeCourses = computed(() => (courses.value || []).filter(c => c.status === 'approved' || !c.status))
-const pendingCourses = computed(() => (courses.value || []).filter(c => c.status === 'pending'))
+const activeCourses = computed(() => (courses.value || []).filter(c => (c.status === 'approved' || !c.status) && (!c.type || c.type === 'regular')))
+const pendingCourses = computed(() => (courses.value || []).filter(c => c.status === 'pending' && (!c.type || c.type === 'regular')))
 
 async function openCreateDialog() {
     showDialog.value = true

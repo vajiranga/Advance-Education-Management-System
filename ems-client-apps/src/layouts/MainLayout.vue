@@ -95,7 +95,7 @@
         </q-item>
         <q-item clickable v-ripple to="/student/courses">
           <q-item-section avatar><q-icon name="library_books" /></q-item-section>
-          <q-item-section>My Courses</q-item-section>
+          <q-item-section>My Classes</q-item-section>
         </q-item>
         <q-item clickable v-ripple to="/student/exams">
           <q-item-section avatar><q-icon name="assignment" /></q-item-section>

@@ -7,35 +7,80 @@ use Illuminate\Http\Request;
 use App\Models\Course;
 use Illuminate\Support\Facades\DB;
 
+use Illuminate\Support\Facades\Log;
+
 class EnrollmentController extends Controller
 {
+    // Enroll a student in a course
     // Enroll a student in a course
     public function enroll(Request $request)
     {
         $request->validate([
             'course_id' => 'required|exists:courses,id',
+            'user_id' => 'nullable|exists:users,id',
         ]);
 
-        $user = $request->user();
-        
-        // check if already enrolled
-        $exists = DB::table('enrollments')
-                    ->where('user_id', $user->id)
+        $currentUser = $request->user();
+        $targetUserId = $currentUser->id;
+
+        Log::info('Enroll Request', ['request' => $request->all(), 'enroller' => $currentUser->id, 'role' => $currentUser->role]);
+
+        // Allow Admin/SuperAdmin/Teacher to enroll others, OR User enrolling themselves
+        if ($request->filled('user_id')) {
+            if (in_array($currentUser->role, ['admin', 'super_admin', 'teacher'])) {
+                $targetUserId = $request->user_id;
+            } elseif ($request->user_id == $currentUser->id) {
+                $targetUserId = $currentUser->id;
+            } else {
+                Log::warning('Enroll Unauthorized', ['user' => $currentUser->id]);
+                return response()->json(['message' => 'Unauthorized to enroll students. Role: ' . $currentUser->role], 403); 
+            }
+        }
+
+        Log::info('Target User ID determined', ['target' => $targetUserId]);
+
+        // Check if ALREADY ACTIVE
+        $active = DB::table('enrollments')
+                    ->where('user_id', $targetUserId)
+                    ->where('course_id', $request->course_id)
+                    ->where('status', 'active')
+                    ->first();
+
+        if ($active) {
+             Log::info('User already active', ['user_id' => $targetUserId, 'course_id' => $request->course_id]);
+             return response()->json(['message' => 'Already enrolled'], 400);
+        }
+
+        // Check for ANY existing record (dropped, pending, etc)
+        $existing = DB::table('enrollments')
+                    ->where('user_id', $targetUserId)
                     ->where('course_id', $request->course_id)
                     ->first();
 
-        if ($exists) {
-            return response()->json(['message' => 'Already enrolled'], 400);
+        if ($existing) {
+            // Re-activate or Activate enrollment
+            DB::table('enrollments')
+                ->where('id', $existing->id)
+                ->update([
+                    'status' => 'active',
+                    'updated_at' => now(),
+                    'enrolled_at' => now()
+                ]);
+            
+            Log::info('Re-activated user', ['user_id' => $targetUserId]);
+            return response()->json(['message' => 'Enrolled successfully (Re-activated)']);
         }
 
         DB::table('enrollments')->insert([
-            'user_id' => $user->id,
+            'user_id' => $targetUserId,
             'course_id' => $request->course_id,
-            'status' => 'active', // For now auto-active, later maybe 'pending' for payment
+            'status' => 'active',
             'enrolled_at' => now(),
             'created_at' => now(),
             'updated_at' => now(),
         ]);
+        
+        Log::info('New enrollment created', ['user_id' => $targetUserId]);
 
         return response()->json(['message' => 'Enrolled successfully']);
     }
@@ -45,8 +90,18 @@ class EnrollmentController extends Controller
     {
         $user = $request->user();
 
-        // Use Eloquent relationship defined in User model
-        $courses = $user->courses()->with(['teacher', 'subject', 'batch', 'hall'])->get();
+        // Get IDs of enrolled courses
+        $enrolledCourseIds = $user->courses()->pluck('courses.id');
+
+        // Fetch Regular + Extra Classes linked to enrolled courses
+        $courses = Course::where(function($q) use ($enrolledCourseIds) {
+            $q->whereIn('id', $enrolledCourseIds)
+              ->orWhere(function($sub) use ($enrolledCourseIds) {
+                  $sub->whereIn('parent_course_id', $enrolledCourseIds)
+                      ->where('type', 'extra')
+                      ->where('status', 'approved');
+              });
+        })->with(['teacher', 'subject', 'batch', 'hall', 'parentCourse'])->withCount('students')->orderBy('created_at', 'desc')->get();
 
         return response()->json(['data' => $courses]);
     }

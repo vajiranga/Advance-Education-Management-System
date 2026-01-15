@@ -71,4 +71,14 @@ class User extends Authenticatable
                     ->withPivot('status', 'enrolled_at')
                     ->wherePivot('status', 'active');
     }
+
+    public function attendances()
+    {
+        return $this->hasMany(Attendance::class);
+    }
+
+    public function payments()
+    {
+        return $this->hasMany(Payment::class);
+    }
 }
