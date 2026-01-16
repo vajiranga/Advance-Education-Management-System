@@ -1,0 +1,217 @@
+<?php
+
+namespace App\Http\Controllers\Api\V1;
+
+use App\Http\Controllers\Controller;
+use App\Models\User;
+use App\Models\Attendance;
+use App\Models\Payment;
+use App\Models\ExamResult;
+use Illuminate\Http\Request;
+use Carbon\Carbon;
+
+class ParentController extends Controller
+{
+    /**
+     * Get all children linked to the logged-in parent
+     */
+    public function getChildren(Request $request)
+    {
+        $user = $request->user();
+        
+        // Link by email
+        // Logic: Students have 'parent_email' column. 
+        // We find students where parent_email == $user->email
+        
+        $children = User::where('parent_email', $user->email)
+            ->where('role', 'student')
+            ->get(['id', 'name', 'grade', 'avatar', 'school']);
+            
+        return response()->json($children);
+    }
+
+    /**
+     * Get Dashboard Stats for a specific child
+     */
+    public function getChildStats(Request $request, $id)
+    {
+        $parent = $request->user();
+        
+        // Verify this child belongs to the parent
+        $child = User::where('id', $id)
+            ->where('parent_email', $parent->email)
+            ->firstOrFail();
+
+        // 1. Attendance (Current Month)
+        $currentMonth = Carbon::now()->month;
+        $totalDays = Attendance::where('user_id', $child->id)
+            ->whereMonth('date', $currentMonth)
+            ->count();
+            
+        $presentDays = Attendance::where('user_id', $child->id)
+            ->whereMonth('date', $currentMonth)
+            ->where('status', 'present')
+            ->count();
+            
+        $attendancePercentage = $totalDays > 0 ? round(($presentDays / $totalDays) * 100) : 0;
+
+        // 2. Pending Fees
+        $currentMonthName = Carbon::now()->format('F');
+        // Simple check: Count active courses * fees NOT in payments
+        // Re-using logic from PaymentController roughly or just checking simple count
+        $activeCourses = $child->courses()->wherePivot('status', 'active')->get();
+        $dueAmount = 0;
+        foreach($activeCourses as $course) {
+             $isPaid = Payment::where('user_id', $child->id)
+                ->where('course_id', $course->id)
+                ->where('month', $currentMonthName)
+                ->exists();
+             if(!$isPaid) {
+                 $dueAmount += $course->fees ?? 2500; // Default fallback fee
+             }
+        }
+
+        // 3. Last Exam Grade
+        $lastResult = ExamResult::where('student_id', $child->id)
+            ->where('is_published', true)
+            ->with('exam')
+            ->latest()
+            ->first();
+            
+        $lastGrade = $lastResult ? $lastResult->grade : '-';
+        
+        // 4. Recent Activity (Mock for now or fetch recent Attendance/Exam events)
+        $recentActivity = Attendance::where('user_id', $child->id)
+             ->latest('date')
+             ->limit(5)
+             ->get()
+             ->map(function($att) {
+                 return [
+                     'title' => ($att->status == 'present' ? 'Attended ' : 'Absent from ') . ($att->course->name ?? 'Class'),
+                     'status' => $att->status,
+                     'date' => $att->date
+                 ];
+             });
+
+        return response()->json([
+            'attendance' => $attendancePercentage,
+            'due_fees' => $dueAmount,
+            'rank' => 'N/A', // Complex calculation, skip for MVP
+            'last_grade' => $lastGrade,
+            'recent_activity' => $recentActivity
+        ]);
+    }
+    /**
+     * Get Child's Courses and Schedule
+     */
+    public function getChildCourses(Request $request, $id)
+    {
+        $parent = $request->user();
+        $child = User::where('id', $id)
+            ->where('parent_email', $parent->email)
+            ->firstOrFail();
+
+        $courses = $child->courses()
+            ->wherePivot('status', 'active')
+            ->with(['teacher', 'hall', 'subject', 'batch', 'subCourses'])
+            ->get();
+            
+        // Format similar to StudentController logic
+        $formatted = $courses->map(function ($course) {
+            
+            // Sub/Extra classes logic could be here (mock/DB)
+            $extraClasses = $course->subCourses->map(function($sub) use ($course) {
+                 return [
+                    'id' => $sub->id,
+                    'name' => 'Extra: ' . $course->name,
+                    'parent_course' => $course,
+                    'type' => 'extra',
+                    'schedule' => [
+                        'date' => $sub->date,
+                        'start' => $sub->start_time,
+                        'end' => $sub->end_time,
+                        'type' => 'one-off'
+                    ],
+                    'hall' => $sub->hall
+                 ];
+            });
+
+            $mainPayload = [
+               'id' => $course->id,
+               'name' => $course->name,
+               'fee_amount' => $course->fee_amount ?? 2500,
+               'teacher' => $course->teacher,
+               'subject' => $course->subject,
+               'batch' => $course->batch,
+               'hall' => $course->hall,
+               'type' => 'regular',
+               'schedule' => $course->schedule, // JSON {day: 'Monday', start: '14:00', end: '16:00'}
+               'students_count' => $course->students()->count()
+            ];
+
+            return collect([$mainPayload])->concat($extraClasses);
+        })->flatten(1);
+
+        return response()->json($formatted);
+    }
+    /**
+     * Get Child's Exam Results
+     */
+    public function getChildResults(Request $request, $id)
+    {
+        $parent = $request->user();
+        $child = User::where('id', $id)
+            ->where('parent_email', $parent->email)
+            ->firstOrFail();
+
+        // Fetch published results
+        $results = ExamResult::where('student_id', $child->id)
+            ->where('is_published', true)
+            ->with(['exam.course']) // Assuming Exam belongsTo Course
+            ->get()
+            ->map(function($res) {
+                return [
+                    'id' => $res->id,
+                    'subject' => $res->exam->course->name ?? 'Unknown',
+                    'exam' => $res->exam->title,
+                    'marks' => $res->marks,
+                    'grade' => $res->grade,
+                    'date' => $res->exam->date,
+                    'remarks' => $res->remarks ?? 'Good effort',
+                    // Trend logic would require history comparison, simplified for now
+                    'trend' => $res->marks >= 75 ? 'up' : 'down',
+                    'diff' => rand(0, 10) // Mock diff
+                ];
+            });
+
+        return response()->json($results);
+    }
+
+    /**
+     * Get Child's Attendance History
+     */
+    public function getChildAttendance(Request $request, $id)
+    {
+        $parent = $request->user();
+        $child = User::where('id', $id)
+            ->where('parent_email', $parent->email)
+            ->firstOrFail();
+
+        $attendance = Attendance::where('user_id', $child->id)
+            ->with('course')
+            ->orderBy('date', 'desc')
+            ->get()
+            ->map(function($att) {
+                return [
+                    'id' => $att->id,
+                    'date' => $att->date,
+                    'status' => $att->status, // present, absent, late
+                    'course_name' => $att->course->name ?? 'N/A',
+                    'check_in' => $att->check_in,
+                    'check_out' => $att->check_out
+                ];
+            });
+
+        return response()->json($attendance);
+    }
+}

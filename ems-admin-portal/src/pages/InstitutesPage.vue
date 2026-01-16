@@ -2,9 +2,13 @@
   <q-page class="q-pa-md">
     <div class="row items-center justify-between q-mb-md">
       <div class="text-h5">Facility Management (Halls)</div>
-      <q-chip color="primary" text-color="white" icon="event">
-        {{ formattedDate }}
-      </q-chip>
+      
+      <div class="row q-gutter-sm items-center">
+            <q-chip color="secondary" text-color="white" icon="event">
+                {{ formattedDate }}
+            </q-chip>
+            <q-btn color="primary" icon="add_location" label="Add New Hall" @click="openAddDialog" />
+      </div>
     </div>
 
     <!-- Overview Stats -->
@@ -20,7 +24,7 @@
       <div class="col-12 col-md-3">
         <q-card class="bg-red text-white">
           <q-card-section>
-             <div class="text-h4 text-weight-bold">{{ 20 - availableHalls }}</div>
+             <div class="text-h4 text-weight-bold">{{ halls.length - availableHalls }}</div>
              <div class="text-caption">Occupied Halls</div>
           </q-card-section>
         </q-card>
@@ -44,16 +48,31 @@
       </q-card-section>
     </q-card>
 
+    <div v-if="hallStore.loading" class="row justify-center q-pa-lg">
+         <q-spinner size="40px" color="primary" />
+    </div>
+
     <!-- Halls Grid -->
-    <div class="row q-col-gutter-lg">
+    <div class="row q-col-gutter-lg" v-else>
       <div class="col-12 col-md-4 col-lg-3" v-for="hall in processedHalls" :key="hall.id">
-        <q-card :class="hall.isOccupied ? 'bg-red-1' : 'bg-green-1'">
+        <q-card :class="hall.isOccupied ? 'bg-red-1' : 'bg-green-1'" class="my-card">
           <q-card-section>
-            <div class="row justify-between items-center">
-               <div class="text-h6">{{ hall.name }}</div>
-               <q-icon :name="hall.isOccupied ? 'lock' : 'lock_open'" size="sm" :color="hall.isOccupied ? 'red' : 'green'" />
+            <div class="row justify-between items-start">
+               <div>
+                   <div class="text-h6">{{ hall.name }}</div>
+                   <div class="text-caption text-grey-8" v-if="hall.hall_number || hall.floor">
+                       {{ hall.hall_number ? `No: ${hall.hall_number}` : '' }} 
+                       {{ hall.floor ? `| Floor: ${hall.floor}` : '' }}
+                   </div>
+               </div>
+               <div class="column items-center">
+                    <q-icon :name="hall.isOccupied ? 'lock' : 'lock_open'" size="sm" :color="hall.isOccupied ? 'red' : 'green'" />
+                    <q-icon v-if="hall.has_ac" name="ac_unit" color="blue" size="xs" class="q-mt-xs"><q-tooltip>AC Available</q-tooltip></q-icon>
+               </div>
             </div>
-            <div class="text-subtitle2 text-grey">Capacity: {{ hall.capacity }} Students</div>
+            <div class="text-subtitle2 text-grey q-mt-sm">
+                <q-icon name="group" /> Capacity: {{ hall.capacity }}
+            </div>
           </q-card-section>
 
           <q-separator />
@@ -72,6 +91,12 @@
           </q-card-section>
 
           <q-card-actions align="right">
+            <q-btn flat round color="grey" icon="edit" size="sm" @click="editHall(hall)">
+                <q-tooltip>Edit Details</q-tooltip>
+            </q-btn>
+            <q-btn flat round color="negative" icon="delete" size="sm" @click="deleteHall(hall)">
+                <q-tooltip>Delete Hall</q-tooltip>
+            </q-btn>
             <q-btn flat color="primary" label="Schedule" @click="viewSchedule(hall)" />
           </q-card-actions>
         </q-card>
@@ -95,13 +120,14 @@
                 :icon="event.type === 'Class' ? 'school' : 'event'"
               >
                 <div>
+                  <strong>{{ event.day }}</strong> <br>
                   Teacher: {{ event.teacher }} <br>
                   Grade: {{ event.grade }}
                 </div>
               </q-timeline-entry>
            </q-timeline>
            <div v-if="hallEvents.length === 0" class="text-center text-grey q-pa-md">
-             No classes scheduled for today.
+             No classes scheduled for this hall.
            </div>
         </q-card-section>
 
@@ -111,16 +137,47 @@
       </q-card>
     </q-dialog>
 
+    <!-- Add/Edit Dialog -->
+    <q-dialog v-model="showAddDialog" persistent>
+        <q-card style="min-width: 400px">
+            <q-card-section>
+                <div class="text-h6">{{ isEditMode ? 'Edit Hall' : 'Add New Hall' }}</div>
+            </q-card-section>
+            
+            <q-card-section>
+                <q-form @submit="saveHall" class="q-gutter-md">
+                    <q-input outlined v-model="form.name" label="Hall Name (Optional)" hint="e.g. Main Auditorium" />
+                    <div class="row q-col-gutter-sm">
+                        <div class="col-6">
+                            <q-input outlined v-model="form.hall_number" label="Hall Number" />
+                        </div>
+                        <div class="col-6">
+                             <q-input outlined v-model="form.floor" label="Floor Number" />
+                        </div>
+                    </div>
+                    <q-input outlined v-model="form.capacity" type="number" label="Student Capacity *" :rules="[val => val > 0 || 'Required']" />
+                    <q-toggle v-model="form.has_ac" label="Air Conditioned (AC)" />
+                    
+                    <div class="row justify-end q-mt-md">
+                        <q-btn flat label="Cancel" v-close-popup />
+                        <q-btn :label="isEditMode ? 'Update' : 'Sav Hall'" type="submit" color="primary" :loading="submitting" />
+                    </div>
+                </q-form>
+            </q-card-section>
+        </q-card>
+    </q-dialog>
+
   </q-page>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import { date } from 'quasar'
+import { date, useQuasar } from 'quasar'
 import { useCourseStore } from 'stores/course-store'
 import { useHallStore } from 'stores/hall-store'
 import { storeToRefs } from 'pinia'
 
+const $q = useQuasar()
 const courseStore = useCourseStore()
 const hallStore = useHallStore()
 const { halls } = storeToRefs(hallStore)
@@ -147,29 +204,20 @@ const filterTime = ref('8:00 AM')
 const processedHalls = ref([])
 
 const checkAvailability = () => {
-   // Logic: Iterate over halls and check if any course occupies it at the filtered time
-   // Note: Time overlapping logic requires parsing "8:00 AM" to Minutes.
-   // For Demo: Use simple exact match or String inclusion if simplified.
-   
    processedHalls.value = halls.value.map(hall => {
       const activeCourse = courses.value.find(c => {
-         // Check Hall ID
-         if (c.hallId !== hall.id) return false
+         if (c.hall_id !== hall.id) return false
          
-         // Check Day
-         if (!c.schedule.includes(filterDay.value)) return false
+         const schedule = c.schedule // assuming object { day, start, end } or similar
          
-         // Check Time (Legacy overlapping logic or simple exact match for demo)
-         // Assuming simple string match or falls within range logic.
-         // Real logic: Parse Start/End time. 
-         // Demo shortcut: Does the schedule string contain the start time?
-         // Or is filterTime "8:00 AM" equal to c.scheduleStart?
+         // Simple check: If Day Matches
+         if ((schedule?.day || 'Monday') !== filterDay.value) return false
          
-         // Let's rely on simple heuristic: If schedule contains the time string? No that's risky.
-         // Let's assume user picks '8:00 AM'. We check if course starts then.
-         // Better: Parse time logic.
+         // In real world, convert times to minutes and check range.
+         // Here, just checking if start time is remarkably close or matches
+         if ((schedule?.start || '08:00') === convertTo24Hour(filterTime.value)) return true
          
-         return c.schedule.includes(filterTime.value) // Very simple check
+         return false 
       })
 
       if (activeCourse) {
@@ -178,8 +226,8 @@ const checkAvailability = () => {
             isOccupied: true,
             currentClass: {
                name: activeCourse.name,
-               teacher: activeCourse.teacher,
-               timeRange: activeCourse.schedule
+               teacher: activeCourse.teacher?.name || 'Unknown',
+               timeRange: `${activeCourse.schedule?.start} - ${activeCourse.schedule?.end}`
             }
          }
       }
@@ -187,26 +235,97 @@ const checkAvailability = () => {
    })
 }
 
+function convertTo24Hour(timeStr) {
+    // very basic converter for '8:00 AM' -> '08:00'
+    // This is just a helper for the demo logic
+    const [time, modifier] = timeStr.split(' ');
+    let [hours, minutes] = time.split(':');
+    if (hours === '12') {
+        hours = '00';
+    }
+    if (modifier === 'PM') {
+        hours = parseInt(hours, 10) + 12;
+    }
+    return `${String(hours).padStart(2, '0')}:${minutes}`;
+}
+
+
+// Add/Edit Logic
+const showAddDialog = ref(false)
+const isEditMode = ref(false)
+const submitting = ref(false)
+const form = ref({
+    id: null, name: '', hall_number: '', floor: '', capacity: 50, has_ac: false
+})
+
+function openAddDialog() {
+    isEditMode.value = false
+    form.value = { name: '', hall_number: '', floor: '', capacity: 50, has_ac: false }
+    showAddDialog.value = true
+}
+
+function editHall(hall) {
+    isEditMode.value = true
+    form.value = { ...hall }
+    showAddDialog.value = true
+}
+
+async function saveHall() {
+    submitting.value = true
+    try {
+        if (isEditMode.value) {
+            await hallStore.updateHall(form.value.id, form.value)
+            $q.notify({ type: 'positive', message: 'Hall Updated' })
+        } else {
+            await hallStore.addHall(form.value)
+            $q.notify({ type: 'positive', message: 'Hall Created' })
+        }
+        showAddDialog.value = false
+        checkAvailability() // Refresh view
+    } catch (e) {
+        console.error(e)
+        $q.notify({ type: 'negative', message: 'Operation Failed' })
+    } finally {
+        submitting.value = false
+    }
+}
+
+function deleteHall(hall) {
+     $q.dialog({ title: 'Confirm', message: 'Delete this Hall?', cancel: true }).onOk(async () => {
+         await hallStore.deleteHall(hall.id)
+         $q.notify({ type: 'positive', message: 'Hall Deleted' })
+         checkAvailability()
+     })
+}
+
+
 // Initial Run
-onMounted(() => {
-   checkAvailability()
+onMounted(async () => {
+   await Promise.all([
+       hallStore.fetchHalls(),
+       courseStore.fetchCourses() // Need courses to check occupancy
+   ])
+   checkAvailability() // Run initial check
 })
 
 // Watch filters
-watch([filterDay, filterTime], () => checkAvailability())
+watch([filterDay, filterTime, halls, courses], () => checkAvailability())
 
-const availableHalls = computed(() => processedHalls.value.filter(h => !h.isOccupied).length)
+const availableHalls = computed(() => {
+    return processedHalls.value ? processedHalls.value.filter(h => !h.isOccupied).length : 0
+})
 
 const viewSchedule = (hall) => {
   selectedHall.value = hall
   // Find all courses for this hall
-  const hallCourses = courses.value.filter(c => c.hallId === hall.id)
+  const hallCourses = courses.value.filter(c => c.hall_id === hall.id)
   
   hallEvents.value = hallCourses.map(c => ({
       name: c.name,
-      time: c.schedule,
-      teacher: c.teacher,
-      grade: c.grade,
+      day: c.schedule?.day || 'Unknown',
+      time: `${c.schedule?.start || ''} - ${c.schedule?.end || ''}`,
+      teacher: c.teacher?.name || 'Unknown',
+      grade: c.batch?.name || '',
       type: 'Class'
   }))
   
@@ -214,3 +333,8 @@ const viewSchedule = (hall) => {
 }
 
 </script>
+
+<style scoped>
+.my-card { transition: all 0.3s }
+.my-card:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.1) }
+</style>

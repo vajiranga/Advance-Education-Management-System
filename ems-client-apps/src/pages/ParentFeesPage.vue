@@ -1,33 +1,33 @@
 <template>
-  <q-page class="q-pa-md bg-grey-1">
+  <q-page :class="$q.dark.isActive ? 'q-pa-md bg-dark-page' : 'q-pa-md bg-grey-1'">
     <div class="row items-center justify-between q-mb-lg">
       <div>
-        <div class="text-h5 text-weight-bold text-deep-purple">Fees & Payments</div>
-        <div class="text-caption text-grey-7">Safe & Secure Online Payments</div>
+        <div class="text-h5 text-weight-bold" :class="$q.dark.isActive ? 'text-deep-purple-2' : 'text-deep-purple'">Fees & Payments</div>
+        <div class="text-caption" :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey-7'">Safe & Secure Online Payments</div>
       </div>
       <div>
-         <q-btn flat icon="receipt" label="Payment History" color="deep-purple" />
+         <q-btn flat icon="receipt" label="Payment History" :color="$q.dark.isActive ? 'deep-purple-2' : 'deep-purple'" />
       </div>
     </div>
 
     <div class="row q-col-gutter-lg">
        <!-- Pending Dues -->
        <div class="col-12 col-md-7">
-          <q-card class="bg-white no-shadow border-light q-mb-md">
+          <q-card class="no-shadow q-mb-md" :class="$q.dark.isActive ? 'bg-dark border-dark' : 'bg-white border-light'">
             <q-card-section>
-               <div class="text-h6 q-mb-md">Pending Dues</div>
+               <div class="text-h6 q-mb-md" :class="$q.dark.isActive ? 'text-white' : ''">Pending Dues</div>
                
                <div v-if="pendingFees.length > 0" class="column q-gutter-y-md">
-                 <q-card v-for="fee in pendingFees" :key="fee.id" class="no-shadow bg-grey-1 q-pa-sm border-left-red">
+                 <q-card v-for="fee in pendingFees" :key="fee.id" class="no-shadow q-pa-sm border-left-red" :class="$q.dark.isActive ? 'bg-grey-9' : 'bg-grey-1'">
                     <q-card-section horizontal class="items-center justify-between">
                        <q-card-section>
-                          <div class="text-h6">{{ fee.title }}</div>
-                          <div class="text-caption text-grey">Due: {{ fee.dueDate }}</div>
-                          <q-chip size="sm" color="red-1" text-color="red" label="Overdue" v-if="fee.isOverdue" class="q-mt-xs"/>
+                          <div class="text-h6" :class="$q.dark.isActive ? 'text-white' : ''">{{ fee.title }}</div>
+                          <div class="text-caption" :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey'">Due: {{ fee.dueDate }}</div>
+                          <q-chip size="sm" :color="$q.dark.isActive ? 'red-9' : 'red-1'" :text-color="$q.dark.isActive ? 'red-2' : 'red'" label="Overdue" v-if="fee.isOverdue" class="q-mt-xs"/>
                        </q-card-section>
                        <q-card-section class="text-right">
-                          <div class="text-h5 text-primary text-weight-bold">{{ fee.amount }} LKR</div>
-                          <q-btn unelevated color="deep-purple" label="Pay Now" class="q-mt-sm" @click="payNow(fee)" :loading="processingId === fee.id" />
+                          <div class="text-h5 text-weight-bold" :class="$q.dark.isActive ? 'text-deep-purple-2' : 'text-primary'">{{ fee.amount }} LKR</div>
+                          <q-btn unelevated :color="$q.dark.isActive ? 'deep-purple-6' : 'deep-purple'" label="Pay Now" class="q-mt-sm" @click="payNow(fee)" :loading="processingId === fee.id" />
                        </q-card-section>
                     </q-card-section>
                  </q-card>
@@ -44,22 +44,22 @@
        <!-- Payment History & Methods -->
        <div class="col-12 col-md-5">
           <!-- Saved Cards -->
-          <q-card class="bg-white no-shadow border-light q-mb-md">
+          <q-card class="no-shadow q-mb-md" :class="$q.dark.isActive ? 'bg-dark border-dark' : 'bg-white border-light'">
              <q-card-section>
-                <div class="text-subtitle1 text-weight-bold q-mb-sm">Saved Payment Methods</div>
-                <q-list bordered separator class="rounded-borders">
-                   <q-item clickable v-ripple>
+                <div class="text-subtitle1 text-weight-bold q-mb-sm" :class="$q.dark.isActive ? 'text-white' : ''">Saved Payment Methods</div>
+                <q-list bordered separator class="rounded-borders" :class="$q.dark.isActive ? 'bg-grey-9 border-grey-8' : ''">
+                   <q-item clickable v-ripple :class="$q.dark.isActive ? 'text-white' : ''">
                       <q-item-section avatar><q-icon name="credit_card" color="blue" /></q-item-section>
                       <q-item-section>
                          <q-item-label>Visa ending in 4242</q-item-label>
-                         <q-item-label caption>Expires 12/28</q-item-label>
+                         <q-item-label caption :class="$q.dark.isActive ? 'text-grey-5' : ''">Expires 12/28</q-item-label>
                       </q-item-section>
                       <q-item-section side>
-                        <q-radio v-model="selectedCard" val="visa" />
+                        <q-radio v-model="selectedCard" val="visa" :dark="$q.dark.isActive" />
                       </q-item-section>
                    </q-item>
-                   <q-item clickable v-ripple>
-                      <q-item-section avatar><q-icon name="add" /></q-item-section>
+                   <q-item clickable v-ripple :class="$q.dark.isActive ? 'text-white' : ''">
+                      <q-item-section avatar><q-icon name="add" :color="$q.dark.isActive ? 'white' : 'grey-8'" /></q-item-section>
                       <q-item-section>Add New Card</q-item-section>
                    </q-item>
                 </q-list>
@@ -67,11 +67,11 @@
           </q-card>
 
           <!-- Recent Transactions -->
-          <q-card class="bg-white no-shadow border-light">
+          <q-card class="no-shadow" :class="$q.dark.isActive ? 'bg-dark border-dark' : 'bg-white border-light'">
              <q-card-section>
-                <div class="text-subtitle1 text-weight-bold q-mb-sm">Recent Transactions</div>
+                <div class="text-subtitle1 text-weight-bold q-mb-sm" :class="$q.dark.isActive ? 'text-white' : ''">Recent Transactions</div>
                 <q-scroll-area style="height: 300px;">
-                  <q-timeline color="deep-purple">
+                  <q-timeline :color="$q.dark.isActive ? 'deep-purple-2' : 'deep-purple'" :dark="$q.dark.isActive">
                      <q-timeline-entry
                        v-for="history in transactionHistory"
                        :key="history.id"
@@ -79,7 +79,7 @@
                        :subtitle="history.date"
                        icon="done"
                      >
-                       <div>
+                       <div :class="$q.dark.isActive ? 'text-grey-4' : ''">
                          Paid <b>{{ history.amount }} LKR</b> via {{ history.method }}
                        </div>
                      </q-timeline-entry>
@@ -93,47 +93,84 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
+import { api } from 'boot/axios'
 
 const $q = useQuasar()
 const selectedCard = ref('visa')
 const processingId = ref(null)
 
-const pendingFees = ref([
- { id: 1, title: 'Term 1 School Fees', amount: '15,000.00', dueDate: 'Jan 10, 2026', isOverdue: true },
- { id: 2, title: 'Sports Meet Contribution', amount: '2,000.00', dueDate: 'Feb 01, 2026', isOverdue: false }
-])
+const pendingFees = ref([])
+const transactionHistory = ref([])
 
-const transactionHistory = ref([
-  { id: 101, title: 'Book List Payment', date: 'Dec 15, 2025', amount: '4,500.00', method: 'Visa **4242' },
-  { id: 102, title: 'Facility Fees - Term 3', date: 'Sept 01, 2025', amount: '10,000.00', method: 'Cash' },
-  { id: 103, title: 'Term 2 School Fees', date: 'May 10, 2025', amount: '15,000.00', method: 'Visa **4242' }
-])
+const fetchFees = async () => {
+    try {
+        const response = await api.get('/v1/parent/fees/due')
+        pendingFees.value = response.data.map(fee => ({
+            id: fee.id,
+            title: `${fee.student_name} - ${fee.course_name} (${fee.month_label})`,
+            amount: parseFloat(fee.amount).toFixed(2),
+            dueDate: new Date(fee.due_date).toLocaleDateString(),
+            isOverdue: fee.is_overdue,
+            month: fee.month_label
+        }))
+    } catch (error) {
+        console.error('Error fetching fees', error)
+    }
+}
 
-const payNow = (fee) => {
+const fetchHistory = async () => {
+    try {
+        const response = await api.get('/v1/my-payments')
+        transactionHistory.value = response.data.data.map(payment => ({
+            id: payment.id,
+            title: `${payment.course?.name || 'Course'} - ${payment.month}`,
+            date: new Date(payment.created_at).toLocaleDateString(),
+            amount: parseFloat(payment.amount).toFixed(2),
+            method: payment.type === 'card' ? 'Visa **4242' : payment.type // Mock card display
+        }))
+    } catch (error) {
+        console.error('Error fetching history', error)
+    }
+}
+
+onMounted(() => {
+    fetchFees()
+    fetchHistory()
+})
+
+const payNow = async (fee) => {
    processingId.value = fee.id
-   // Simulate Payment Process
-   setTimeout(() => {
-     $q.notify({
-       type: 'positive',
-       message: 'Payment Successful!',
-       position: 'top',
-       icon: 'check_circle'
-     })
-     
-     // Move to History
-     pendingFees.value = pendingFees.value.filter(f => f.id !== fee.id)
-     transactionHistory.value.unshift({
-        id: Date.now(),
-        title: fee.title,
-        date: 'Just now',
-        amount: fee.amount,
-        method: 'Visa **4242'
-     })
-     
-     processingId.value = null
-   }, 2000)
+   
+   try {
+       await api.post('/v1/payments', {
+           fee_id: fee.id,
+           amount: fee.amount,
+           type: 'card', // Hardcoded for demo
+           note: 'Paid via Parent Portal'
+       })
+
+       $q.notify({
+         type: 'positive',
+         message: 'Payment Successful!',
+         position: 'top',
+         icon: 'check_circle'
+       })
+       
+       // Refresh Data
+       await fetchFees()
+       await fetchHistory()
+
+   } catch (error) {
+       $q.notify({
+         type: 'negative',
+         message: 'Payment Failed: ' + (error.response?.data?.message || 'Unknown Error'),
+         position: 'top'
+       })
+   } finally {
+       processingId.value = null
+   }
 }
 </script>
 

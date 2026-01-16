@@ -237,7 +237,30 @@
                                 option-label="name" 
                                 label="Select Hall *" 
                                 :rules="[val => !!val || 'Required']" 
-                            />
+                            >
+                                <template v-slot:option="scope">
+                                    <q-item v-bind="scope.itemProps">
+                                        <q-item-section>
+                                            <q-item-label>
+                                                {{ scope.opt.name }}
+                                            </q-item-label>
+                                            <q-item-label caption class="text-grey-7">
+                                                <q-icon name="group" size="xs" /> {{ scope.opt.capacity }} | 
+                                                <span v-if="scope.opt.floor">Floor: {{ scope.opt.floor }}</span>
+                                            </q-item-label>
+                                        </q-item-section>
+                                        <q-item-section side v-if="scope.opt.has_ac">
+                                            <q-chip dense color="blue-1" text-color="blue" size="sm" icon="ac_unit" label="AC" />
+                                        </q-item-section>
+                                    </q-item>
+                                </template>
+                                <template v-slot:selected-item="scope">
+                                    <div class="row items-center">
+                                         {{ scope.opt.name }}
+                                         <q-chip v-if="scope.opt.has_ac" dense color="blue-1" text-color="blue" size="xs" icon="ac_unit" class="q-ml-sm" label="AC" />
+                                    </div>
+                                </template>
+                            </q-select>
                        </div>
                        <div class="col-6">
                             <q-input 

@@ -1,14 +1,14 @@
 <template>
-  <q-page class="q-pa-md bg-grey-1">
+  <q-page :class="$q.dark.isActive ? 'q-pa-md bg-dark-page' : 'q-pa-md bg-grey-1'">
     <div class="row items-center justify-between q-mb-md">
-      <div class="text-h5 text-weight-bold text-teal-9">My Classes</div>
+      <div class="text-h5 text-weight-bold" :class="$q.dark.isActive ? 'text-teal-2' : 'text-teal-9'">My Classes</div>
       <q-btn color="teal" icon="add" label="New Class" unelevated @click="openCreateDialog" />
     </div>
 
     <q-tabs
       v-model="tab"
       dense
-      class="text-grey"
+      :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey'"
       active-color="teal"
       indicator-color="teal"
       align="left"
@@ -26,24 +26,24 @@
                   <div>No active classes found.</div>
               </div>
               <div class="col-12 col-md-4" v-for="cls in activeCourses" :key="cls.id">
-                  <q-card class="no-shadow border-top-teal bg-white full-height column">
+                  <q-card class="no-shadow border-top-teal full-height column" :class="$q.dark.isActive ? 'bg-dark' : 'bg-white'">
                      <q-card-section>
                         <div class="row items-center justify-between">
-                           <q-badge color="teal-1" text-color="teal" :label="cls.batch?.name" />
+                           <q-badge :color="$q.dark.isActive ? 'teal-9' : 'teal-1'" :text-color="$q.dark.isActive ? 'teal-2' : 'teal'" :label="cls.batch?.name" />
                            <q-btn flat round icon="more_vert" dense color="grey" />
                         </div>
-                        <div class="text-h6 q-mt-sm">{{ cls.name }}</div>
-                        <div class="text-caption text-grey">{{ formatSchedule(cls.schedule) }}</div>
+                        <div class="text-h6 q-mt-sm" :class="$q.dark.isActive ? 'text-white' : ''">{{ cls.name }}</div>
+                        <div class="text-caption" :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey'">{{ formatSchedule(cls.schedule) }}</div>
                      </q-card-section>
 
                      <q-card-section class="q-pt-none">
-                         <div class="row q-gutter-x-lg q-my-sm text-grey-8">
+                         <div class="row q-gutter-x-lg q-my-sm" :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey-8'">
                             <div class="row items-center"><q-icon name="groups" class="q-mr-xs" /> {{ cls.students_count || 0 }} Students</div>
                             <div class="row items-center"><q-icon name="meeting_room" class="q-mr-xs" /> {{ cls.hall?.name || 'No Hall' }}</div>
                          </div>
                      </q-card-section>
 
-                     <q-separator />
+                     <q-separator :class="$q.dark.isActive ? 'bg-grey-8' : ''" />
 
                      <q-card-actions align="right">
                         <q-btn flat color="teal" label="Syllabus" />
@@ -60,21 +60,27 @@
                   <div>No pending requests.</div>
               </div>
                <div class="col-12 col-md-4" v-for="cls in pendingCourses" :key="cls.id">
-                  <q-card class="no-shadow border-top-orange bg-white full-height column">
+                  <q-card class="no-shadow border-top-orange full-height column" :class="$q.dark.isActive ? 'bg-dark' : 'bg-white'">
                      <q-card-section>
                         <div class="row items-center justify-between">
-                           <q-badge color="teal-1" text-color="teal" :label="cls.batch?.name" />
-                           <q-chip size="sm" color="orange-1" text-color="orange" label="Pending Approval" />
+                           <q-badge :color="$q.dark.isActive ? 'teal-9' : 'teal-1'" :text-color="$q.dark.isActive ? 'teal-2' : 'teal'" :label="cls.batch?.name" />
+                           <q-chip size="sm" :color="$q.dark.isActive ? 'orange-9' : 'orange-1'" :text-color="$q.dark.isActive ? 'orange-2' : 'orange'" label="Pending Approval" />
                         </div>
-                        <div class="text-h6 q-mt-sm">{{ cls.name }}</div>
-                        <div class="text-caption text-grey">{{ formatSchedule(cls.schedule) }}</div>
+                        <div class="text-h6 q-mt-sm" :class="$q.dark.isActive ? 'text-white' : ''">{{ cls.name }}</div>
+                        <div class="text-caption" :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey'">{{ formatSchedule(cls.schedule) }}</div>
                      </q-card-section>
 
                      <q-card-section class="q-pt-none">
-                         <div class="text-grey-8 text-caption">
+                         <div class="text-caption" :class="$q.dark.isActive ? 'text-grey-5' : 'text-grey-8'">
                             Request sent on {{ new Date(cls.created_at).toLocaleDateString() }}
                          </div>
                      </q-card-section>
+                     
+                     <q-separator :class="$q.dark.isActive ? 'bg-grey-8' : ''" />
+                     
+                     <q-card-actions align="right">
+                        <q-btn flat color="negative" icon="delete" label="Cancel Request" size="sm" @click="cancelRequest(cls.id)" />
+                     </q-card-actions>
                   </q-card>
               </div>
           </div>
@@ -82,27 +88,54 @@
     </q-tab-panels>
 
      <q-dialog v-model="showDialog">
-        <q-card style="min-width: 500px">
+        <q-card style="min-width: 500px" :class="$q.dark.isActive ? 'bg-dark' : ''">
             <q-card-section>
-                <div class="text-h6">Create New Class</div>
-                <div class="text-caption text-grey">Request a new course. Requires Admin Approval.</div>
+                <div class="text-h6" :class="$q.dark.isActive ? 'text-white' : ''">Create New Class</div>
+                <div class="text-caption" :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey'">Request a new course. Requires Admin Approval.</div>
             </q-card-section>
 
             <q-card-section class="q-gutter-md">
-                <q-input v-model="newCourse.name" label="Class Name (e.g. Science Grade 6)" outlined :rules="[val => !!val || 'Required']" />
-                <q-select v-model="newCourse.subject_id" :options="subjects" option-label="name" option-value="id" label="Subject" emit-value map-options outlined :rules="[val => !!val || 'Required']" />
-                <q-select v-model="newCourse.batch_id" :options="batches" option-label="name" option-value="id" label="Batch / Grade" emit-value map-options outlined :rules="[val => !!val || 'Required']" />
-                <q-input v-model="newCourse.fee_amount" label="Fee (LKR)" type="number" outlined :rules="[val => !!val || 'Required']" />
+                <q-input v-model="newCourse.name" label="Class Name (e.g. Science Grade 6)" outlined :rules="[val => !!val || 'Required']" :bg-color="$q.dark.isActive ? 'grey-9' : 'white'" :dark="$q.dark.isActive" />
+                <q-select v-model="newCourse.subject_id" :options="subjects" option-label="name" option-value="id" label="Subject" emit-value map-options outlined :rules="[val => !!val || 'Required']" :bg-color="$q.dark.isActive ? 'grey-9' : 'white'" :dark="$q.dark.isActive" />
+                <q-select v-model="newCourse.batch_id" :options="batches" option-label="name" option-value="id" label="Batch / Grade" emit-value map-options outlined :rules="[val => !!val || 'Required']" :bg-color="$q.dark.isActive ? 'grey-9' : 'white'" :dark="$q.dark.isActive" />
+                <q-input v-model="newCourse.fee_amount" label="Fee (LKR)" type="number" outlined :rules="[val => !!val || 'Required']" :bg-color="$q.dark.isActive ? 'grey-9' : 'white'" :dark="$q.dark.isActive" />
                 
                 <div class="row q-col-gutter-sm">
-                    <q-select class="col-4" v-model="newCourse.schedule.day" :options="days" label="Day" outlined />
-                    <q-input class="col-4" v-model="newCourse.schedule.start" type="time" label="Start" outlined />
-                    <q-input class="col-4" v-model="newCourse.schedule.end" type="time" label="End" outlined />
+                    <q-select class="col-4" v-model="newCourse.schedule.day" :options="days" label="Day" outlined :bg-color="$q.dark.isActive ? 'grey-9' : 'white'" :dark="$q.dark.isActive" />
+                    <q-input class="col-4" v-model="newCourse.schedule.start" type="time" label="Start" outlined :bg-color="$q.dark.isActive ? 'grey-9' : 'white'" :dark="$q.dark.isActive" />
+                    <q-input class="col-4" v-model="newCourse.schedule.end" type="time" label="End" outlined :bg-color="$q.dark.isActive ? 'grey-9' : 'white'" :dark="$q.dark.isActive" />
                 </div>
+                
+                <q-select 
+                    v-model="newCourse.hall_id" 
+                    :options="halls" 
+                    option-label="name" 
+                    option-value="id" 
+                    label="Select Hall (Based on Schedule)" 
+                    emit-value 
+                    map-options 
+                    outlined 
+                    :disable="halls.length === 0"
+                    :hint="halls.length === 0 ? 'Set schedule to see available halls' : `${halls.length} halls available`"
+                    :bg-color="$q.dark.isActive ? 'grey-9' : 'white'" 
+                    :dark="$q.dark.isActive"
+                >
+                    <template v-slot:option="scope">
+                        <q-item v-bind="scope.itemProps" :class="$q.dark.isActive ? 'text-white' : ''">
+                            <q-item-section>
+                                <q-item-label>{{ scope.opt.name }}</q-item-label>
+                                <q-item-label caption :class="$q.dark.isActive ? 'text-grey-4' : ''">Points: {{ scope.opt.capacity }} | Floor: {{ scope.opt.floor }}</q-item-label>
+                            </q-item-section>
+                            <q-item-section side v-if="scope.opt.has_ac">
+                                <q-chip dense color="blue-1" text-color="blue" size="sm" icon="ac_unit" label="AC" />
+                            </q-item-section>
+                        </q-item>
+                    </template>
+                </q-select>
             </q-card-section>
 
             <q-card-actions align="right">
-                <q-btn flat label="Cancel" v-close-popup />
+                <q-btn flat label="Cancel" v-close-popup :color="$q.dark.isActive ? 'grey-4' : 'primary'" />
                 <q-btn color="primary" label="Create Request" @click="submitCourse" :loading="loading" />
             </q-card-actions>
         </q-card>
@@ -126,13 +159,14 @@ const tab = ref('active')
 const showDialog = ref(false)
 const batches = ref([])
 const subjects = ref([])
+const halls = ref([]) // Available Halls
 const newCourse = reactive({
     name: '',
     subject_id: null,
     batch_id: null,
     fee_amount: '',
     hall_id: null,
-    schedule: { day: 'Monday', start: '', end: '' }
+    schedule: { day: 'Monday', start: '08:00', end: '10:00' }
 })
 
 const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
@@ -140,6 +174,18 @@ const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'
 onMounted(() => {
     loadCourses()
 })
+
+// Watch schedule changes to fetch available halls
+import { watch } from 'vue'
+watch(() => newCourse.schedule, async (val) => {
+    if (val.day && val.start && val.end) {
+        halls.value = await teacherStore.checkHallAvailability({
+            day: val.day, // Pass day explicitly
+            start_time: val.start, 
+            end_time: val.end 
+        })
+    }
+}, { deep: true })
 
 function loadCourses() {
     teacherStore.fetchCourses({ teacher_id: authStore.user?.id })
@@ -166,6 +212,7 @@ async function submitCourse() {
         batch_id: newCourse.batch_id,
         teacher_id: authStore.user?.id,
         fee_amount: newCourse.fee_amount,
+        hall_id: newCourse.hall_id,
         schedule: newCourse.schedule 
     }
 
@@ -194,6 +241,23 @@ async function submitCourse() {
     } else {
         $q.notify({ type: 'negative', message: 'Failed: ' + res.error })
     }
+}
+
+async function cancelRequest(id) {
+    $q.dialog({
+        title: 'Confirm Cancellation',
+        message: 'Are you sure you want to cancel this class request?',
+        cancel: true,
+        persistent: true
+    }).onOk(async () => {
+        const res = await teacherStore.deleteClass(id)
+        if (res.success) {
+            $q.notify({ type: 'positive', message: 'Request Cancelled' })
+            loadCourses()
+        } else {
+            $q.notify({ type: 'negative', message: 'Failed to cancel' })
+        }
+    })
 }
 
 function formatSchedule(schedule) {

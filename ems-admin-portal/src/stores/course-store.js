@@ -70,10 +70,16 @@ export const useCourseStore = defineStore('course', () => {
         await api.post('/v1/enroll', { course_id: courseId, user_id: userId })
     }
 
+    async function bulkEnroll(courseId, userIds) {
+        // Create array of promises
+        const promises = userIds.map(uid => api.post('/v1/enroll', { course_id: courseId, user_id: uid }))
+        await Promise.all(promises)
+    }
+
     return {
         courses, subjects, batches, halls, loading,
         fetchCourses, fetchMetadata, addCourse, updateStatus, deleteCourse, bulkAction, updateCourse,
-        fetchStudents, enrollStudent
+        fetchStudents, enrollStudent, bulkEnroll
     }
 })
-// Forced HMR Update
+// Forced HMR Update 2

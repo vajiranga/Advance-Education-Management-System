@@ -1,9 +1,9 @@
 <template>
-  <q-page class="q-pa-md bg-grey-1">
+  <q-page :class="$q.dark.isActive ? 'q-pa-md bg-dark-page' : 'q-pa-md bg-grey-1'">
     <div class="row items-center justify-between q-mb-lg">
       <div>
-        <div class="text-h5 text-weight-bold">Exams & Results</div>
-        <div class="text-caption text-grey-7">Track your examination schedules and performance</div>
+        <div class="text-h5 text-weight-bold" :class="$q.dark.isActive ? 'text-white' : ''">Exams & Results</div>
+        <div class="text-caption" :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey-7'">Track your examination schedules and performance</div>
       </div>
     </div>
 
@@ -15,7 +15,8 @@
       indicator-color="primary"
       align="left"
       narrow-indicator
-      class="text-grey q-mb-md"
+      class="q-mb-md"
+      :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey'"
     >
       <q-tab name="upcoming" label="Upcoming Exams" icon="event" />
       <q-tab name="results" label="My Results" icon="assignment_turned_in" />
@@ -28,21 +29,21 @@
         <div v-if="upcomingExams.length > 0">
            <div class="row q-col-gutter-md">
              <div class="col-12 col-md-6" v-for="exam in upcomingExams" :key="exam.id">
-               <q-card class="exam-card border-light no-shadow">
+               <q-card class="exam-card no-shadow" :class="$q.dark.isActive ? 'bg-dark border-dark' : 'bg-white border-light'">
                  <q-card-section>
                    <div class="row justify-between items-center">
-                      <q-chip color="blue-1" text-color="primary" icon="event">
+                      <q-chip :color="$q.dark.isActive ? 'blue-9' : 'blue-1'" :text-color="$q.dark.isActive ? 'blue-1' : 'primary'" icon="event">
                         {{ exam.date }}
                       </q-chip>
-                      <q-chip outline color="grey" size="sm">{{ exam.duration }}</q-chip>
+                      <q-chip outline :color="$q.dark.isActive ? 'grey-4' : 'grey'" size="sm">{{ exam.duration }}</q-chip>
                    </div>
-                   <div class="text-h6 q-mt-sm">{{ exam.subject }}</div>
-                   <div class="text-subtitle2 text-grey-8">{{ exam.title }}</div>
-                   <div class="text-caption text-grey q-mt-xs">
+                   <div class="text-h6 q-mt-sm" :class="$q.dark.isActive ? 'text-white' : ''">{{ exam.subject }}</div>
+                   <div class="text-subtitle2" :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey-8'">{{ exam.title }}</div>
+                   <div class="text-caption q-mt-xs" :class="$q.dark.isActive ? 'text-grey-5' : 'text-grey'">
                      <q-icon name="schedule" /> {{ exam.time }} &nbsp;|&nbsp; <q-icon name="place" /> {{ exam.venue }}
                    </div>
                  </q-card-section>
-                 <q-separator />
+                 <q-separator :class="$q.dark.isActive ? 'bg-grey-8' : ''" />
                  <q-card-actions align="right">
                    <q-btn flat color="primary" label="View Syllabus" />
                  </q-card-actions>
@@ -51,19 +52,21 @@
            </div>
         </div>
         <div v-else class="text-center text-grey q-pa-xl">
-           <q-icon name="event_busy" size="64px" color="grey-4" />
-           <div class="text-h6 q-mt-md">No upcoming exams</div>
+           <q-icon name="event_busy" size="64px" :color="$q.dark.isActive ? 'grey-7' : 'grey-4'" />
+           <div class="text-h6 q-mt-md" :class="$q.dark.isActive ? 'text-grey-4' : ''">No upcoming exams</div>
         </div>
       </q-tab-panel>
 
       <!-- Results Tab -->
       <q-tab-panel name="results" class="q-pa-none">
-         <q-card class="no-shadow border-light">
+         <q-card class="no-shadow" :class="$q.dark.isActive ? 'bg-dark border-dark' : 'bg-white border-light'">
            <q-table
              :rows="results"
              :columns="columns"
              row-key="id"
              flat
+             :dark="$q.dark.isActive"
+             :color="$q.dark.isActive ? 'primary' : ''"
            >
              <template v-slot:body-cell-grade="props">
                <q-td :props="props">
@@ -78,7 +81,7 @@
                </q-td>
              </template>
              <template v-slot:body-cell-mark="props">
-                <q-td :props="props" class="text-weight-bold">
+                <q-td :props="props" class="text-weight-bold" :class="$q.dark.isActive ? 'text-white' : ''">
                    {{ props.row.mark }}%
                 </q-td>
              </template>
@@ -86,9 +89,9 @@
          </q-card>
          
          <!-- Performance Chart Placeholder -->
-         <q-card class="q-mt-md no-shadow border-light q-pa-md">
-            <div class="text-subtitle1 text-weight-bold q-mb-sm">Performance Analysis</div>
-            <div class="text-grey text-caption text-center" style="height: 150px; border: 2px dashed #eee; border-radius: 8px; line-height: 150px;">
+         <q-card class="q-mt-md no-shadow q-pa-md" :class="$q.dark.isActive ? 'bg-dark border-dark' : 'bg-white border-light'">
+            <div class="text-subtitle1 text-weight-bold q-mb-sm" :class="$q.dark.isActive ? 'text-white' : ''">Performance Analysis</div>
+            <div class="text-caption text-center" :class="$q.dark.isActive ? 'text-grey-5' : 'text-grey'" style="height: 150px; border: 2px dashed; border-radius: 8px; line-height: 150px; border-color: inherit;">
                [Performance Chart Component]
             </div>
          </q-card>
@@ -99,30 +102,39 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { useExamStore } from 'stores/exam-store'
 
 const tab = ref('upcoming')
 
-const upcomingExams = ref([
- {
-    id: 1,
-    subject: 'Science',
-    title: 'Term 1 Evaluation',
-    date: 'Jan 15, 2026',
-    time: '08:30 AM',
-    duration: '2 Hours',
-    venue: 'Main Hall'
- },
- {
-    id: 2,
-    subject: 'Mathematics',
-    title: 'Monthly Test - Algebra',
-    date: 'Jan 20, 2026',
-    time: '10:00 AM',
-    duration: '1 Hour',
-    venue: 'Classroom 5B'
- }
-])
+const examStore = useExamStore()
+
+onMounted(async () => {
+    const data = await examStore.fetchMyExams()
+    upcomingExams.value = data.upcoming.map(e => ({
+        id: e.id,
+        subject: e.subject || 'Subject',
+        title: e.title,
+        date: new Date(e.date).toLocaleDateString(),
+        time: 'TBA', // Backend currently just stores date
+        duration: 'TBA',
+        venue: 'Main Hall',
+        description: e.description
+    }))
+    
+    results.value = data.results.map(r => ({
+        id: r.id,
+        subject: r.subject,
+        exam: r.exam_title,
+        date: new Date(r.date).toLocaleDateString(),
+        mark: Number(r.marks), // Ensure number
+        grade: r.grade || '-',
+        feedback: r.feedback
+    }))
+})
+
+const upcomingExams = ref([])
+const results = ref([])
 
 const columns = [
   { name: 'subject', label: 'Subject', field: 'subject', align: 'left' },
@@ -132,14 +144,8 @@ const columns = [
   { name: 'grade', label: 'Grade', field: 'grade', align: 'center' },
 ]
 
-const results = ref([
-  { id: 101, subject: 'English', exam: 'Unit Test 3', date: 'Dec 10, 2025', mark: 85, grade: 'A' },
-  { id: 102, subject: 'History', exam: 'Term End Exam', date: 'Nov 25, 2025', mark: 62, grade: 'C' },
-  { id: 103, subject: 'ICT', exam: 'Practical Test', date: 'Nov 20, 2025', mark: 90, grade: 'A' },
-  { id: 104, subject: 'Mathematics', exam: 'Pop Quiz', date: 'Nov 15, 2025', mark: 45, grade: 'S' },
-])
-
 const getGradeColor = (grade) => {
+   if (!grade) return 'grey'
    if (grade === 'A') return 'green'
    if (grade === 'B') return 'blue'
    if (grade === 'C') return 'orange'
@@ -155,5 +161,8 @@ const getGradeColor = (grade) => {
 }
 .border-light {
    border: 1px solid #eee;
+}
+.border-dark {
+   border: 1px solid #334155;
 }
 </style>

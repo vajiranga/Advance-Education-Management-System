@@ -1,21 +1,40 @@
 <template>
   <q-page :class="$q.dark.isActive ? 'q-pa-md bg-dark-page' : 'q-pa-md bg-grey-1'">
-    <div class="q-mb-lg">
-      <div class="text-h5 text-weight-bold" :class="$q.dark.isActive ? 'text-white' : 'text-primary'">My Attendance</div>
-      <div class="text-caption" :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey'">Track your class participation</div>
+    
+    <!-- Header: Child Selector -->
+    <div class="row items-center justify-between q-mb-lg">
+      <div>
+        <div class="text-h5 text-weight-bold" :class="$q.dark.isActive ? 'text-white' : 'text-primary'">Attendance Records</div>
+        <div class="text-caption" :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey'">Track class participation</div>
+      </div>
+      <div class="row items-center q-gutter-x-md">
+         <div class="text-subtitle2" :class="$q.dark.isActive ? 'text-grey-4' : ''">Child:</div>
+         <q-select 
+            dense outlined 
+            v-model="selectedChild" 
+            :options="children" 
+            option-label="name"
+            :bg-color="$q.dark.isActive ? 'dark' : 'white'"
+            :dark="$q.dark.isActive" 
+            style="min-width: 200px"
+         />
+      </div>
     </div>
 
+    <!-- Loading State -->
     <div v-if="loading" class="row justify-center q-py-xl">
         <q-spinner color="primary" size="3em" />
     </div>
 
-    <div v-else-if="attendanceHistory.length === 0" class="text-center q-py-xl" :class="$q.dark.isActive ? 'text-grey-5' : 'text-grey'">
-        <q-icon name="assignment_late" size="4em" />
-        <div class="text-h6 q-mt-md">No attendance records found</div>
+    <!-- Empty State -->
+    <div v-else-if="!groupedAttendance || groupedAttendance.length === 0" class="text-center q-py-xl" :class="$q.dark.isActive ? 'text-grey-5' : 'text-grey'">
+        <q-icon name="event_busy" size="4em" />
+        <div class="text-h6 q-mt-md">No attendance records found for {{ selectedChild?.name }}</div>
     </div>
 
+    <!-- Attendance List -->
     <div v-else class="row q-col-gutter-md">
-        <div class="col-12" v-for="(record, index) in attendanceHistory" :key="index">
+        <div class="col-12" v-for="(record, index) in groupedAttendance" :key="index">
             <q-card class="no-shadow" :class="$q.dark.isActive ? 'bg-dark border-dark' : 'bg-white border-light'">
                 <q-expansion-item
                     expand-separator
@@ -58,7 +77,7 @@
                                 </q-item-section>
                                 <q-item-section>
                                     <q-item-label class="text-weight-medium" :class="$q.dark.isActive ? 'text-grey-3' : ''">{{ formatDate(hist.date) }}</q-item-label>
-                                    <q-item-label caption v-if="hist.in_time" :class="$q.dark.isActive ? 'text-grey-5' : ''">Checked in: {{ formatTime(hist.in_time) }}</q-item-label>
+                                    <q-item-label caption v-if="hist.check_in" :class="$q.dark.isActive ? 'text-grey-5' : ''">Checked in: {{ formatTime(hist.check_in) }}</q-item-label>
                                 </q-item-section>
                                 <q-item-section side>
                                     <q-chip 
@@ -81,16 +100,64 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
-import { useStudentStore } from 'stores/student-store'
-import { storeToRefs } from 'pinia'
+import { ref, onMounted, watch, computed } from 'vue'
+import { api } from 'boot/axios'
 import { date as qDate } from 'quasar'
 
-const studentStore = useStudentStore()
-const { attendanceHistory, loading } = storeToRefs(studentStore)
+const children = ref([])
+const selectedChild = ref(null)
+const rawAttendance = ref([])
+const loading = ref(false)
 
-onMounted(() => {
-    studentStore.fetchAttendanceHistory()
+onMounted(async () => {
+    try {
+        const res = await api.get('/v1/parent/children')
+        children.value = res.data
+        if (children.value.length > 0) {
+            selectedChild.value = children.value[0]
+            fetchAttendance(selectedChild.value.id)
+        }
+    } catch (e) {
+        console.error('Error fetching children', e)
+    }
+})
+
+watch(selectedChild, (newVal) => {
+    if(newVal) fetchAttendance(newVal.id)
+})
+
+async function fetchAttendance(childId) {
+    loading.value = true
+    try {
+        const res = await api.get(`/v1/parent/children/${childId}/attendance`)
+        rawAttendance.value = res.data
+    } catch (e) {
+        console.error('Error fetching attendance', e)
+    } finally {
+        loading.value = false
+    }
+}
+
+const groupedAttendance = computed(() => {
+    const groups = {}
+    rawAttendance.value.forEach(rec => {
+        if (!groups[rec.course_name]) {
+            groups[rec.course_name] = {
+                course_name: rec.course_name,
+                history: [],
+                total_sessions: 0,
+                present_sessions: 0
+            }
+        }
+        groups[rec.course_name].history.push(rec)
+        groups[rec.course_name].total_sessions++
+        if(rec.status === 'present') groups[rec.course_name].present_sessions++
+    })
+
+    return Object.values(groups).map(g => {
+        g.percentage = g.total_sessions > 0 ? Math.round((g.present_sessions / g.total_sessions) * 100) : 0
+        return g
+    })
 })
 
 function getHealthColor(percent) {
@@ -104,7 +171,11 @@ function formatDate(dateString) {
 }
 
 function formatTime(timeString) {
-    return qDate.formatDate(timeString, 'h:mm A')
+    if(!timeString) return ''
+    // Assuming backend sends H:i:s or similar, try to make it Date object if needed or just format string
+    // If string like "14:30:00", Quasar might parse it if valid ISO. 
+    // Backend API `format('h:i A')` might be better or handle here.
+    return timeString // Simplified for now
 }
 </script>
 

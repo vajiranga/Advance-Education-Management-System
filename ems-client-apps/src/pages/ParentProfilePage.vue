@@ -1,41 +1,87 @@
 <template>
-  <q-page class="q-pa-md bg-grey-1">
-    <div class="text-h6 text-weight-bold q-mb-md">My Profile</div>
+  <q-page :class="$q.dark.isActive ? 'q-pa-md bg-dark-page' : 'q-pa-md bg-grey-1'">
+    <div class="text-h6 text-weight-bold q-mb-md" :class="$q.dark.isActive ? 'text-white' : ''">My Profile</div>
 
     <div class="row q-col-gutter-md">
       <!-- Profile Card -->
       <div class="col-12 col-md-4">
-        <q-card class="my-card text-center q-pa-lg">
-          <q-avatar size="100px" font-size="50px" color="deep-purple" text-color="white">
+        <q-card class="my-card text-center q-pa-lg" :class="$q.dark.isActive ? 'bg-dark border-dark' : 'bg-white'">
+          <q-avatar size="100px" font-size="50px" :color="$q.dark.isActive ? 'deep-purple-8' : 'deep-purple'" text-color="white">
             {{ form.name.charAt(0) }}
           </q-avatar>
-          <div class="text-h6 q-mt-md">{{ authStore.user?.email || authStore.user?.username }}</div>
-          <div class="text-subtitle2 text-grey">{{ form.role.toUpperCase() }}</div>
+          <div class="text-h6 q-mt-md" :class="$q.dark.isActive ? 'text-white' : ''">{{ authStore.user?.email || authStore.user?.username }}</div>
+          <div class="text-subtitle2" :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey'">{{ form.role.toUpperCase() }}</div>
         </q-card>
       </div>
 
       <!-- Edit Form -->
       <div class="col-12 col-md-8">
-        <q-card class="my-card q-pa-md">
+        <q-card class="my-card q-pa-md" :class="$q.dark.isActive ? 'bg-dark border-dark' : 'bg-white'">
           <q-form @submit="updateProfile" class="q-gutter-md">
             
-            <q-input v-model="form.name" label="Full Name" outlined dense />
-            <q-input v-model="form.email" label="Email" outlined dense hint="Email cannot be changed" disable />
+            <q-input 
+                v-model="form.name" 
+                label="Full Name" 
+                outlined 
+                dense 
+                :dark="$q.dark.isActive" 
+                :bg-color="$q.dark.isActive ? 'grey-9' : ''"
+            />
+            <q-input 
+                v-model="form.email" 
+                label="Email" 
+                outlined 
+                dense 
+                hint="Email cannot be changed" 
+                disable 
+                :dark="$q.dark.isActive" 
+                :bg-color="$q.dark.isActive ? 'grey-9' : ''"
+            />
             
             <div class="row q-col-gutter-md">
               <div class="col-12 col-md-6">
-                 <q-input v-model="form.phone" label="Phone Number" outlined dense />
+                 <q-input 
+                    v-model="form.phone" 
+                    label="Phone Number" 
+                    outlined 
+                    dense 
+                    :dark="$q.dark.isActive" 
+                    :bg-color="$q.dark.isActive ? 'grey-9' : ''"
+                />
               </div>
               <div class="col-12 col-md-6">
-                 <q-input v-model="form.whatsapp" label="WhatsApp Number" outlined dense />
+                 <q-input 
+                    v-model="form.whatsapp" 
+                    label="WhatsApp Number" 
+                    outlined 
+                    dense 
+                    :dark="$q.dark.isActive" 
+                    :bg-color="$q.dark.isActive ? 'grey-9' : ''"
+                />
               </div>
             </div>
 
-            <q-separator class="q-my-md" />
-            <div class="text-subtitle2 q-mb-sm">Change Password (Optional)</div>
+            <q-separator class="q-my-md" :class="$q.dark.isActive ? 'bg-grey-8' : ''" />
+            <div class="text-subtitle2 q-mb-sm" :class="$q.dark.isActive ? 'text-white' : ''">Change Password (Optional)</div>
             
-            <q-input v-model="form.password" type="password" label="New Password" outlined dense />
-            <q-input v-model="form.password_confirmation" type="password" label="Confirm Password" outlined dense />
+            <q-input 
+                v-model="form.password" 
+                type="password" 
+                label="New Password" 
+                outlined 
+                dense 
+                :dark="$q.dark.isActive" 
+                :bg-color="$q.dark.isActive ? 'grey-9' : ''"
+            />
+            <q-input 
+                v-model="form.password_confirmation" 
+                type="password" 
+                label="Confirm Password" 
+                outlined 
+                dense 
+                :dark="$q.dark.isActive" 
+                :bg-color="$q.dark.isActive ? 'grey-9' : ''"
+            />
 
             <div class="row justify-end">
               <q-btn label="Update Profile" type="submit" color="deep-purple" :loading="loading" />

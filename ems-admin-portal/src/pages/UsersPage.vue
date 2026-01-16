@@ -63,14 +63,25 @@
                 :columns="studentCols"
                 row-key="id"
                 :filter="filter"
+                selection="multiple"
+                v-model:selected="selectedStudents"
               >
                 <template v-slot:top-right>
-                  <q-input borderless dense debounce="300" v-model="filter" placeholder="Search by Name or Barcode">
-                    <template v-slot:append>
-                      <q-icon name="search" />
-                    </template>
-                  </q-input>
-                  <q-btn color="primary" label="Add New User" icon="add" class="q-ml-md" @click="openAddUserDialog('student')" />
+                  <div class="row q-gutter-sm">
+                      <q-btn v-if="selectedStudents.length > 0" 
+                            color="secondary" 
+                            icon="class" 
+                            :label="`Add ${selectedStudents.length} to Class`" 
+                            @click="openBulkEnrollDialog" 
+                      />
+                      
+                      <q-input borderless dense debounce="300" v-model="filter" placeholder="Search by Name or Barcode">
+                        <template v-slot:append>
+                          <q-icon name="search" />
+                        </template>
+                      </q-input>
+                      <q-btn color="primary" label="Add New User" icon="add" @click="openAddUserDialog('student')" />
+                  </div>
                 </template>
                 <template v-slot:body-cell-plain_password="props">
                   <q-td :props="props">
@@ -136,6 +147,40 @@
         </q-card>
       </div>
     </div>
+
+    <!-- Bulk Enroll Dialog -->
+    <q-dialog v-model="bulkEnrollDialog">
+        <q-card style="min-width: 400px">
+            <q-card-section>
+                <div class="text-h6">Add {{ selectedStudents.length }} Students to Class</div>
+            </q-card-section>
+            
+            <q-card-section>
+                 <q-select
+                    outlined
+                    v-model="selectedClass"
+                    :options="courseStore.courses"
+                    option-label="name"
+                    label="Select Class"
+                    :loading="courseStore.loading"
+                 >
+                    <template v-slot:option="scope">
+                        <q-item v-bind="scope.itemProps">
+                            <q-item-section>
+                                <q-item-label>{{ scope.opt.name }}</q-item-label>
+                                <q-item-label caption v-if="scope.opt.teacher">{{ scope.opt.teacher.name }}</q-item-label>
+                            </q-item-section>
+                        </q-item>
+                    </template>
+                 </q-select>
+            </q-card-section>
+
+            <q-card-actions align="right">
+                <q-btn flat label="Cancel" v-close-popup />
+                <q-btn color="primary" label="Enroll All" @click="submitBulkEnroll" :loading="enrolling" />
+            </q-card-actions>
+        </q-card>
+    </q-dialog>
 
     <!-- Add/Edit User Dialog -->
     <q-dialog v-model="addUserDialog" persistent>
@@ -223,10 +268,13 @@
 import { ref, onMounted, computed } from 'vue'
 import { api } from 'boot/axios'
 import { useUserStore } from 'stores/user-store'
+import { useCourseStore } from 'stores/course-store' // Import Course Store
 import { useQuasar } from 'quasar'
 
 const $q = useQuasar()
 const userStore = useUserStore()
+const courseStore = useCourseStore() // Init Store
+
 const tab = ref('students')
 const filter = ref('')
 const visiblePasswords = ref({})
@@ -235,6 +283,43 @@ const loading = ref(false)
 const teachers = computed(() => userStore.teachers)
 const students = computed(() => userStore.students)
 const parents = computed(() => userStore.parents)
+
+// Selection State
+const selectedStudents = ref([])
+
+// Bulk Enroll Dialog State
+const bulkEnrollDialog = ref(false)
+const selectedClass = ref(null)
+const enrolling = ref(false)
+
+function openBulkEnrollDialog() {
+    if (selectedStudents.value.length === 0) return
+    courseStore.fetchCourses() // Ensure courses are loaded
+    selectedClass.value = null
+    bulkEnrollDialog.value = true
+}
+
+async function submitBulkEnroll() {
+    if (!selectedClass.value) {
+        $q.notify({ type: 'warning', message: 'Please select a class' })
+        return
+    }
+    
+    enrolling.value = true
+    try {
+        const studentIds = selectedStudents.value.map(s => s.id)
+        await courseStore.bulkEnroll(selectedClass.value.id, studentIds)
+        
+        $q.notify({ type: 'positive', message: `Successfully enrolled ${studentIds.length} students` })
+        bulkEnrollDialog.value = false
+        selectedStudents.value = [] // Clear selection
+    } catch (e) {
+        console.error(e)
+        $q.notify({ type: 'negative', message: 'Failed to enroll some or all students' })
+    } finally {
+        enrolling.value = false
+    }
+}
 
 // Columns Definitions
 const commonCols = [

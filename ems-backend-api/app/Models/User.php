@@ -81,4 +81,12 @@ class User extends Authenticatable
     {
         return $this->hasMany(Payment::class);
     }
+
+    /**
+     * Get children where this user is the parent (matched by email)
+     */
+    public function children()
+    {
+        return $this->hasMany(User::class, 'parent_email', 'email');
+    }
 }

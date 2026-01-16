@@ -1,10 +1,10 @@
 // app.scss
 // Brand Colors for Client Apps (Student/Teacher)
 
-$primary : #6366f1; // Indigo (Modern & Youthful)
-$secondary : #ec4899; // Pink (Vibrant Accent)
-$dark : #111827; // Gray 900
-$dark-page : #030712; // Gray 950
+$primary : #6366f1; // Indigo
+$secondary : #ec4899; // Pink
+$dark : #1e293b; // Slate 800 (Card Backgrounds)
+$dark-page : #0f172a; // Slate 900 (Main Background)
 
 $positive : #22c55e;
 $negative : #ef4444;
@@ -13,10 +13,60 @@ $warning : #f59e0b;
 body {
     font-family: 'Inter', sans-serif;
     background-color: #f3f4f6;
-    color: $dark;
+    color: #111827;
 }
 
-// Netflix-like Card Hover Effects
+// Custom Dark Utilities
+.bg-dark-page {
+    background: $dark-page !important;
+}
+
+.bg-dark {
+    background: $dark !important;
+}
+
+.text-dark-page {
+    color: $dark-page !important;
+}
+
+.border-dark {
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.border-bottom-dark {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+// Global Dark Mode Overrides
+.body--dark {
+    background: $dark-page !important;
+    color: #e2e8f0; // Slate 200
+
+    // Automatic Card coloring in Dark Mode if using q-card without manual bg
+    .q-card {
+        background-color: $dark; // fallback
+        border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    // Drawer & Header
+    .q-drawer {
+        background: $dark !important;
+        border-right: 1px solid rgba(255, 255, 255, 0.05) !important;
+    }
+
+    .q-header {
+        background: rgba(15, 23, 42, 0.9) !important; // Glassy dark page color
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+    }
+
+    .text-grey-7,
+    .text-grey-8 {
+        color: #94a3b8 !important; // Slate 400
+    }
+}
+
+// Transitions
 .course-card {
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     cursor: pointer;
@@ -32,4 +82,9 @@ body {
     background: rgba(255, 255, 255, 0.8);
     backdrop-filter: blur(12px);
     border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+
+    .body--dark & {
+        background: rgba(15, 23, 42, 0.8); // Dark Glass
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
 }

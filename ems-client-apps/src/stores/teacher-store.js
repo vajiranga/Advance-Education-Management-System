@@ -93,16 +93,21 @@ export const useTeacherStore = defineStore('teacher', () => {
     async function fetchStudentsForAttendance(courseId, date) {
         try {
             const res = await api.get('/v1/attendance/students', { params: { course_id: courseId, date } })
-            return res.data
+            return res.data // { data: [...] }
         } catch (e) {
             console.error(e)
-            return { students: [] }
+            return { data: [] }
         }
     }
 
     async function saveAttendance(payload) {
         try {
-            await api.post('/v1/attendance', payload)
+            // Check if it's a bulk payload (has 'attendances' array)
+            if (payload.attendances) {
+                await api.post('/v1/attendance/bulk', payload)
+            } else {
+                await api.post('/v1/attendance', payload)
+            }
             return { success: true }
         } catch (e) {
             console.error(e)

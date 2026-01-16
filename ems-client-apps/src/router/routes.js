@@ -25,6 +25,7 @@ const routes = [
       { path: 'dashboard', component: () => import('pages/ParentDashboard.vue') },
       { path: 'results', component: () => import('pages/ParentResults.vue') },
       { path: 'payments', component: () => import('pages/ParentFeesPage.vue') },
+      { path: 'attendance', component: () => import('pages/ParentAttendancePage.vue') },
       { path: 'messages', component: () => import('pages/ParentChatPage.vue') },
       { path: 'profile', component: () => import('pages/ParentProfilePage.vue') }
     ]

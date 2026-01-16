@@ -1,8 +1,8 @@
 <template>
-  <q-page class="q-pa-md bg-grey-1">
+  <q-page :class="$q.dark.isActive ? 'q-pa-md bg-dark-page' : 'q-pa-md bg-grey-1'">
     <!-- Welcome Section -->
     <!-- Profile & ID Section -->
-    <q-card class="q-mb-lg bg-white overflow-hidden" flat bordered>
+    <q-card class="q-mb-lg overflow-hidden" :class="$q.dark.isActive ? 'bg-dark border-dark' : 'bg-white border-light'" flat bordered>
        <q-card-section>
          <div class="row items-center q-col-gutter-md">
            <!-- Profile Info -->
@@ -12,11 +12,11 @@
                  <img src="https://cdn.quasar.dev/img/avatar2.jpg">
                </q-avatar>
                <div>
-                 <div class="text-h5 text-weight-bold text-teal-9">{{ authStore.user?.name || 'Teacher' }}</div>
-                 <div class="text-subtitle1 text-grey-7">{{ authStore.user?.username || 'ID: ???' }}</div>
+                 <div class="text-h5 text-weight-bold" :class="$q.dark.isActive ? 'text-teal-2' : 'text-teal-9'">{{ authStore.user?.name || 'Teacher' }}</div>
+                 <div class="text-subtitle1" :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey-7'">{{ authStore.user?.username || 'ID: ???' }}</div>
                  <div class="row q-gutter-x-sm q-mt-xs">
-                     <q-chip size="sm" color="teal-1" text-color="teal" icon="verified_user" label="Verified Teacher" />
-                     <q-chip size="sm" color="blue-1" text-color="blue" icon="email" :label="authStore.user?.email" />
+                     <q-chip size="sm" :color="$q.dark.isActive ? 'teal-9' : 'teal-1'" :text-color="$q.dark.isActive ? 'teal-1' : 'teal'" icon="verified_user" label="Verified Teacher" />
+                     <q-chip size="sm" :color="$q.dark.isActive ? 'blue-9' : 'blue-1'" :text-color="$q.dark.isActive ? 'blue-1' : 'blue'" icon="email" :label="authStore.user?.email" />
                  </div>
                </div>
              </div>
@@ -24,12 +24,12 @@
            
            <!-- Barcode Section -->
            <div class="col-12 col-md-4 text-center">
-              <div class="bg-grey-2 q-pa-md rounded-borders inline-block">
-                <div style="font-family: 'Libre Barcode 39', sans-serif; font-size: 48px; line-height: 1;">
+              <div class="q-pa-md rounded-borders inline-block" :class="$q.dark.isActive ? 'bg-white' : 'bg-grey-2'">
+                <div style="font-family: 'Libre Barcode 39', sans-serif; font-size: 48px; line-height: 1; color: black !important;">
                   *{{ authStore.user?.username || '000000' }}*
                 </div>
               </div>
-              <div class="text-caption text-grey q-mt-sm">Teacher ID Barcode</div>
+              <div class="text-caption q-mt-sm" :class="$q.dark.isActive ? 'text-grey-5' : 'text-grey'">Teacher ID Barcode</div>
            </div>
          </div>
        </q-card-section>
@@ -38,28 +38,27 @@
     <!-- Stats Cards -->
     <div class="row q-col-gutter-md q-mb-lg">
       <div class="col-12 col-sm-6 col-md-3">
-        <q-card class="bg-white text-teal border-bottom-teal no-shadow">
+        <q-card class="no-shadow border-bottom-teal" :class="$q.dark.isActive ? 'bg-dark text-teal-2' : 'bg-white text-teal'">
           <q-card-section>
              <div class="row items-center justify-between">
                 <div>
-                   <div class="text-h4 text-weight-bold">04</div>
-                   <div class="text-caption text-grey">Today's Classes</div>
+                   <div class="text-h4 text-weight-bold">{{ todayClassesCount }}</div>
+                   <div class="text-caption" :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey'">Today's Classes</div>
                 </div>
-                <q-avatar color="teal-1" text-color="teal" icon="schedule" font-size="24px" />
+                <q-avatar :color="$q.dark.isActive ? 'teal-9' : 'teal-1'" :text-color="$q.dark.isActive ? 'teal-2' : 'teal'" icon="schedule" font-size="24px" />
              </div>
           </q-card-section>
         </q-card>
       </div>
-      <!-- Other stats omitted for brevity, keeping existing structure -->
        <div class="col-12 col-sm-6 col-md-3">
-        <q-card class="bg-white text-orange border-bottom-orange no-shadow">
+        <q-card class="no-shadow border-bottom-orange" :class="$q.dark.isActive ? 'bg-dark text-orange-2' : 'bg-white text-orange'">
           <q-card-section>
              <div class="row items-center justify-between">
                 <div>
-                   <div class="text-h4 text-weight-bold">128</div>
-                   <div class="text-caption text-grey">Total Students</div>
+                   <div class="text-h4 text-weight-bold">{{ totalStudentsCount }}</div>
+                   <div class="text-caption" :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey'">Total Students</div>
                 </div>
-                <q-avatar color="orange-1" text-color="orange" icon="groups" font-size="24px" />
+                <q-avatar :color="$q.dark.isActive ? 'orange-9' : 'orange-1'" :text-color="$q.dark.isActive ? 'orange-2' : 'orange'" icon="groups" font-size="24px" />
              </div>
           </q-card-section>
         </q-card>
@@ -69,20 +68,25 @@
     <div class="row q-col-gutter-lg">
        <!-- Schedule -->
        <div class="col-12 col-md-8">
-          <q-card class="no-shadow border-light">
+          <q-card class="no-shadow" :class="$q.dark.isActive ? 'bg-dark border-dark' : 'bg-white border-light'">
              <q-card-section class="row items-center justify-between">
-                <div class="text-h6">Today's Schedule</div>
-                <q-chip outline color="teal" label="Thursday, 8th Jan" icon="calendar_today" />
+                <div class="text-h6" :class="$q.dark.isActive ? 'text-white' : ''">Today's Schedule</div>
+                <q-chip outline color="teal" label="Today" icon="calendar_today" />
              </q-card-section>
-             <q-separator />
+             <q-separator :class="$q.dark.isActive ? 'bg-grey-8' : ''" />
              <q-list separator>
                 <q-item v-for="cls in schedule" :key="cls.id" class="q-py-md">
                    <q-item-section avatar>
-                      <q-avatar color="grey-2" text-color="teal" class="text-weight-bold">{{ cls.time.split(' ')[0] }}</q-avatar>
+                      <q-avatar :color="$q.dark.isActive ? 'grey-8' : 'grey-2'" :text-color="$q.dark.isActive ? 'teal-2' : 'teal'" class="text-weight-bold">{{ cls.time.split(' ')[0] }}</q-avatar>
                    </q-item-section>
                    <q-item-section>
-                      <q-item-label class="text-weight-bold text-subtitle1">{{ cls.subject }} - {{ cls.batch }}</q-item-label>
-                      <q-item-label caption><q-icon name="meeting_room" /> {{ cls.hall }}</q-item-label>
+                      <q-item-label class="text-weight-bold text-subtitle1" :class="$q.dark.isActive ? 'text-white' : ''">{{ cls.subject }} - {{ cls.batch }}</q-item-label>
+                      <q-item-label caption class="row items-center" :class="$q.dark.isActive ? 'text-grey-4' : ''">
+                          <q-icon name="meeting_room" class="q-mr-xs" /> 
+                          {{ cls.hallName }}
+                          <span v-if="cls.hallFloor" class="q-ml-xs" :class="$q.dark.isActive ? 'text-grey-5' : 'text-grey-7'"> (Floor: {{ cls.hallFloor }})</span>
+                          <q-icon v-if="cls.hallAC" name="ac_unit" color="blue" size="xs" class="q-ml-sm" />
+                      </q-item-label>
                    </q-item-section>
                    <q-item-section side>
                        <div class="row items-center q-gutter-sm">
@@ -90,7 +94,7 @@
                                <q-tooltip>View Students</q-tooltip>
                            </q-btn>
                            <q-btn v-if="cls.status === 'upcoming'" md color="teal" label="Start Class" icon="play_arrow" unelevated />
-                           <q-chip v-else color="green-1" text-color="green" label="Completed" />
+                           <q-chip v-else :color="$q.dark.isActive ? 'green-9' : 'green-1'" :text-color="$q.dark.isActive ? 'green-2' : 'green'" label="Completed" />
                        </div>
                    </q-item-section>
                 </q-item>
@@ -99,23 +103,23 @@
        
        <!-- My Extra Classes -->
        <div v-if="(upcomingExtraCourses || []).length > 0" class="q-mt-lg">
-           <div class="text-h6 q-mb-sm text-teal">Upcoming Extra Classes</div>
-           <q-list bordered separator class="bg-white rounded-borders">
+           <div class="text-h6 q-mb-sm" :class="$q.dark.isActive ? 'text-teal-2' : 'text-teal'">Upcoming Extra Classes</div>
+           <q-list bordered separator class="rounded-borders" :class="$q.dark.isActive ? 'bg-dark' : 'bg-white'">
                <q-item v-for="cls in upcomingExtraCourses" :key="cls.id">
                    <q-item-section avatar>
-                       <q-avatar color="teal-1" text-color="teal" icon="event" />
+                       <q-avatar :color="$q.dark.isActive ? 'teal-9' : 'teal-1'" :text-color="$q.dark.isActive ? 'teal-2' : 'teal'" icon="event" />
                    </q-item-section>
                    <q-item-section>
-                       <q-item-label class="text-weight-bold">{{ cls.name }}</q-item-label>
-                       <q-item-label caption>
+                       <q-item-label class="text-weight-bold" :class="$q.dark.isActive ? 'text-white' : ''">{{ cls.name }}</q-item-label>
+                       <q-item-label caption :class="$q.dark.isActive ? 'text-grey-4' : ''">
                            {{ typeof cls.schedule === 'string' ? JSON.parse(cls.schedule).date : cls.schedule.date }} | 
                            {{ typeof cls.schedule === 'string' ? JSON.parse(cls.schedule).start : cls.schedule.start }}
                        </q-item-label>
                    </q-item-section>
                    <q-item-section side>
                        <div class="row items-center q-gutter-xs">
-                           <q-chip size="sm" color="orange" text-color="white" :label="cls.status === 'approved' ? 'Approved' : 'Pending'" />
-                           <q-btn flat round dense icon="more_vert">
+                           <q-chip size="sm" :color="$q.dark.isActive ? 'orange-9' : 'orange'" :text-color="$q.dark.isActive ? 'orange-1' : 'white'" :label="cls.status === 'approved' ? 'Approved' : 'Pending'" />
+                           <q-btn flat round dense icon="more_vert" :color="$q.dark.isActive ? 'grey-4' : 'grey-7'">
                                <q-menu>
                                    <q-list style="min-width: 100px">
                                        <q-item clickable v-close-popup @click="viewStudents(cls.id)">
@@ -138,21 +142,21 @@
 
        <div v-if="(pastExtraCourses || []).length > 0" class="q-mt-md">
            <div class="text-h6 q-mb-sm text-grey">Past Extra Classes</div>
-           <q-list bordered separator class="bg-white rounded-borders">
-               <q-item v-for="cls in pastExtraCourses" :key="cls.id" class="bg-grey-1">
+           <q-list bordered separator class="rounded-borders" :class="$q.dark.isActive ? 'bg-dark' : 'bg-white'">
+               <q-item v-for="cls in pastExtraCourses" :key="cls.id" :class="$q.dark.isActive ? 'bg-grey-9' : 'bg-grey-1'">
                    <q-item-section avatar>
-                       <q-avatar color="grey-3" text-color="grey-7" icon="history" />
+                       <q-avatar :color="$q.dark.isActive ? 'grey-8' : 'grey-3'" :text-color="$q.dark.isActive ? 'grey-4' : 'grey-7'" icon="history" />
                    </q-item-section>
                    <q-item-section>
-                       <q-item-label class="text-grey-8">{{ cls.name }}</q-item-label>
-                       <q-item-label caption>
+                       <q-item-label :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey-8'">{{ cls.name }}</q-item-label>
+                       <q-item-label caption :class="$q.dark.isActive ? 'text-grey-5' : ''">
                            {{ typeof cls.schedule === 'string' ? JSON.parse(cls.schedule).date : cls.schedule.date }}
                        </q-item-label>
                    </q-item-section>
                    <q-item-section side>
                        <div class="row items-center q-gutter-xs">
-                           <q-chip size="sm" color="grey" text-color="white" label="Ended" />
-                           <q-btn flat round dense icon="more_vert">
+                           <q-chip size="sm" :color="$q.dark.isActive ? 'grey-8' : 'grey'" text-color="white" label="Ended" />
+                           <q-btn flat round dense icon="more_vert" :color="$q.dark.isActive ? 'grey-4' : 'grey-7'">
                                <q-menu>
                                    <q-list style="min-width: 100px">
                                        <q-item clickable v-close-popup @click="viewStudents(cls.id)">
@@ -176,9 +180,9 @@
 
        <!-- Quick Actions -->
        <div class="col-12 col-md-4">
-          <q-card class="no-shadow border-light q-mb-md">
+          <q-card class="no-shadow q-mb-md" :class="$q.dark.isActive ? 'bg-dark border-dark' : 'bg-white border-light'">
              <q-card-section>
-                <div class="text-subtitle1 text-weight-bold q-mb-sm">Quick Actions</div>
+                <div class="text-subtitle1 text-weight-bold q-mb-sm" :class="$q.dark.isActive ? 'text-white' : ''">Quick Actions</div>
                 <div class="row q-col-gutter-sm">
                    <div class="col-6">
                       <!-- New Class Button -->
@@ -196,10 +200,10 @@
 
     <!-- Add Extra Class Dialog -->
     <q-dialog v-model="showAddClassDialog">
-      <q-card style="min-width: 500px">
+      <q-card style="min-width: 500px" :class="$q.dark.isActive ? 'bg-dark' : ''">
         <q-card-section>
-          <div class="text-h6">Add Extra Class</div>
-          <div class="text-caption text-grey">Schedule a new session</div>
+          <div class="text-h6" :class="$q.dark.isActive ? 'text-white' : ''">Add Extra Class</div>
+          <div class="text-caption" :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey'">Schedule a new session</div>
         </q-card-section>
 
         <q-card-section class="q-gutter-md">
@@ -213,25 +217,27 @@
                outlined 
                emit-value 
                map-options 
+               :bg-color="$q.dark.isActive ? 'grey-9' : 'white'"
+               :dark="$q.dark.isActive"
                :rules="[val => !!val || 'Required']"
                @update:model-value="onParentCourseSelect"
             />
 
             <!-- Name of Extra Class (Auto-filled or Custom) -->
-            <q-input v-model="newClass.name" label="Session Name (e.g. Revision for Exam)" outlined :rules="[val => !!val || 'Required']" />
+            <q-input v-model="newClass.name" label="Session Name (e.g. Revision for Exam)" outlined :rules="[val => !!val || 'Required']" :bg-color="$q.dark.isActive ? 'grey-9' : 'white'" :dark="$q.dark.isActive" />
             
-            <q-input v-model="newClass.fee_amount" label="Fee (LKR)" type="number" outlined :rules="[val => val !== null && val !== '' || 'Required']" />
+            <q-input v-model="newClass.fee_amount" label="Fee (LKR)" type="number" outlined :rules="[val => val !== null && val !== '' || 'Required']" :bg-color="$q.dark.isActive ? 'grey-9' : 'white'" :dark="$q.dark.isActive" />
             
             <!-- Date & Time -->
             <div class="row q-col-gutter-sm">
                 <div class="col-4">
-                     <q-input v-model="newClass.date" type="date" label="Date" outlined stack-label :rules="[val => !!val || 'Required']" />
+                     <q-input v-model="newClass.date" type="date" label="Date" outlined stack-label :rules="[val => !!val || 'Required']" :bg-color="$q.dark.isActive ? 'grey-9' : 'white'" :dark="$q.dark.isActive" />
                 </div>
                 <div class="col-4">
-                     <q-input v-model="newClass.startTime" type="time" label="Start Time" outlined stack-label :rules="[val => !!val || 'Required']" />
+                     <q-input v-model="newClass.startTime" type="time" label="Start Time" outlined stack-label :rules="[val => !!val || 'Required']" :bg-color="$q.dark.isActive ? 'grey-9' : 'white'" :dark="$q.dark.isActive" />
                 </div>
                 <div class="col-4">
-                     <q-input v-model="newClass.endTime" type="time" label="End Time" outlined stack-label :rules="[val => !!val || 'Required']" />
+                     <q-input v-model="newClass.endTime" type="time" label="End Time" outlined stack-label :rules="[val => !!val || 'Required']" :bg-color="$q.dark.isActive ? 'grey-9' : 'white'" :dark="$q.dark.isActive" />
                 </div>
             </div>
 
@@ -241,15 +247,15 @@
             <!-- Hall Selection -->
             <div v-if="hallCheckPerformed">
                  <div v-if="availableHalls.length > 0">
-                     <div class="text-subtitle2 q-mt-md">Available Halls:</div>
-                     <q-list bordered separator class="rounded-borders">
+                     <div class="text-subtitle2 q-mt-md" :class="$q.dark.isActive ? 'text-white' : ''">Available Halls:</div>
+                     <q-list bordered separator class="rounded-borders" :class="$q.dark.isActive ? 'bg-grey-9 border-grey-7' : ''">
                          <q-item tag="label" v-for="hall in availableHalls" :key="hall.id" v-ripple class="q-pa-sm">
                              <q-item-section avatar>
-                                 <q-radio v-model="newClass.hallId" :val="hall.id" />
+                                 <q-radio v-model="newClass.hallId" :val="hall.id" :dark="$q.dark.isActive" />
                              </q-item-section>
                              <q-item-section>
-                                 <q-item-label>{{ hall.name }}</q-item-label>
-                                 <q-item-label caption>
+                                 <q-item-label :class="$q.dark.isActive ? 'text-white' : ''">{{ hall.name }}</q-item-label>
+                                 <q-item-label caption :class="$q.dark.isActive ? 'text-grey-4' : ''">
                                      Capacity: <strong>{{ hall.capacity }}</strong> Students
                                      <q-icon v-if="hall.has_ac" name="ac_unit" color="blue" />
                                  </q-item-label>
@@ -263,7 +269,7 @@
          </q-card-section>
 
          <q-card-actions align="right">
-           <q-btn flat label="Cancel" v-close-popup />
+           <q-btn flat label="Cancel" v-close-popup :color="$q.dark.isActive ? 'grey-4' : 'primary'" />
            <q-btn color="primary" label="Book & Request" @click="submitClass" :loading="loading" :disable="!newClass.hallId" />
          </q-card-actions>
        </q-card>
@@ -271,20 +277,20 @@
 
     <!-- Student List Dialog -->
     <q-dialog v-model="showStudentsDialog">
-        <q-card style="min-width: 500px">
+        <q-card style="min-width: 500px" :class="$q.dark.isActive ? 'bg-dark' : ''">
             <q-card-section>
-                <div class="text-h6">Student List</div>
-                <div class="text-caption text-grey">Total: {{ studentsList.length }}</div>
+                <div class="text-h6" :class="$q.dark.isActive ? 'text-white' : ''">Student List</div>
+                <div class="text-caption" :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey'">Total: {{ studentsList.length }}</div>
             </q-card-section>
             <q-card-section>
-                <q-list separator bordered class="rounded-borders scroll" style="max-height: 400px">
+                <q-list separator bordered class="rounded-borders scroll" style="max-height: 400px" :class="$q.dark.isActive ? 'bg-grey-9 border-grey-8' : ''">
                      <q-item v-for="student in studentsList" :key="student.id">
                          <q-item-section avatar>
                              <q-avatar size="sm" color="teal" text-color="white">{{ student.name.charAt(0) }}</q-avatar>
                          </q-item-section>
                          <q-item-section>
-                             <q-item-label>{{ student.name }}</q-item-label>
-                             <q-item-label caption>
+                             <q-item-label :class="$q.dark.isActive ? 'text-white' : ''">{{ student.name }}</q-item-label>
+                             <q-item-label caption :class="$q.dark.isActive ? 'text-grey-4' : ''">
                                  {{ student.phone || 'No Phone' }}
                              </q-item-label>
                          </q-item-section>
@@ -307,7 +313,7 @@
                                  </q-chip>
 
                                  <!-- Payment Status -->
-                                 <span class="text-caption text-grey">
+                                 <span class="text-caption" :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey'">
                                      Fee: <span :class="hasPaid(student) ? 'text-green text-weight-bold' : 'text-orange'">{{ hasPaid(student) ? 'Paid' : 'Pending' }}</span>
                                  </span>
                              </div>
@@ -319,13 +325,13 @@
                  </q-list>
             </q-card-section>
             <q-card-actions align="right">
-                <q-btn flat label="Close" v-close-popup />
+                <q-btn flat label="Close" v-close-popup :color="$q.dark.isActive ? 'white' : 'primary'" />
             </q-card-actions>
         </q-card>
     </q-dialog>
  
     </q-page>
- </template>
+</template>
 
  <script setup>
  import { ref, computed, onMounted } from 'vue'
@@ -353,7 +359,7 @@
              displayName: `${c.name} (${c.batch?.name})`
          }))
  })
- 
+
  const schedule = computed(() => {
      const today = qDate.formatDate(Date.now(), 'dddd')
      const todayYMD = qDate.formatDate(Date.now(), 'YYYY-MM-DD')
@@ -376,10 +382,21 @@
               time: s.start ? `${s.start} - ${s.end}` : 'TBA',
               subject: c.subject?.name || c.name,
               batch: c.batch?.name || 'Batch',
-              hall: c.hall?.name || 'TBA',
-              status: 'upcoming' 
+              hallName: c.hall?.name || 'TBA',
+              hallFloor: c.hall?.floor,
+              hallAC: c.hall?.has_ac,
+              status: 'upcoming'  
           }
      })
+ })
+
+ const todayClassesCount = computed(() => schedule.value.length)
+
+ const totalStudentsCount = computed(() => {
+     if (!courses.value) return 0
+     return courses.value
+        .filter(c => c.status === 'approved')
+        .reduce((acc, c) => acc + (c.students_count || 0), 0)
  })
  
  const showAddClassDialog = ref(false)

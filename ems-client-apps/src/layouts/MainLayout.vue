@@ -1,23 +1,38 @@
 <template>
-  <q-layout view="lHh Lpr lFf" class="bg-grey-1">
-    <q-header class="glass-nav text-dark">
+  <q-layout view="lHh Lpr lFf" :class="$q.dark.isActive ? 'bg-dark-page text-white' : 'bg-grey-1'">
+    <q-header elevated :class="$q.dark.isActive ? 'bg-dark text-white border-bottom-dark' : 'bg-white text-primary'">
       <q-toolbar>
         <q-btn flat dense round icon="menu" aria-label="Menu" @click="toggleLeftDrawer" />
 
         <q-toolbar-title class="text-weight-bold row items-center">
-          <span class="text-primary">EMS</span> <span class="q-ml-sm text-subtitle2">Student Portal</span>
+          <q-icon name="school" size="md" class="q-mr-sm" />
+          <span>EMS</span> 
+          <span class="q-ml-sm text-subtitle2" :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey-7'">
+            Student Portal
+          </span>
         </q-toolbar-title>
 
         <q-space />
 
         <div class="row q-gutter-sm items-center">
-          <q-btn round flat icon="search" color="grey-7" />
-          <q-btn round flat icon="notifications_none" color="grey-7">
+          <!-- Dark Mode Toggle -->
+          <q-btn 
+            flat 
+            round 
+            :icon="$q.dark.isActive ? 'light_mode' : 'dark_mode'" 
+            :color="$q.dark.isActive ? 'yellow' : 'grey-7'" 
+            @click="$q.dark.toggle()" 
+          >
+            <q-tooltip>Toggle {{ $q.dark.isActive ? 'Light' : 'Dark' }} Mode</q-tooltip>
+          </q-btn>
+
+          <q-btn round flat icon="search" :color="$q.dark.isActive ? 'white' : 'grey-7'" />
+          <q-btn round flat icon="notifications_none" :color="$q.dark.isActive ? 'white' : 'grey-7'">
             <q-badge floating color="red" rounded dot />
           </q-btn>
           <q-avatar size="36px" class="q-ml-sm cursor-pointer shadow-1">
             <img src="https://cdn.quasar.dev/img/avatar2.jpg">
-            <q-menu>
+            <q-menu :class="$q.dark.isActive ? 'bg-dark text-white' : 'bg-white'">
               <q-list style="min-width: 220px">
                 <q-item class="bg-primary text-white">
                   <q-item-section>
@@ -26,15 +41,15 @@
                   </q-item-section>
                 </q-item>
 
-                <q-separator />
+                <q-separator :class="$q.dark.isActive ? 'bg-grey-8' : ''" />
                 
                 <q-item clickable v-close-popup to="/student/profile">
                   <q-item-section avatar><q-icon name="person" /></q-item-section>
                   <q-item-section>My Profile</q-item-section>
                 </q-item>
 
-                <q-separator />
-                <q-item-label header class="text-grey-7">Switch Account</q-item-label>
+                <q-separator :class="$q.dark.isActive ? 'bg-grey-8' : ''" />
+                <q-item-label header :class="$q.dark.isActive ? 'text-grey-5' : 'text-grey-7'">Switch Account</q-item-label>
 
                 <q-item 
                   v-for="(acc, idx) in authStore.accounts" 
@@ -43,7 +58,7 @@
                   v-close-popup 
                   @click="authStore.switchAccount(idx)"
                   :active="idx === authStore.activeAccountIndex"
-                  active-class="bg-blue-1 text-primary"
+                  :active-class="$q.dark.isActive ? 'bg-grey-8 text-primary' : 'bg-blue-1 text-primary'"
                 >
                    <q-item-section avatar>
                      <q-avatar size="24px" color="primary" text-color="white" font-size="12px">
@@ -52,7 +67,7 @@
                    </q-item-section>
                    <q-item-section>
                      <q-item-label>{{ acc.user?.name }}</q-item-label>
-                     <q-item-label caption>{{ acc.user?.username }}</q-item-label>
+                     <q-item-label caption class="text-grey">{{ acc.user?.username }}</q-item-label>
                    </q-item-section>
                    <q-item-section side v-if="idx === authStore.activeAccountIndex">
                      <q-icon name="check" color="primary" size="xs" />
@@ -64,7 +79,7 @@
                   <q-item-section>Add Another Account</q-item-section>
                 </q-item>
 
-                <q-separator />
+                <q-separator :class="$q.dark.isActive ? 'bg-grey-8' : ''" />
 
                 <q-item clickable v-close-popup @click="authStore.logout()">
                   <q-item-section avatar><q-icon name="logout" color="negative" /></q-item-section>
@@ -81,35 +96,46 @@
       v-model="leftDrawerOpen"
       show-if-above
       bordered
-      class="bg-white"
+      :class="$q.dark.isActive ? 'bg-dark' : 'bg-white'"
     >
-      <div class="q-pa-md">
-        <div class="text-subtitle1 text-weight-bold">{{ authStore.user?.name || 'Loading...' }}</div>
-        <div class="text-caption text-grey">{{ authStore.user?.username }}</div>
+      <div class="q-pa-md" :class="$q.dark.isActive ? 'bg-transparent' : 'bg-blue-1'">
+        <template v-if="authStore.user">
+           <div class="text-subtitle1 text-weight-bold" :class="$q.dark.isActive ? 'text-white' : 'text-primary'">{{ authStore.user.name }}</div>
+           <div class="text-caption" :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey-8'">{{ authStore.user.username }}</div>
+           <div class="q-mt-xs">
+              <q-chip size="xs" :color="$q.dark.isActive ? 'grey-8' : 'white'" :text-color="$q.dark.isActive ? 'grey-4' : 'grey-7'" icon="school">Student</q-chip>
+           </div>
+        </template>
+        <template v-else>
+           <div class="row items-center q-gutter-sm">
+             <q-skeleton type="text" width="60%" />
+           </div>
+           <q-skeleton type="text" width="40%" class="q-mt-xs" />
+        </template>
       </div>
-      <q-separator />
+      <q-separator :class="$q.dark.isActive ? 'bg-grey-8' : ''" />
       <q-list class="q-mt-md">
-        <q-item clickable v-ripple to="/student/dashboard" active-class="text-primary bg-indigo-1">
+        <q-item clickable v-ripple to="/student/dashboard" :active-class="$q.dark.isActive ? 'text-indigo-2 bg-grey-9 border-l-primary' : 'text-primary bg-blue-1'">
           <q-item-section avatar><q-icon name="dashboard" /></q-item-section>
           <q-item-section>Dashboard</q-item-section>
         </q-item>
-        <q-item clickable v-ripple to="/student/courses">
+        <q-item clickable v-ripple to="/student/courses" :active-class="$q.dark.isActive ? 'text-indigo-2 bg-grey-9 border-l-primary' : 'text-primary bg-blue-1'">
           <q-item-section avatar><q-icon name="library_books" /></q-item-section>
           <q-item-section>My Classes</q-item-section>
         </q-item>
-        <q-item clickable v-ripple to="/student/exams">
+        <q-item clickable v-ripple to="/student/exams" :active-class="$q.dark.isActive ? 'text-indigo-2 bg-grey-9 border-l-primary' : 'text-primary bg-blue-1'">
           <q-item-section avatar><q-icon name="assignment" /></q-item-section>
           <q-item-section>Exams & Results</q-item-section>
         </q-item>
-        <q-item clickable v-ripple to="/student/attendance">
+        <q-item clickable v-ripple to="/student/attendance" :active-class="$q.dark.isActive ? 'text-indigo-2 bg-grey-9 border-l-primary' : 'text-primary bg-blue-1'">
           <q-item-section avatar><q-icon name="how_to_reg" /></q-item-section>
           <q-item-section>Attendance</q-item-section>
         </q-item>
-        <q-item clickable v-ripple to="/student/payments">
+        <q-item clickable v-ripple to="/student/payments" :active-class="$q.dark.isActive ? 'text-indigo-2 bg-grey-9 border-l-primary' : 'text-primary bg-blue-1'">
           <q-item-section avatar><q-icon name="receipt_long" /></q-item-section>
           <q-item-section>Payments</q-item-section>
         </q-item>
-        <q-item clickable v-ripple to="/student/profile">
+        <q-item clickable v-ripple to="/student/profile" :active-class="$q.dark.isActive ? 'text-indigo-2 bg-grey-9 border-l-primary' : 'text-primary bg-blue-1'">
           <q-item-section avatar><q-icon name="person" /></q-item-section>
           <q-item-section>Profile</q-item-section>
         </q-item>
@@ -130,14 +156,19 @@
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from 'stores/auth-store'
 import { useRoute } from 'vue-router'
+import { useQuasar } from 'quasar'
 
 const leftDrawerOpen = ref(false)
 const authStore = useAuthStore()
 const route = useRoute()
+const $q = useQuasar()
+
+// Set default dark mode if saved or system preference (Quasar might do this auto if configured)
+// For now, let's verify if toggle works.
 
 onMounted(async () => {
-  // Initialize store (headers etc)
-  authStore.init()
+    // ... logic ...
+    authStore.init()
 
   if (route.query.token) {
     // Add new account from token
@@ -148,7 +179,7 @@ onMounted(async () => {
     url.searchParams.delete('token')
     window.history.replaceState({}, document.title, url.toString())
   } else if (!authStore.user) {
-    // Try to fetch user if token exists but no user loaded (rare with new logic but safe)
+    // Try to fetch user if token exists but no user loaded
     await authStore.fetchUser()
   }
 })

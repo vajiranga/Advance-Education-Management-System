@@ -1,17 +1,24 @@
 <template>
-  <q-page class="q-pa-md bg-grey-1">
+  <q-page :class="$q.dark.isActive ? 'q-pa-md bg-dark-page' : 'q-pa-md bg-grey-1'">
     <div class="row items-center justify-between q-mb-lg">
-      <div class="text-h5 text-weight-bold text-teal-9">Attendance Management</div>
+      <div class="text-h5 text-weight-bold" :class="$q.dark.isActive ? 'text-teal-2' : 'text-teal-9'">Attendance Management</div>
       <div class="row items-center q-gutter-x-sm">
-         <div class="text-subtitle2">Date:</div>
-         <q-input dense outlined v-model="selectedDate" type="date" class="bg-white" />
+         <div class="text-subtitle2" :class="$q.dark.isActive ? 'text-white' : ''">Date:</div>
+         <q-input 
+            dense 
+            outlined 
+            v-model="selectedDate" 
+            type="date" 
+            :bg-color="$q.dark.isActive ? 'grey-9' : 'white'" 
+            :dark="$q.dark.isActive"
+         />
       </div>
     </div>
     
     <!-- Class Selector -->
-    <q-card class="q-mb-md no-shadow border-light">
+    <q-card class="q-mb-md no-shadow" :class="$q.dark.isActive ? 'bg-dark border-dark' : 'bg-white border-light'">
        <q-card-section class="row items-center q-gutter-x-md">
-          <div class="text-subtitle1 text-grey-7">Select Class:</div>
+          <div class="text-subtitle1" :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey-7'">Select Class:</div>
           <q-select 
             dense 
             outlined 
@@ -20,24 +27,26 @@
             option-label="name"
             option-value="id" 
             label="Choose Class"
-            style="min-width: 250px" 
+            style="min-width: 250px"
+            :bg-color="$q.dark.isActive ? 'grey-9' : 'white'"
+            :dark="$q.dark.isActive" 
           />
           <q-btn color="teal" label="Load Students" icon="refresh" @click="loadStudents" :disable="!selectedClass" />
        </q-card-section>
     </q-card>
 
     <!-- Attendance Sheet -->
-    <q-card class="no-shadow border-light" v-if="attendanceList.length > 0">
+    <q-card class="no-shadow" :class="$q.dark.isActive ? 'bg-dark border-dark' : 'bg-white border-light'" v-if="attendanceList.length > 0">
        <q-card-section>
           <div class="row items-center justify-between q-mb-md">
-             <div class="text-h6">Mark Attendance</div>
+             <div class="text-h6" :class="$q.dark.isActive ? 'text-white' : ''">Mark Attendance</div>
              <div class="row q-gutter-x-sm">
-                <q-chip color="green-1" text-color="green">Present: {{ presentCount }}</q-chip>
-                <q-chip color="red-1" text-color="red">Absent: {{ absentCount }}</q-chip>
+                <q-chip :color="$q.dark.isActive ? 'green-9' : 'green-1'" :text-color="$q.dark.isActive ? 'green-2' : 'green'">Present: {{ presentCount }}</q-chip>
+                <q-chip :color="$q.dark.isActive ? 'red-9' : 'red-1'" :text-color="$q.dark.isActive ? 'red-2' : 'red'">Absent: {{ absentCount }}</q-chip>
              </div>
           </div>
           
-          <q-separator />
+          <q-separator :class="$q.dark.isActive ? 'bg-grey-8' : ''" />
 
           <q-list separator>
              <q-item v-for="student in attendanceList" :key="student.id" class="q-py-sm">
@@ -45,14 +54,14 @@
                    <q-avatar size="32px"><img :src="student.avatar" /></q-avatar>
                 </q-item-section>
                 <q-item-section>
-                   <q-item-label class="text-weight-bold">{{ student.name }}</q-item-label>
-                   <q-item-label caption>{{ student.idNumber }}</q-item-label>
+                   <q-item-label class="text-weight-bold" :class="$q.dark.isActive ? 'text-white' : ''">{{ student.name }}</q-item-label>
+                   <q-item-label caption :class="$q.dark.isActive ? 'text-grey-4' : ''">{{ student.idNumber }}</q-item-label>
                 </q-item-section>
                 <q-item-section side>
                    <div class="row q-gutter-x-md">
                       <q-btn 
                          round 
-                         :color="student.status === 'present' ? 'green' : 'grey-3'" 
+                         :color="student.status === 'present' ? 'green' : ($q.dark.isActive ? 'grey-8' : 'grey-3')" 
                          :text-color="student.status === 'present' ? 'white' : 'grey'" 
                          icon="check" 
                          @click="student.status = 'present'" 
@@ -60,7 +69,7 @@
                       />
                       <q-btn 
                          round 
-                         :color="student.status === 'absent' ? 'red' : 'grey-3'" 
+                         :color="student.status === 'absent' ? 'red' : ($q.dark.isActive ? 'grey-8' : 'grey-3')" 
                          :text-color="student.status === 'absent' ? 'white' : 'grey'" 
                          icon="close" 
                          @click="student.status = 'absent'" 
@@ -72,7 +81,7 @@
              </q-item>
           </q-list>
           
-          <q-separator />
+          <q-separator :class="$q.dark.isActive ? 'bg-grey-8' : ''" />
           
           <div class="row justify-end q-pa-md">
              <q-btn color="teal" label="Save Attendance" icon="save" @click="saveAttendance" :loading="loading" />
@@ -113,20 +122,25 @@ async function loadStudents() {
     if (!selectedClass.value) return
     
     $q.loading.show()
+    attendanceList.value = []
+    
+    // Fetch
     const res = await teacherStore.fetchStudentsForAttendance(selectedClass.value.id, selectedDate.value)
     $q.loading.hide()
     
+    const students = res.data || []
+    
     // Map backend data to UI
-    attendanceList.value = res.students.map(s => ({
+    attendanceList.value = students.map(s => ({
         id: s.id,
         name: s.name,
-        idNumber: s.username, // Using username as ID (e.g. STU...)
-        avatar: s.avatar || 'https://cdn.quasar.dev/img/boy-avatar.png',
-        status: s.status || 'present' // Default to present if not marked
+        idNumber: s.username, 
+        avatar: 'https://cdn.quasar.dev/img/boy-avatar.png',
+        status: s.attendance_status || 'present' // Default to present
     }))
-    
-    if (res.is_marked) {
-        $q.notify({ type: 'info', message: 'Loaded existing attendance record.' })
+
+    if (attendanceList.value.length === 0) {
+        $q.notify({ type: 'warning', message: 'No students found for this class.' })
     }
 }
 
@@ -148,6 +162,8 @@ async function saveAttendance() {
     
     if (res.success) {
         $q.notify({ type: 'positive', message: 'Attendance Saved Successfully' })
+        // Reload to ensure sync
+        loadStudents()
     } else {
         $q.notify({ type: 'negative', message: 'Failed: ' + res.error })
     }

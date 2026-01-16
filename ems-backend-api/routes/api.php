@@ -43,13 +43,16 @@ Route::prefix('v1')->group(function () {
     // (Note: In production, these should be inside the tenant.php routes file and protected by tenancy middleware)
     Route::post('courses/bulk', [CourseController::class, 'bulkAction']);
     Route::get('courses/{id}/students', [CourseController::class, 'getStudents']);
-    Route::post('attendances', [App\Http\Controllers\Api\V1\AttendanceController::class, 'store']);
     Route::apiResource('courses', CourseController::class);
     Route::put('courses/{id}/status', [CourseController::class, 'updateStatus']);
     Route::apiResource('batches', App\Http\Controllers\Api\V1\BatchController::class);
     Route::get('subjects', [App\Http\Controllers\Api\V1\AcademicController::class, 'getAllSubjects']);
     Route::apiResource('halls', App\Http\Controllers\Api\V1\HallController::class);
     Route::post('halls/check', [App\Http\Controllers\Api\V1\HallController::class, 'checkAvailability']);
+
+    Route::apiResource('exams', App\Http\Controllers\Api\V1\ExamController::class);
+    Route::get('exams/{id}/results', [App\Http\Controllers\Api\V1\ExamController::class, 'getResults']);
+    Route::post('exams/{id}/results', [App\Http\Controllers\Api\V1\ExamController::class, 'storeResults']);
 
     // Academic Routes (Grades & Subjects)
     Route::get('grades', [App\Http\Controllers\Api\V1\AcademicController::class, 'getGrades']);
@@ -63,8 +66,28 @@ Route::prefix('v1')->group(function () {
         
         // Attendance
         Route::get('attendance/students', [App\Http\Controllers\Api\V1\AttendanceController::class, 'getStudents']);
+        Route::post('attendance/bulk', [App\Http\Controllers\Api\V1\AttendanceController::class, 'bulkStore']);
         Route::post('attendance', [App\Http\Controllers\Api\V1\AttendanceController::class, 'store']);
         Route::get('attendance/my-history', [App\Http\Controllers\Api\V1\AttendanceController::class, 'myAttendance']);
+        
+        // Exams
+        Route::get('my-exams', [App\Http\Controllers\Api\V1\ExamController::class, 'myExams']);
+
+    // Payments
+    Route::get('my-payments', [App\Http\Controllers\Api\V1\PaymentController::class, 'myPayments']);
+    Route::get('my-due-fees', [App\Http\Controllers\Api\V1\PaymentController::class, 'getDueFees']);
+    Route::post('payments', [App\Http\Controllers\Api\V1\PaymentController::class, 'store']);
+    
+    Route::get('parent/fees/due', [App\Http\Controllers\Api\V1\PaymentController::class, 'getParentDueFees']);
+    Route::get('teacher/payments', [App\Http\Controllers\Api\V1\PaymentController::class, 'getTeacherStudentPayments']);
+    Route::get('admin/payments/summary', [App\Http\Controllers\Api\V1\PaymentController::class, 'getAdminPaymentSummary']);
+
+    // Parent
+    Route::get('parent/children', [App\Http\Controllers\Api\V1\ParentController::class, 'getChildren']);
+    Route::get('parent/children/{id}/stats', [App\Http\Controllers\Api\V1\ParentController::class, 'getChildStats']);
+    Route::get('parent/children/{id}/courses', [App\Http\Controllers\Api\V1\ParentController::class, 'getChildCourses']);
+    Route::get('parent/children/{id}/results', [App\Http\Controllers\Api\V1\ParentController::class, 'getChildResults']);
+    Route::get('parent/children/{id}/attendance', [App\Http\Controllers\Api\V1\ParentController::class, 'getChildAttendance']);
     });
 });
 
