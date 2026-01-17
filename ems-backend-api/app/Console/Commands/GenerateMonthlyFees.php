@@ -37,66 +37,70 @@ class GenerateMonthlyFees extends Command
         $dueDate = Carbon::now()->setDay(10)->format('Y-m-d');
 
         // 1. Generate Fees
-        $courses = Course::with(['students' => function($q) {
-            $q->wherePivot('status', 'active'); // Only active students
-        }])->get();
+        $currentMonth = Carbon::now()->format('Y-m'); // 2026-01
+        $dueDate = Carbon::now()->setDay(10)->format('Y-m-d');
+        
+        $enrollments = \App\Models\Enrollment::where('status', 'active')
+            ->with(['course', 'user']) // 'user' is the student
+            ->get();
 
         $count = 0;
 
-        foreach ($courses as $course) {
-            foreach ($course->students as $student) {
-                // Check if fee already exists
-                $exists = StudentFee::where('student_id', $student->id)
-                    ->where('course_id', $course->id)
-                    ->where('month', $currentMonth)
-                    ->exists();
+        foreach ($enrollments as $enrollment) {
+            $student = $enrollment->user;
+            $course = $enrollment->course;
+            
+            if (!$student || !$course) continue;
 
-                if (!$exists) {
-                    $feeAmount = $course->fee_amount ?? 0;
+            // Check if fee already exists
+            $exists = StudentFee::where('student_id', $student->id)
+                ->where('course_id', $course->id)
+                ->where('month', $currentMonth)
+                ->exists();
+
+            if (!$exists) {
+                $feeAmount = $course->fee_amount ?? 0;
+                
+                if ($feeAmount > 0) {
+                    StudentFee::create([
+                        'student_id' => $student->id,
+                        'course_id' => $course->id,
+                        'month' => $currentMonth,
+                        'amount' => $feeAmount,
+                        'due_date' => $dueDate,
+                        'status' => 'pending'
+                    ]);
                     
-                    if ($feeAmount > 0) {
-                        StudentFee::create([
-                            'student_id' => $student->id,
-                            'course_id' => $course->id,
-                            'month' => $currentMonth,
-                            'amount' => $feeAmount,
-                            'due_date' => $dueDate,
-                            'status' => 'pending'
+                    // Create Notification
+                    try {
+                        Notification::create([
+                            'user_id' => $student->id,
+                            'type' => 'payment_due',
+                            'title' => 'New Fee Generated',
+                            'message' => "Payment for {$course->name} ({$currentMonth}) is now available.",
+                            'is_read' => false
                         ]);
                         
-                        // Create Notification
-                        try {
-                            // Assuming a simple notification table structure
-                            // Adjust fields based on actual table
-                            Notification::create([
-                                'user_id' => $student->id,
+                        // Notify Parent if exists
+                        if ($student->parent_id) {
+                             Notification::create([
+                                'user_id' => $student->parent_id,
                                 'type' => 'payment_due',
-                                'title' => 'New Fee Generated',
-                                'message' => "Payment for {$course->name} ({$currentMonth}) is now available.",
+                                'title' => 'Child Fee Due',
+                                'message' => "Payment for {$student->name} - {$course->name} ({$currentMonth}) is now available.",
                                 'is_read' => false
                             ]);
-                            
-                            // Notify Parent if exists
-                            if ($student->parent_id) {
-                                 Notification::create([
-                                    'user_id' => $student->parent_id,
-                                    'type' => 'payment_due',
-                                    'title' => 'Child Fee Due',
-                                    'message' => "Payment for {$student->name} - {$course->name} ({$currentMonth}) is now available.",
-                                    'is_read' => false
-                                ]);
-                            }
-                        } catch (\Exception $e) {
-                            // Ignore notification errors
                         }
-
-                        $count++;
+                    } catch (\Exception $e) {
+                         // Ignore notification errors
                     }
+
+                    $count++;
                 }
             }
         }
         
-        $this->info("Generated {$count} fee records.");
+        $this->info("Generated {$count} fee records for {$currentMonth}.");
 
         // 2. Check for Inactive Students (4 months unpaid)
         $this->info('Checking for inactive students...');

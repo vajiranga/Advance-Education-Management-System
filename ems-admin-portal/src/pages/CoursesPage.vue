@@ -148,8 +148,44 @@
     <q-dialog v-model="reviewDialog" persistent>
       <q-card style="min-width: 500px">
         <q-card-section>
-          <div class="text-h6">Review Class</div>
-          <div class="text-subtitle1">{{ reviewingCourse?.name }}</div>
+          <div class="text-h6">Review Class Request</div>
+          <div class="text-subtitle1 text-primary q-mb-sm">{{ reviewingCourse?.name }}</div>
+          
+          <q-list bordered separator class="rounded-borders bg-grey-1">
+             <q-item>
+                <q-item-section>
+                    <q-item-label caption>Teacher</q-item-label>
+                    <q-item-label>{{ reviewingCourse?.teacher?.name }}</q-item-label>
+                </q-item-section>
+                <q-item-section side>
+                    <q-item-label caption>Type</q-item-label>
+                    <q-chip size="sm" color="orange" text-color="white" v-if="reviewingCourse?.type === 'extra'">EXTRA</q-chip>
+                    <q-chip size="sm" color="blue" text-color="white" v-else>REGULAR</q-chip>
+                </q-item-section>
+             </q-item>
+
+             <q-item class="bg-blue-1">
+                <q-item-section avatar>
+                    <q-icon name="meeting_room" color="primary" />
+                </q-item-section>
+                <q-item-section>
+                    <q-item-label caption class="text-primary text-weight-bold">Requested Hall</q-item-label>
+                    <q-item-label class="text-h6">{{ reviewingCourse?.hall?.name || 'No Hall Selected' }}</q-item-label>
+                    <q-item-label caption v-if="reviewingCourse?.hall">Capacity: {{ reviewingCourse?.hall?.capacity }} | AC: {{ reviewingCourse?.hall?.has_ac ? 'Yes' : 'No' }}</q-item-label>
+                </q-item-section>
+             </q-item>
+
+             <q-item>
+                <q-item-section>
+                    <q-item-label caption>Schedule</q-item-label>
+                    <q-item-label>{{ formatSchedule(reviewingCourse?.schedule) }}</q-item-label>
+                </q-item-section>
+                <q-item-section side>
+                     <q-item-label caption>Fee</q-item-label>
+                     <q-item-label class="text-weight-bold">LKR {{ reviewingCourse?.fee_amount }}</q-item-label>
+                </q-item-section>
+             </q-item>
+          </q-list>
         </q-card-section>
 
         <q-card-section>
@@ -365,6 +401,9 @@
                              <q-chip size="xs" :color="student.pivot?.status === 'active' ? 'green' : 'red'" text-color="white">
                                  {{ student.pivot?.status }}
                              </q-chip>
+                             <q-chip size="xs" :color="getFeeColor(student)" text-color="white">
+                                 {{ getFeeStatus(student) }}
+                             </q-chip>
                          </q-item-section>
                      </q-item>
                      <div v-if="studentsList.length === 0" class="text-center text-grey q-pa-md">
@@ -489,6 +528,18 @@ const filteredCourses = computed(() => {
         return true
     })
 })
+
+function getFeeStatus(student) {
+    if (!student.fees || student.fees.length === 0) return 'NO FEE'
+    const fee = student.fees[0]
+    return fee.status === 'paid' ? 'PAID' : 'DUE'
+}
+
+function getFeeColor(student) {
+     if (!student.fees || student.fees.length === 0) return 'grey'
+     const fee = student.fees[0]
+     return fee.status === 'paid' ? 'green' : 'orange'
+}
 
 function getStatusColor(status) {
     if (status === 'approved') return 'green'

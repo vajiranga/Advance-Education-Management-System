@@ -10,6 +10,7 @@ const routes = [
       { path: 'users', component: () => import('pages/UsersPage.vue') },
       { path: 'courses', component: () => import('pages/CoursesPage.vue') },
       { path: 'finance', component: () => import('pages/FinancePage.vue') },
+      { path: 'attendance', component: () => import('pages/AttendanceMarkingPage.vue') },
       { path: 'settings', component: () => import('pages/SettingsPage.vue') }
     ]
   },

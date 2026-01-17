@@ -7,10 +7,11 @@ export const usePaymentStore = defineStore('payment', () => {
     const history = ref([])
     const pending = ref([])
 
-    async function fetchHistory() {
+    async function fetchHistory(studentId = null) {
         loading.value = true
         try {
-            const res = await api.get('/v1/my-payments')
+            const url = studentId ? `/v1/parent/children/${studentId}/payments` : '/v1/my-payments'
+            const res = await api.get(url)
             history.value = res.data.data ? res.data.data : res.data
         } catch (e) {
             console.error('Fetch payments failed', e)
@@ -19,10 +20,11 @@ export const usePaymentStore = defineStore('payment', () => {
         }
     }
 
-    async function fetchPendingFees() {
+    async function fetchPendingFees(studentId = null) {
         loading.value = true
         try {
-            const res = await api.get('/v1/my-due-fees')
+            const url = studentId ? `/v1/parent/children/${studentId}/fees` : '/v1/my-due-fees'
+            const res = await api.get(url)
             pending.value = res.data
         } catch (e) {
             console.error(e)
@@ -34,7 +36,10 @@ export const usePaymentStore = defineStore('payment', () => {
     async function makePayment(payload) {
         loading.value = true
         try {
-            await api.post('/v1/payments', payload)
+            const isFormData = payload instanceof FormData
+            await api.post('/v1/payments', payload, {
+                headers: isFormData ? { 'Content-Type': 'multipart/form-data' } : {}
+            })
             // Refresh
             await fetchPendingFees()
             await fetchHistory()

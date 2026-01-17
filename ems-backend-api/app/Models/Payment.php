@@ -17,7 +17,8 @@ class Payment extends Model
         'paid_at',
         'type',
         'status',
-        'note'
+        'note',
+        'slip_image'
     ];
 
     public function course()

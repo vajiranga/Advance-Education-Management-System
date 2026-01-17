@@ -82,6 +82,11 @@ class User extends Authenticatable
         return $this->hasMany(Payment::class);
     }
 
+    public function fees()
+    {
+        return $this->hasMany(StudentFee::class, 'student_id');
+    }
+
     /**
      * Get children where this user is the parent (matched by email)
      */

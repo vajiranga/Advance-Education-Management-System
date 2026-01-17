@@ -98,16 +98,33 @@
     >
       <div class="q-pa-md" :class="$q.dark.isActive ? 'bg-transparent' : 'bg-blue-1'">
         <div class="text-subtitle1 text-weight-bold" :class="$q.dark.isActive ? 'text-white' : 'text-primary'">My Children</div>
+        
         <div class="row items-center q-mt-sm q-pa-sm rounded-borders shadow-1 cursor-pointer" :class="$q.dark.isActive ? 'bg-grey-9' : 'bg-white'">
            <q-avatar size="32px">
-             <img src="https://cdn.quasar.dev/img/boy-avatar.png">
+             <img :src="currentChild?.avatar || 'https://cdn.quasar.dev/img/boy-avatar.png'">
            </q-avatar>
            <div class="q-ml-sm">
-             <div class="text-weight-bold text-caption" :class="$q.dark.isActive ? 'text-white' : ''">Kasun Perera</div>
-             <div class="text-caption" :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey'" style="font-size: 10px;">Grade 10</div>
+             <div class="text-weight-bold text-caption" :class="$q.dark.isActive ? 'text-white' : ''">{{ currentChild?.name || 'Select Child' }}</div>
+             <div class="text-caption" :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey'" style="font-size: 10px;">{{ currentChild?.grade || 'N/A' }}</div>
            </div>
            <q-space />
            <q-icon name="expand_more" color="grey" />
+
+           <q-menu fit v-model="childMenuOpen">
+               <q-list style="min-width: 150px">
+                   <q-item clickable v-close-popup v-for="child in children" :key="child.id" @click="selectChild(child)">
+                       <q-item-section avatar>
+                           <q-avatar size="24px">
+                               <img :src="child.avatar || 'https://cdn.quasar.dev/img/boy-avatar.png'">
+                           </q-avatar>
+                       </q-item-section>
+                       <q-item-section>
+                           <q-item-label>{{ child.name }}</q-item-label>
+                           <q-item-label caption>{{ child.grade }}</q-item-label>
+                       </q-item-section>
+                   </q-item>
+               </q-list>
+           </q-menu>
         </div>
       </div>
       
@@ -134,10 +151,7 @@
           <q-item-section>Fees & Payments</q-item-section>
         </q-item>
         
-        <q-item clickable v-ripple to="/parent/messages" :active-class="$q.dark.isActive ? 'text-indigo-2 bg-grey-9 border-l-primary' : 'text-primary bg-blue-1'">
-          <q-item-section avatar><q-icon name="chat" /></q-item-section>
-          <q-item-section>Messages</q-item-section>
-        </q-item>
+
         
         <q-item clickable v-ripple to="/parent/profile" :active-class="$q.dark.isActive ? 'text-indigo-2 bg-grey-9 border-l-primary' : 'text-primary bg-blue-1'">
           <q-item-section avatar><q-icon name="person" /></q-item-section>
@@ -160,13 +174,17 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useAuthStore } from 'stores/auth-store'
 import { useRoute } from 'vue-router'
 
 const leftDrawerOpen = ref(false)
 const authStore = useAuthStore()
 const route = useRoute()
+const children = ref([])
+const childMenuOpen = ref(false)
+
+const currentChild = computed(() => authStore.selectedChild)
 
 onMounted(async () => {
     authStore.init()
@@ -175,13 +193,35 @@ onMounted(async () => {
         const url = new URL(window.location.href)
         url.searchParams.delete('token')
         window.history.replaceState({}, document.title, url.toString())
-    } else if (!authStore.user) {
+    } 
+    
+    // Fetch user if needed
+    if (!authStore.user) {
         await authStore.fetchUser()
+    }
+    
+    // Fetch Children
+    try {
+        const { api } = await import('boot/axios')
+        const res = await api.get('/v1/parent/children')
+        children.value = res.data
+        
+        // Auto select first child if none selected
+        if (children.value.length > 0 && !authStore.selectedChild) {
+            authStore.selectedChild = children.value[0]
+        }
+    } catch (e) {
+        console.error('Failed to load children', e)
     }
 })
 
 function toggleLeftDrawer () {
   leftDrawerOpen.value = !leftDrawerOpen.value
+}
+
+function selectChild(child) {
+    authStore.selectedChild = child
+    childMenuOpen.value = false
 }
 </script>
 

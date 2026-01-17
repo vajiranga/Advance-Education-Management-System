@@ -77,6 +77,7 @@ const navigationLinks = [
   { title: 'Hall Management', icon: 'meeting_room', path: '/institutes' },
   { title: 'Users', icon: 'people', path: '/users' },
   { title: 'Classes', icon: 'library_books', path: '/courses' },
+  { title: 'Attendance', icon: 'fact_check', path: '/attendance' },
   { title: 'Finance', icon: 'payments', path: '/finance' },
   { title: 'Settings', icon: 'settings', path: '/settings' }
 ]

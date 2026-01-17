@@ -7,6 +7,7 @@ use App\Models\Course;
 use App\Models\Notification; // Ensure this Model is created
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class CourseController extends Controller
 {
@@ -53,6 +54,10 @@ class CourseController extends Controller
             $query->where('status', 'approved');
         } 
 
+        if ($request->has('all')) {
+            return response()->json($query->with(['subject', 'batch', 'teacher', 'hall', 'parentCourse'])->withCount('students')->orderBy('created_at', 'desc')->get());
+        }
+
         return response()->json($query->with(['subject', 'batch', 'teacher', 'hall', 'parentCourse'])->withCount('students')->orderBy('created_at', 'desc')->paginate(20));
     }
 
@@ -70,7 +75,8 @@ class CourseController extends Controller
             'schedule' => 'nullable', 
             'cover_image_url' => 'nullable|string',
             'type' => 'nullable|in:regular,extra',
-            'parent_course_id' => 'nullable|exists:courses,id'
+            'parent_course_id' => 'nullable|exists:courses,id',
+            'hall_id' => 'nullable|exists:halls,id'
         ]);
 
         $user = $request->user();
@@ -228,6 +234,9 @@ class CourseController extends Controller
             },
             'payments' => function($q) use ($id, $thisMonth) {
                  $q->where('course_id', $id)->where('month', $thisMonth);
+            },
+            'fees' => function($q) use ($id, $thisMonth) {
+                 $q->where('course_id', $id)->where('month', $thisMonth);
             }
         ]);
 
@@ -266,5 +275,86 @@ class CourseController extends Controller
         }
 
         return response()->json(['message' => 'Invalid action'], 400);
+    }
+    public function getMyStudents(Request $request)
+    {
+        $user = $request->user();
+        
+        Log::info('getMyStudents calling', ['teacher_id' => $user->id]);
+
+        $query = \Illuminate\Support\Facades\DB::table('enrollments')
+                    ->join('courses', 'enrollments.course_id', '=', 'courses.id')
+                    ->join('users', 'enrollments.user_id', '=', 'users.id') // Join student
+                    ->leftJoin('batches', 'courses.batch_id', '=', 'batches.id')
+                    ->select(
+                        'users.id as student_id',
+                        'users.name as student_name',
+                        'users.email as student_email',
+                        'users.phone as student_contact',
+                        // 'users.avatar as student_avatar', // Column does not exist
+                        'courses.id as course_id',
+                        'courses.name as course_name',
+                        'courses.fee_amount',
+                        'batches.name as grade',
+                        'enrollments.id as enrollment_id',
+                        'enrollments.status as enrollment_status'
+                    )
+                    ->where('courses.teacher_id', $user->id)
+                    ->whereNull('courses.deleted_at'); // Handle soft delete manually
+                    
+        // Filter by specific Class (Course)
+        if ($request->has('course_id') && $request->course_id !== 'all') {
+             $query->where('enrollments.course_id', $request->course_id);
+        }
+
+        // Search
+        if ($request->has('search') && $request->search) {
+             $search = $request->search;
+             $query->where(function($q) use ($search) {
+                 $q->where('users.name', 'like', "%{$search}%")
+                   ->orWhere('users.email', 'like', "%{$search}%");
+             });
+        }
+
+        $results = $query->orderBy('users.name')->get();
+
+        Log::info('getMyStudents results', ['count' => $results->count()]);
+
+        // Process Fees manually
+        $thisMonth = now()->format('Y-m');
+        
+        $data = $results->map(function($row) use ($thisMonth) {
+            // Check fees
+            $fee = \Illuminate\Support\Facades\DB::table('student_fees')
+                        ->where('student_id', $row->student_id)
+                        ->where('course_id', $row->course_id)
+                        ->where('month', $thisMonth)
+                        ->first();
+            
+            $feeStatus = 'no_fee';
+            if ($fee) {
+                $feeStatus = $fee->status;
+                if ($feeStatus === 'pending' && now()->gt($fee->due_date)) {
+                    $feeStatus = 'overdue';
+                }
+            } else {
+                 if ($row->fee_amount > 0) $feeStatus = 'pending';
+                 else $feeStatus = 'free';
+            }
+
+            return [
+                 'id' => $row->student_id,
+                 'name' => $row->student_name,
+                 'avatar' => 'https://cdn.quasar.dev/img/boy-avatar.png', // Default avatar
+                 'course_name' => $row->course_name,
+                 'grade' => $row->grade,
+                 'contact' => $row->student_contact ?? $row->student_email,
+                 'active' => $row->enrollment_status === 'active',
+                 'payment_status' => $feeStatus,
+                 'course_id' => $row->course_id
+            ];
+        });
+
+        return response()->json($data);
     }
 }

@@ -3,11 +3,11 @@
     
     <!-- Header: Child Selector -->
     <div class="row items-center justify-between q-mb-lg">
-      <div>
-        <div class="text-h5 text-weight-bold" :class="$q.dark.isActive ? 'text-white' : 'text-primary'">Attendance Records</div>
-        <div class="text-caption" :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey'">Track class participation</div>
+      <div class="col-12 col-sm-6">
+        <div class="text-h5 text-weight-bold" :class="$q.dark.isActive ? 'text-white' : 'text-primary'">Attendance</div>
+        <div class="text-caption" :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey'">Manage class participation</div>
       </div>
-      <div class="row items-center q-gutter-x-md">
+      <div class="col-12 col-sm-6 row justify-end items-center q-gutter-x-md q-mt-sm q-mt-sm-none">
          <div class="text-subtitle2" :class="$q.dark.isActive ? 'text-grey-4' : ''">Child:</div>
          <q-select 
             dense outlined 
@@ -26,75 +26,78 @@
         <q-spinner color="primary" size="3em" />
     </div>
 
-    <!-- Empty State -->
-    <div v-else-if="!groupedAttendance || groupedAttendance.length === 0" class="text-center q-py-xl" :class="$q.dark.isActive ? 'text-grey-5' : 'text-grey'">
-        <q-icon name="event_busy" size="4em" />
-        <div class="text-h6 q-mt-md">No attendance records found for {{ selectedChild?.name }}</div>
-    </div>
+    <!-- Main Content -->
+    <div v-else class="row q-col-gutter-lg">
+        
+       <!-- Upcoming Classes Section (Next 24 Hours) -->
+       <div class="col-12">
+          <div class="text-h6 q-mb-md flex items-center">
+             <q-icon name="event" class="q-mr-sm text-primary" /> Upcoming Classes (Next 24h)
+          </div>
+          
+          <div v-if="upcoming.length === 0" class="q-pa-lg text-center bg-white rounded-borders shadow-1" :class="$q.dark.isActive ? 'bg-dark' : ''">
+              <div class="text-grey">No upcoming classes for {{ selectedChild?.name }} in the next 24 hours.</div>
+          </div>
 
-    <!-- Attendance List -->
-    <div v-else class="row q-col-gutter-md">
-        <div class="col-12" v-for="(record, index) in groupedAttendance" :key="index">
-            <q-card class="no-shadow" :class="$q.dark.isActive ? 'bg-dark border-dark' : 'bg-white border-light'">
-                <q-expansion-item
-                    expand-separator
-                    :header-class="$q.dark.isActive ? 'bg-dark text-white' : 'bg-white'"
-                >
-                    <template v-slot:header>
-                        <q-item-section avatar>
-                            <q-circular-progress
-                                show-value
-                                font-size="12px"
-                                :value="record.percentage"
-                                size="50px"
-                                :thickness="0.2"
-                                :color="getHealthColor(record.percentage)"
-                                :track-color="$q.dark.isActive ? 'grey-8' : 'grey-3'"
-                                class="q-ma-md"
-                            >
-                                {{ record.percentage }}%
-                            </q-circular-progress>
-                        </q-item-section>
+          <div v-else class="row q-col-gutter-md">
+             <div class="col-12 col-md-6" v-for="(cls, idx) in upcoming" :key="'up'+idx">
+                <q-card class="my-card bordered-card" :class="$q.dark.isActive ? 'bg-grey-9' : 'bg-blue-1'">
+                   <q-card-section>
+                      <div class="text-subtitle2 text-primary">UPCOMING CLASS: {{ selectedChild?.name }}</div>
+                      <div class="text-h6 text-weight-bold q-mt-xs">{{ cls.course_name }}</div>
+                      <div class="text-subtitle1 q-mt-sm">
+                         <q-icon name="schedule" /> {{ cls.start }} - {{ cls.end }}
+                      </div>
+                      <div class="text-caption text-grey-8 q-mt-xs">
+                         Date: {{ formatDate(cls.date) }} <span v-if="cls.type === 'extra'" class="text-orange q-ml-sm">(Extra Class)</span>
+                      </div>
+                   </q-card-section>
+                   <q-separator />
+                   <q-card-actions align="right" class="bg-primary text-white">
+                      <div class="text-weight-bold q-px-sm">
+                          Please ensure they attend!
+                      </div>
+                   </q-card-actions>
+                </q-card>
+             </div>
+          </div>
+       </div>
 
-                        <q-item-section>
-                            <q-item-label class="text-h6" :class="$q.dark.isActive ? 'text-white' : ''">{{ record.course_name }}</q-item-label>
-                            <q-item-label caption>
-                                <q-badge :color="$q.dark.isActive ? 'green-9' : 'green-1'" :text-color="$q.dark.isActive ? 'green-1' : 'green'" class="q-mr-xs">{{ record.present_sessions }} Present</q-badge>
-                                <q-badge :color="$q.dark.isActive ? 'grey-8' : 'grey-2'" :text-color="$q.dark.isActive ? 'grey-4' : 'grey-8'">{{ record.total_sessions }} Total Sessions</q-badge>
-                            </q-item-label>
-                        </q-item-section>
-                    </template>
+       <!-- Recent Status Section (Last 7 Days) -->
+       <div class="col-12 q-mt-lg">
+          <div class="text-h6 q-mb-md flex items-center">
+             <q-icon name="history" class="q-mr-sm text-primary" /> Recent Status
+          </div>
 
-                    <q-card-section class="q-pa-none">
-                        <q-list separator :class="$q.dark.isActive ? 'bg-dark' : ''">
-                            <q-item v-for="(hist, hIdx) in record.history" :key="hIdx" class="q-py-md">
-                                <q-item-section avatar>
-                                    <q-icon 
-                                        :name="hist.status === 'present' ? 'check_circle' : 'cancel'" 
-                                        :color="hist.status === 'present' ? 'green' : 'red'" 
-                                        size="sm"
-                                    />
-                                </q-item-section>
-                                <q-item-section>
-                                    <q-item-label class="text-weight-medium" :class="$q.dark.isActive ? 'text-grey-3' : ''">{{ formatDate(hist.date) }}</q-item-label>
-                                    <q-item-label caption v-if="hist.check_in" :class="$q.dark.isActive ? 'text-grey-5' : ''">Checked in: {{ formatTime(hist.check_in) }}</q-item-label>
-                                </q-item-section>
-                                <q-item-section side>
-                                    <q-chip 
-                                        size="sm" 
-                                        :color="hist.status === 'present' ? ($q.dark.isActive ? 'green-9' : 'green-1') : ($q.dark.isActive ? 'red-9' : 'red-1')" 
-                                        :text-color="hist.status === 'present' ? ($q.dark.isActive ? 'green-1' : 'green') : ($q.dark.isActive ? 'red-1' : 'red')" 
-                                        class="text-uppercase"
-                                    >
-                                        {{ hist.status }}
-                                    </q-chip>
-                                </q-item-section>
-                            </q-item>
-                        </q-list>
-                    </q-card-section>
-                </q-expansion-item>
-            </q-card>
-        </div>
+          <div v-if="recent.length === 0" class="q-pa-lg text-center bg-white rounded-borders shadow-1" :class="$q.dark.isActive ? 'bg-dark' : ''">
+              <div class="text-grey">No recent classes in the last 7 days.</div>
+          </div>
+
+          <q-list v-else separator bordered class="rounded-borders bg-white" :class="$q.dark.isActive ? 'bg-dark' : ''">
+             <q-item v-for="(sess, sIdx) in recent" :key="'rec'+sIdx" class="q-py-md">
+                 <q-item-section avatar>
+                    <q-avatar :color="sess.status === 'present' ? 'green-1' : 'red-1'" :text-color="sess.status === 'present' ? 'green' : 'red'">
+                       <q-icon :name="sess.status === 'present' ? 'check' : 'close'" />
+                    </q-avatar>
+                 </q-item-section>
+                 
+                 <q-item-section>
+                    <q-item-label class="text-weight-bold">{{ sess.course_name }}</q-item-label>
+                    <q-item-label caption>{{ formatDate(sess.date) }} @ {{ sess.time }}</q-item-label>
+                 </q-item-section>
+                 
+                 <q-item-section side>
+                    <q-chip 
+                        :color="sess.status === 'present' ? 'green' : 'red'" 
+                        text-color="white"
+                        class="text-uppercase text-weight-bold"
+                    >
+                        {{ sess.status }}
+                    </q-chip>
+                 </q-item-section>
+             </q-item>
+          </q-list>
+       </div>
     </div>
   </q-page>
 </template>
@@ -106,8 +109,11 @@ import { date as qDate } from 'quasar'
 
 const children = ref([])
 const selectedChild = ref(null)
-const rawAttendance = ref([])
+const dashboardData = ref({ upcoming: [], recent: [] })
 const loading = ref(false)
+
+const upcoming = computed(() => dashboardData.value.upcoming || [])
+const recent = computed(() => dashboardData.value.recent || [])
 
 onMounted(async () => {
     try {
@@ -115,7 +121,7 @@ onMounted(async () => {
         children.value = res.data
         if (children.value.length > 0) {
             selectedChild.value = children.value[0]
-            fetchAttendance(selectedChild.value.id)
+            fetchDashboard(selectedChild.value.id)
         }
     } catch (e) {
         console.error('Error fetching children', e)
@@ -123,63 +129,31 @@ onMounted(async () => {
 })
 
 watch(selectedChild, (newVal) => {
-    if(newVal) fetchAttendance(newVal.id)
+    if(newVal) fetchDashboard(newVal.id)
 })
 
-async function fetchAttendance(childId) {
+async function fetchDashboard(childId) {
     loading.value = true
     try {
-        const res = await api.get(`/v1/parent/children/${childId}/attendance`)
-        rawAttendance.value = res.data
+        const res = await api.get(`/v1/attendance/dashboard`, { params: { student_id: childId } })
+        dashboardData.value = res.data
     } catch (e) {
-        console.error('Error fetching attendance', e)
+        console.error('Error fetching dashboard', e)
     } finally {
         loading.value = false
     }
 }
 
-const groupedAttendance = computed(() => {
-    const groups = {}
-    rawAttendance.value.forEach(rec => {
-        if (!groups[rec.course_name]) {
-            groups[rec.course_name] = {
-                course_name: rec.course_name,
-                history: [],
-                total_sessions: 0,
-                present_sessions: 0
-            }
-        }
-        groups[rec.course_name].history.push(rec)
-        groups[rec.course_name].total_sessions++
-        if(rec.status === 'present') groups[rec.course_name].present_sessions++
-    })
-
-    return Object.values(groups).map(g => {
-        g.percentage = g.total_sessions > 0 ? Math.round((g.present_sessions / g.total_sessions) * 100) : 0
-        return g
-    })
-})
-
-function getHealthColor(percent) {
-    if (percent >= 80) return 'green'
-    if (percent >= 60) return 'orange'
-    return 'red'
-}
-
 function formatDate(dateString) {
-    return qDate.formatDate(dateString, 'ddd, DD MMM YYYY')
-}
-
-function formatTime(timeString) {
-    if(!timeString) return ''
-    // Assuming backend sends H:i:s or similar, try to make it Date object if needed or just format string
-    // If string like "14:30:00", Quasar might parse it if valid ISO. 
-    // Backend API `format('h:i A')` might be better or handle here.
-    return timeString // Simplified for now
+    return qDate.formatDate(dateString, 'ddd, DD MMM')
 }
 </script>
 
 <style scoped>
-.border-light { border: 1px solid #eee; }
-.border-dark { border: 1px solid #334155; }
+.bordered-card {
+    border: 1px solid rgba(0,0,0,0.1);
+}
+.bg-dark-page {
+    background: #121212;
+}
 </style>

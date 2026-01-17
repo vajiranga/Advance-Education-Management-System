@@ -426,10 +426,10 @@ async function saveUser() {
         if (isEditMode.value && !payload.password) delete payload.password
 
         if (isEditMode.value) {
-            await api.put(`/users/${editingId.value}`, payload)
+            await api.put(`/v1/users/${editingId.value}`, payload)
             $q.notify({ type: 'positive', message: 'User updated successfully' })
         } else {
-            await api.post('/users', payload)
+            await api.post('/v1/users', payload)
             $q.notify({ type: 'positive', message: 'User created successfully' })
         }
         
@@ -454,7 +454,7 @@ function deleteUser(row) {
         persistent: true
     }).onOk(async () => {
         try {
-            await api.delete(`/users/${row.id}`)
+            await api.delete(`/v1/users/${row.id}`)
             $q.notify({ type: 'positive', message: 'User deleted' })
             await userStore.fetchTeachers()
             await userStore.fetchStudents()

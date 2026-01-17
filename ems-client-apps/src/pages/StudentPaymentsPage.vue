@@ -46,7 +46,7 @@
                  <q-separator :class="$q.dark.isActive ? 'bg-grey-8' : ''" />
 
                  <q-card-actions align="right">
-                   <q-btn unelevated color="primary" label="Pay Now" icon="payment" @click="payNow(fee)" />
+                   <q-btn unelevated color="primary" label="Pay Now" icon="payment" @click="openPayDialog(fee)" />
                  </q-card-actions>
                </q-card>
              </div>
@@ -72,10 +72,10 @@
              <template v-slot:body-cell-status="props">
                <q-td :props="props">
                  <q-chip 
-                    :color="$q.dark.isActive ? 'green-9' : 'green-1'" 
-                    :text-color="$q.dark.isActive ? 'green-1' : 'green'" 
+                    :color="getStatusColor(props.row.status)" 
+                    :text-color="getStatusTextColor(props.row.status)" 
                     size="sm"
-                    icon="check"
+                    :icon="getStatusIcon(props.row.status)"
                  >
                    {{ props.row.status }}
                  </q-chip>
@@ -85,12 +85,63 @@
                 <q-td :props="props" class="text-weight-bold" :class="$q.dark.isActive ? 'text-white' : ''">
                    LKR {{ props.row.amount }}
                 </q-td>
+              </template>
+              <template v-slot:body-cell-actions="props">
+                <q-td :props="props">
+                   <q-btn 
+                     v-if="props.row.status === 'paid'"
+                     round flat dense 
+                     icon="print" 
+                     color="grey" 
+                     @click="printReceipt(props.row)"
+                     title="Download/Print Receipt" 
+                   />
+                </q-td>
              </template>
            </q-table>
          </q-card>
       </q-tab-panel>
 
+
     </q-tab-panels>
+
+    <!-- Payment Dialog -->
+    <q-dialog v-model="showPaymentDialog">
+      <q-card style="min-width: 400px" :class="$q.dark.isActive ? 'bg-dark' : 'bg-white'">
+        <q-card-section>
+          <div class="text-h6" :class="$q.dark.isActive ? 'text-white' : ''">Make Payment</div>
+          <div class="text-subtitle2 text-primary">{{ selectedFee?.course_name }} - {{ selectedFee?.month }}</div>
+        </q-card-section>
+
+        <q-card-section class="q-pt-none">
+           <div class="text-h5 text-center q-mb-md font-weight-bold">LKR {{ selectedFee?.amount }}</div>
+           
+           <div class="text-subtitle2 q-mb-sm" :class="$q.dark.isActive ? 'text-grey-4' : ''">Select Payment Method:</div>
+           <div class="q-gutter-sm">
+             <q-radio v-model="paymentMethod" val="online" label="Online Payment (Card/Gateway)" :dark="$q.dark.isActive" />
+             <q-radio v-model="paymentMethod" val="bank_transfer" label="Bank Transfer (Upload Slip)" :dark="$q.dark.isActive" />
+           </div>
+
+           <div v-if="paymentMethod === 'bank_transfer'" class="q-mt-md">
+              <q-file outlined v-model="slipFile" label="Upload Receipt Slip" accept="image/*" :dark="$q.dark.isActive">
+                <template v-slot:prepend>
+                  <q-icon name="attach_file" />
+                </template>
+              </q-file>
+              <div class="text-caption text-grey q-mt-xs">
+                 Bank Account: 123-456-7890 (BOC)<br>
+                 Name: EMS Institute
+              </div>
+           </div>
+        </q-card-section>
+
+        <q-card-actions align="right" class="text-primary">
+          <q-btn flat label="Cancel" v-close-popup :color="$q.dark.isActive ? 'grey-5' : 'grey-7'"/>
+          <q-btn unelevated color="primary" label="Confirm Payment" @click="submitPayment" :loading="processing" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
   </q-page>
 </template>
 
@@ -103,13 +154,48 @@ import { storeToRefs } from 'pinia'
 const $q = useQuasar()
 const paymentStore = usePaymentStore()
 const { pending, history } = storeToRefs(paymentStore)
+const route = useRoute()
+const authStore = useAuthStore()
 
 const tab = ref('pending')
+const showPaymentDialog = ref(false)
+const selectedFee = ref(null)
+const paymentMethod = ref('online')
+const slipFile = ref(null)
+const processing = ref(false)
+
+// Function to determine context student ID
+const getContextStudentId = () => {
+   if (route.meta.isParentView) {
+       // Assuming authStore has a selectedChild or similar state
+       // Since ParentLayout manages selected child locally, we might need a shared store state.
+       // However, looking at ParentLayout, it uses a local ref.
+       // We should move 'selectedChild' to authStore to make it accessible here.
+       return authStore.selectedChild?.id
+   }
+   return null // Defaults to logged in user
+}
+
+const fetchData = () => {
+    const studentId = getContextStudentId()
+    paymentStore.fetchPendingFees(studentId)
+    paymentStore.fetchHistory(studentId)
+}
 
 onMounted(() => {
-    paymentStore.fetchPendingFees()
-    paymentStore.fetchHistory()
+    fetchData()
 })
+
+// Watch for child change if in parent view
+import { watch } from 'vue'
+import { useRoute } from 'vue-router'
+import { useAuthStore } from 'stores/auth-store'
+
+if (route.meta.isParentView) {
+    watch(() => authStore.selectedChild, () => {
+        fetchData()
+    })
+}
 
 const columns = [
   { name: 'date', label: 'Payment Date', field: 'created_at', format: val => new Date(val).toLocaleDateString(), align: 'left' },
@@ -118,37 +204,153 @@ const columns = [
   { name: 'amount', label: 'Amount', field: 'amount', align: 'right' },
   { name: 'method', label: 'Method', field: 'type', align: 'center' },
   { name: 'status', label: 'Status', field: 'status', align: 'center' },
+  { name: 'actions', label: '', align: 'right' }
 ]
 
-const payNow = (fee) => {
-    $q.dialog({
-        title: 'Confirm Payment',
-        message: `Pay LKR ${fee.amount} for ${fee.course_name} (${fee.month})?`,
-        cancel: true,
-        persistent: true,
-        ok: { label: 'Pay via Card', color: 'primary' }
-    }).onOk(async () => {
-        $q.loading.show({ message: 'Processing Payment...' })
+function getStatusColor(status) {
+    if (status === 'paid') return $q.dark.isActive ? 'green-9' : 'green-1'
+    if (status === 'pending') return $q.dark.isActive ? 'orange-9' : 'orange-1'
+    return 'grey-3'
+}
+
+function getStatusTextColor(status) {
+    if (status === 'paid') return $q.dark.isActive ? 'green-1' : 'green-8'
+    if (status === 'pending') return $q.dark.isActive ? 'orange-1' : 'orange-8'
+    return 'grey-8'
+}
+
+function getStatusIcon(status) {
+    if (status === 'paid') return 'check_circle'
+    if (status === 'pending') return 'hourglass_empty'
+    return 'info'
+}
+
+function printReceipt(payment) {
+    const printWindow = window.open('', '_blank', 'width=800,height=600');
+    if (!printWindow) return;
+
+    const htmlContent = `
+        <html>
+        <head>
+            <title>Payment Receipt #${payment.id}</title>
+            <style>
+                body { font-family: 'Helvetica', sans-serif; padding: 40px; color: #333; }
+                .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 20px; margin-bottom: 30px; }
+                .title { font-size: 24px; font-weight: bold; margin: 0; }
+                .subtitle { color: #666; margin-top: 5px; }
+                .details { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+                .details td { padding: 12px; border-bottom: 1px solid #eee; }
+                .label { font-weight: bold; width: 150px; }
+                .total { font-size: 20px; font-weight: bold; text-align: right; margin-top: 20px; }
+                .footer { margin-top: 50px; font-size: 12px; text-align: center; color: #999; }
+                .status { display: inline-block; padding: 5px 10px; background: #e8f5e9; color: #2e7d32; border-radius: 4px; font-weight: bold; }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <div class="title">EMS Institute</div>
+                <div class="subtitle">Official Payment Receipt</div>
+            </div>
+
+            <table class="details">
+                <tr>
+                    <td class="label">Receipt No:</td>
+                    <td>#${payment.id}</td>
+                </tr>
+                <tr>
+                    <td class="label">Date:</td>
+                    <td>${new Date(payment.created_at).toLocaleDateString()} ${new Date(payment.created_at).toLocaleTimeString()}</td>
+                </tr>
+                 <tr>
+                    <td class="label">Student:</td>
+                    <td>${payment.student_name || 'Student'}</td> <!-- Assuming FE might need to enrich this if not present -->
+                </tr>
+                <tr>
+                    <td class="label">Course:</td>
+                    <td>${payment.course?.name || 'Unknown Course'}</td>
+                </tr>
+                <tr>
+                    <td class="label">Month:</td>
+                    <td>${payment.month}</td>
+                </tr>
+                <tr>
+                    <td class="label">Payment Method:</td>
+                    <td>${payment.type.toUpperCase()}</td>
+                </tr>
+                <tr>
+                    <td class="label">Status:</td>
+                    <td><span class="status">${payment.status.toUpperCase()}</span></td>
+                </tr>
+            </table>
+
+            <div class="total">
+                Total Amount: LKR ${payment.amount}
+            </div>
+
+            <div class="footer">
+                <p>Thank you for your payment!</p>
+                <p>Generated on ${new Date().toLocaleString()}</p>
+            </div>
+            
+            <script>
+                setTimeout(() => { window.print(); window.close(); }, 500);
+            ` + '<' + '/script>' + `
+        </body>
+        </html>
+    `;
+    
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+}
+
+const openPayDialog = (fee) => {
+    selectedFee.value = fee
+    paymentMethod.value = 'online'
+    slipFile.value = null
+    showPaymentDialog.value = true
+}
+
+// ... existing code ...
+
+const submitPayment = async () => {
+    if (paymentMethod.value === 'bank_transfer' && !slipFile.value) {
+        $q.notify({ type: 'warning', message: 'Please upload the receipt slip' })
+        return
+    }
+
+    processing.value = true
+    
+    // Simulate delay
+    setTimeout(async () => {
+        let payload;
         
-        // Simulate Gateway Delay
-        setTimeout(async () => {
-            const payload = {
-                fee_id: fee.id,
-                amount: fee.amount,
+        if (paymentMethod.value === 'bank_transfer') {
+             const formData = new FormData()
+             formData.append('fee_id', selectedFee.value.id)
+             formData.append('amount', selectedFee.value.amount)
+             formData.append('type', 'bank_transfer')
+             formData.append('note', 'Bank Transfer Upload')
+             formData.append('slip', slipFile.value)
+             payload = formData
+        } else {
+             payload = {
+                fee_id: selectedFee.value.id,
+                amount: selectedFee.value.amount,
                 type: 'online', 
                 note: 'Online Payment via Student Portal'
             }
-            
-            const res = await paymentStore.makePayment(payload)
-            $q.loading.hide()
-            
-            if (res.success) {
-                $q.notify({ type: 'positive', message: 'Payment Successful!' })
-            } else {
-                $q.notify({ type: 'negative', message: 'Payment Failed: ' + res.error })
-            }
-        }, 1500)
-    })
+        }
+        
+        const res = await paymentStore.makePayment(payload)
+        processing.value = false
+        showPaymentDialog.value = false
+        
+        if (res.success) {
+            $q.notify({ type: 'positive', message: 'Payment Submitted! Status: ' + (paymentMethod.value === 'bank_transfer' ? 'Pending Approval' : 'Paid') })
+        } else {
+            $q.notify({ type: 'negative', message: 'Payment Failed: ' + res.error })
+        }
+    }, 1000)
 }
 </script>
 

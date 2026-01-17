@@ -12,8 +12,8 @@ export const useUserStore = defineStore('user', () => {
     async function fetchTeachers() {
         loading.value = true
         try {
-            const res = await api.get('/users', { params: { role: 'teacher' } })
-            teachers.value = res.data
+            const res = await api.get('/v1/users', { params: { role: 'teacher' } })
+            teachers.value = res.data.data
         } catch (err) {
             console.error(err)
         } finally {
@@ -24,8 +24,8 @@ export const useUserStore = defineStore('user', () => {
     async function fetchStudents() {
         loading.value = true
         try {
-            const res = await api.get('/users', { params: { role: 'student' } })
-            students.value = res.data
+            const res = await api.get('/v1/users', { params: { role: 'student' } })
+            students.value = res.data.data
         } catch (err) {
             console.error(err)
         } finally {
@@ -36,8 +36,8 @@ export const useUserStore = defineStore('user', () => {
     async function fetchParents() {
         loading.value = true
         try {
-            const res = await api.get('/users', { params: { role: 'parent' } })
-            parents.value = res.data
+            const res = await api.get('/v1/users', { params: { role: 'parent' } })
+            parents.value = res.data.data
         } catch (err) {
             console.error(err)
         } finally {

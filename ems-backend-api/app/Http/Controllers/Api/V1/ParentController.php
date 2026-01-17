@@ -19,11 +19,11 @@ class ParentController extends Controller
     {
         $user = $request->user();
         
-        // Link by email
-        // Logic: Students have 'parent_email' column. 
-        // We find students where parent_email == $user->email
-        
-        $children = User::where('parent_email', $user->email)
+        // Link by email OR parent_id (Robust linking)
+        $children = User::where(function($query) use ($user) {
+                $query->where('parent_email', $user->email)
+                      ->orWhere('parent_id', $user->id);
+            })
             ->where('role', 'student')
             ->get(['id', 'name', 'grade', 'avatar', 'school']);
             

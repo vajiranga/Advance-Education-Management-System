@@ -48,6 +48,7 @@
                      <q-card-actions align="right">
                         <q-btn flat color="teal" label="Syllabus" />
                         <q-btn flat color="teal" label="Materials" />
+                        <q-btn unelevated color="teal" size="sm" class="q-ml-sm" label="View Students" @click="goToStudents(cls.id)" />
                      </q-card-actions>
                   </q-card>
               </div>
@@ -146,14 +147,20 @@
 <script setup>
 import { onMounted, ref, reactive, computed } from 'vue'
 import { useQuasar } from 'quasar'
+import { useRouter } from 'vue-router'
 import { useTeacherStore } from 'stores/teacher-store'
 import { useAuthStore } from 'stores/auth-store'
 import { storeToRefs } from 'pinia'
 
 const $q = useQuasar()
+const router = useRouter()
 const teacherStore = useTeacherStore()
 const authStore = useAuthStore()
 const { courses, loading } = storeToRefs(teacherStore)
+
+function goToStudents(courseId) {
+    router.push({ path: '/teacher/students', query: { course_id: courseId } })
+}
 
 const tab = ref('active')
 const showDialog = ref(false)

@@ -104,11 +104,11 @@ onBeforeUnmount(() => {
 const onSubmit = async () => {
   try {
       await authStore.login(email.value, password.value)
-      $q.notify({ type: 'positive', message: 'Welcome Back!' })
-      router.push('/dashboard')
+      $q.notify({ type: 'positive', message: 'Welcome Back, Admin!' })
+      router.push('/finance') // Direct to Finance for testing
   } catch (e) {
       console.error(e)
-      $q.notify({ type: 'negative', message: 'Login Failed. Check credentials.' })
+      $q.notify({ type: 'negative', message: e.message || 'Login Failed. Check credentials.' })
   }
 }
 </script>

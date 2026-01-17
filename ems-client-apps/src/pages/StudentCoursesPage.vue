@@ -65,14 +65,7 @@
                   Fee: LKR {{ course.fee_amount }}
                 </div>
                 
-                <!-- Attendance Bar (Mock for visuals) -->
-                <div class="q-mt-sm">
-                  <div class="row justify-between text-caption q-mb-xs" :class="$q.dark.isActive ? 'text-grey-4' : ''">
-                    <span>Attendance: 85%</span>
-                    <span class="text-positive">Good</span>
-                  </div>
-                  <q-linear-progress rounded size="6px" :value="0.85" color="positive" :track-color="$q.dark.isActive ? 'grey-8' : 'grey-3'" />
-                </div>
+
               </q-card-section>
 
               <q-separator :class="$q.dark.isActive ? 'bg-grey-8' : ''" />

@@ -3,15 +3,16 @@ import { api } from 'boot/axios'
 
 export const useAuthStore = defineStore('auth', {
     state: () => ({
-        // accounts: Array of { token, user }
         accounts: JSON.parse(localStorage.getItem('auth_accounts')) || [],
-        activeAccountIndex: parseInt(localStorage.getItem('auth_active_index') || 0)
+        activeAccountIndex: parseInt(localStorage.getItem('auth_active_index') || 0),
+        selectedChild: null
     }),
 
     getters: {
         user: (state) => state.accounts[state.activeAccountIndex]?.user || null,
         token: (state) => state.accounts[state.activeAccountIndex]?.token || null,
-        allAccounts: (state) => state.accounts
+        allAccounts: (state) => state.accounts,
+        currentChild: (state) => state.selectedChild
     },
 
     actions: {

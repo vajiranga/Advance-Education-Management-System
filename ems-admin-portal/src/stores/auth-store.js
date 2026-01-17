@@ -12,6 +12,11 @@ export const useAuthStore = defineStore('auth', {
     actions: {
         async login(email, password) {
             const res = await api.post('/login', { email, password })
+
+            if (res.data.user.role !== 'admin' && res.data.user.role !== 'super_admin') {
+                throw new Error('Access Denied. Admin privileges required.')
+            }
+
             this.token = res.data.token
             this.user = res.data.user
             localStorage.setItem('token', this.token)

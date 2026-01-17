@@ -57,5 +57,19 @@ export const useStudentStore = defineStore('student', () => {
         }
     }
 
-    return { myCourses, allCourses, attendanceHistory, fetchMyCourses, fetchAttendanceHistory, fetchAllCourses, enroll, loading }
+    const dashboardData = ref({ upcoming: [], recent: [] })
+
+    async function fetchDashboard() {
+        loading.value = true
+        try {
+            const res = await api.get('/v1/attendance/dashboard')
+            dashboardData.value = res.data
+        } catch (e) {
+            console.error('Fetch dashboard failed', e)
+        } finally {
+            loading.value = false
+        }
+    }
+
+    return { myCourses, allCourses, attendanceHistory, dashboardData, fetchDashboard, fetchMyCourses, fetchAttendanceHistory, fetchAllCourses, enroll, loading }
 })

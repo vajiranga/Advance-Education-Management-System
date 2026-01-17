@@ -81,6 +81,33 @@ class EnrollmentController extends Controller
         ]);
         
         Log::info('New enrollment created', ['user_id' => $targetUserId]);
+        
+        // Generate Fee for the current month immediately
+        try {
+            $course = Course::find($request->course_id);
+            if ($course && $course->fee_amount > 0) {
+                 $currentMonth = now()->format('Y-m');
+                 $exists = \App\Models\StudentFee::where('student_id', $targetUserId)
+                        ->where('course_id', $request->course_id)
+                        ->where('month', $currentMonth)
+                        ->exists();
+
+                 if (!$exists) {
+                     \App\Models\StudentFee::create([
+                        'student_id' => $targetUserId,
+                        'course_id' => $course->id,
+                        'month' => $currentMonth,
+                        'amount' => $course->fee_amount,
+                        'due_date' => now()->addDays(7), // Due in 7 days for new enrollments
+                        'status' => 'pending'
+                     ]);
+                     
+                     // Notification logic could go here
+                 }
+            }
+        } catch (\Exception $e) {
+            Log::error('Failed to generate enrollment fee', ['error' => $e->getMessage()]);
+        }
 
         return response()->json(['message' => 'Enrolled successfully']);
     }

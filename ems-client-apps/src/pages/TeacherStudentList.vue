@@ -17,10 +17,10 @@
             dense 
             outlined 
             v-model="filterClass" 
-            :options="['All Classes', 'Grade 10', 'Grade 11']" 
+            :options="classOptions" 
             :bg-color="$q.dark.isActive ? 'grey-9' : 'white'" 
             :dark="$q.dark.isActive" 
-            style="min-width:150px" 
+            style="min-width:200px" 
          />
       </div>
     </div>
@@ -76,28 +76,116 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, watch } from 'vue'
+import { api } from 'boot/axios'
+import { useQuasar } from 'quasar'
+import { useRoute } from 'vue-router'
+import { useAuthStore } from 'stores/auth-store'
 
+const $q = useQuasar()
+const route = useRoute()
+const authStore = useAuthStore()
 const search = ref('')
-// In real app, fetch classes from API
-const filterClass = ref('All Classes') 
+const filterClass = ref(null) // Object: { label: 'All Classes', value: 'all' }
+const classOptions = ref([{ label: 'All Classes', value: 'all' }])
+const students = ref([])
+const loading = ref(false)
+
 const currentMonth = new Date().toLocaleString('default', { month: 'long' })
 
 const columns = [
   { name: 'avatar', label: '', field: 'avatar', align: 'center' },
   { name: 'name', label: 'Student Name', field: 'name', align: 'left', sortable: true },
   { name: 'grade', label: 'Grade/Batch', field: 'grade', align: 'left', sortable: true },
-  { name: 'fees', label: `Fees (${currentMonth})`, field: 'payment_status', align: 'center', sortable: true }, // New Column
+  { name: 'fees', label: `Fees (${currentMonth})`, field: 'payment_status', align: 'center', sortable: true },
   { name: 'contact', label: 'Contact', field: 'contact', align: 'left' },
   { name: 'status', label: 'Status', field: 'active', align: 'center' },
   { name: 'actions', label: 'Actions', field: 'actions', align: 'center' }
 ]
 
-const students = ref([
- { id: 1, name: 'Kasun Perera', grade: 'Grade 10 - A', parent: 'Mr. Sarath', contact: '071-2233445', active: true, avatar: 'https://cdn.quasar.dev/img/boy-avatar.png', payment_status: 'paid' },
- { id: 2, name: 'Nethmi Silva', grade: 'Grade 10 - A', parent: 'Mrs. Silva', contact: '077-8899001', active: true, avatar: 'https://cdn.quasar.dev/img/avatar2.jpg', payment_status: 'pending' },
- { id: 3, name: 'Amila Fernando', grade: 'Grade 11', parent: 'Mr. Fernando', contact: '075-1122334', active: false, avatar: 'https://cdn.quasar.dev/img/avatar4.jpg', payment_status: 'overdue' },
-])
+const fetchClasses = async () => {
+    try {
+        const params = { all: true }
+        if (authStore.user?.id) {
+            params.teacher_id = authStore.user.id
+        }
+        const res = await api.get('/v1/courses', { params })
+        // Handle both pagination (res.data.data) and flat list (res.data)
+        const rawData = Array.isArray(res.data) ? res.data : (res.data.data || [])
+        
+        const courses = rawData.map(c => ({
+            label: c.name,
+            value: c.id
+        }))
+        classOptions.value = [{ label: 'All Classes', value: 'all' }, ...courses]
+        
+        // Re-check query param now that options are loaded
+        checkQueryParam()
+    } catch (e) {
+        console.error('Fetch classes error', e)
+    }
+}
+
+const fetchStudents = async () => {
+    loading.value = true
+    try {
+        const params = {}
+        if (filterClass.value && filterClass.value.value !== 'all') {
+            params.course_id = filterClass.value.value
+        }
+        if (search.value) {
+            params.search = search.value
+        }
+
+        const res = await api.get('/v1/teacher/students', { params })
+        students.value = res.data
+    } catch (e) {
+        console.error('Fetch students error', e)
+        $q.notify({ type: 'negative', message: 'Failed to load students' })
+    } finally {
+        loading.value = false
+    }
+}
+
+// Check for query param initially and on change
+const checkQueryParam = () => {
+    if (route.query.course_id) {
+        // Wait for options to be populated if needed, though they should be by now
+        const preSelected = classOptions.value.find(c => c.value == route.query.course_id)
+        if (preSelected) {
+            filterClass.value = preSelected
+        } else {
+            // Fallback or just 'all'
+        }
+    }
+}
+
+onMounted(async () => {
+    await fetchClasses()
+    checkQueryParam()
+    // Explicitly call fetchStudents to ensure data load
+    fetchStudents()
+})
+
+watch(() => route.query.course_id, () => {
+    checkQueryParam()
+})
+
+watch(filterClass, () => {
+    fetchStudents()
+})
+
+watch(search, () => {
+    fetchStudents() // Could debounce this
+})
+
+// Refetch classes when user is identified (if not already)
+watch(() => authStore.user, (val) => {
+    if (val) {
+        fetchClasses()
+        fetchStudents()
+    }
+})
 </script>
 
 

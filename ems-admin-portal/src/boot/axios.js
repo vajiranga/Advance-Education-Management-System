@@ -11,6 +11,21 @@ export default boot(({ app, store }) => {
 
     const authStore = useAuthStore(store)
     authStore.init()
+
+    api.interceptors.response.use(
+        response => response,
+        error => {
+            if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+                // Determine if it's just a permissions issue or invalid token
+                // const isForbidden = error.response.status === 403
+
+                // Only logout on 401 or if we want to force logout on 403 (often safer for this admin app)
+                // authStore.logout()
+                // router.push('/login')
+            }
+            return Promise.reject(error)
+        }
+    )
 })
 
 export { api }

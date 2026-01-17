@@ -137,4 +137,179 @@ class AttendanceController extends Controller
 
         return response()->json($response);
     }
+    /**
+     * Get Upcoming and Recent Attendance for Student Dashboard
+     */
+    public function getStudentDashboard(Request $request)
+    {
+        $user = $request->user();
+        if ($request->has('student_id') && ($request->user()->role === 'parent' || $request->user()->role === 'admin')) {
+             // Allow looking up child's dashboard
+             $user = \App\Models\User::find($request->student_id);
+        }
+
+        $courses = $user->courses()->wherePivot('status', 'active')->get();
+        // Handle User without courses relationship loaded potentially? Assuming User model has courses()
+        
+        $now = now();
+        $upcomingLimit = now()->addHours(24);
+        $recentLimit = now()->subDays(7);
+        
+        $upcomingSessions = [];
+        $recentSessions = [];
+        
+        foreach($courses as $course) {
+            $schedule = $course->schedule;
+            if (!$schedule) continue;
+
+            // Generate occurrences for this course within range [Now-7days, Now+24hours]
+            $occurrences = $this->getOccurrences($schedule, $recentLimit, $upcomingLimit);
+            
+            foreach($occurrences as $occ) {
+                $start = \Carbon\Carbon::parse($occ['date'] . ' ' . $occ['start']);
+                $end = \Carbon\Carbon::parse($occ['date'] . ' ' . $occ['end']);
+                
+                // 1. Upcoming Check
+                if ($start->greaterThan($now) && $start->lessThanOrEqualTo($upcomingLimit)) {
+                    $upcomingSessions[] = [
+                        'course_id' => $course->id,
+                        'course_name' => $course->name,
+                        'date' => $occ['date'],
+                        'start' => $occ['start'],
+                        'end' => $occ['end'],
+                        'type' => $course->type ?? 'regular'
+                    ];
+                }
+                
+                // 2. Recent/Past Check
+                if ($end->lessThan($now) && $end->greaterThanOrEqualTo($recentLimit)) {
+                    // Check actual attendance record
+                    $att = Attendance::where('user_id', $user->id)
+                                ->where('course_id', $course->id)
+                                ->where('date', $occ['date'])
+                                ->first();
+                    
+                    $status = $att ? $att->status : 'absent';
+                    
+                    // User Request: If Admin hasn't marked it yet (meaning NO record), show Absent.
+                    // But if it's VERY recent (e.g. class just ended 1 hour ago), maybe Admin hasn't marked it yet?
+                    // User said: "attend admin pennel eken mark unee neththan ee class eka end time ekata auto pennanna oone attend unee ne kiyala"
+                    // Translation: "If not marked by admin, automatically show as 'did not attend' (Absent) at the end time."
+                    // So 'absent' default is correct.
+                    
+                    $recentSessions[] = [
+                         'id' => $course->id . '_' . $occ['date'],
+                         'course_name' => $course->name,
+                         'date' => $occ['date'],
+                         'time' => $occ['start'] . ' - ' . $occ['end'],
+                         'status' => $status,
+                         'note' => $att ? $att->note : null
+                    ];
+                }
+            }
+        }
+        
+        // Sort
+        usort($upcomingSessions, fn($a, $b) => strcmp($a['date'].$a['start'], $b['date'].$b['start']));
+        usort($recentSessions, fn($a, $b) => strcmp($b['date'].$b['time'], $a['date'].$a['time'])); // Descending
+
+        return response()->json(['upcoming' => $upcomingSessions, 'recent' => $recentSessions]);
+    }
+
+    /**
+     * Get Admin Dashboard for Attendance Marking
+     */
+    public function getAdminDashboard(Request $request)
+    {
+        // Lists sessions (classes) that happened recently or are upcoming, to allow marking.
+        // Range: Last 3 days to Next 24 hours.
+        $startWindow = now()->subDays(3);
+        $endWindow = now()->addHours(24);
+        
+        $courses = Course::where('status', 'approved')->get(); // Active courses
+        
+        $sessions = [];
+        
+        foreach($courses as $course) {
+            $schedule = $course->schedule;
+            if (!$schedule) continue;
+            
+            $occurrences = $this->getOccurrences($schedule, $startWindow, $endWindow);
+            
+            foreach($occurrences as $occ) {
+                 // Check if attendance is already fully marked?
+                 // Or just count how many marked
+                 $markedCount = Attendance::where('course_id', $course->id)
+                                    ->where('date', $occ['date'])
+                                    ->count();
+                 $totalStudents = $course->students()->count();
+                 
+                 $status = 'pending';
+                 if ($markedCount > 0) {
+                     $status = ($markedCount >= $totalStudents) ? 'completed' : 'partial';
+                 }
+                 
+                 $sessions[] = [
+                     'course_id' => $course->id,
+                     'course_name' => $course->name,
+                     'teacher_name' => $course->teacher->name ?? 'Unknown',
+                     'date' => $occ['date'],
+                     'start' => $occ['start'],
+                     'end' => $occ['end'],
+                     'marked_status' => $status,
+                     'marked_count' => $markedCount,
+                     'total_students' => $totalStudents
+                 ];
+            }
+        }
+        
+        usort($sessions, fn($a, $b) => strcmp($b['date'].$b['start'], $a['date'].$a['start']));
+        
+        return response()->json(['sessions' => $sessions]);
+    }
+
+
+    private function getOccurrences($schedule, $startWindow, $endWindow) 
+    {
+        $occurrences = [];
+        
+        // Ensure schedule is array
+        if (is_string($schedule)) {
+             try { $schedule = json_decode($schedule, true); } catch(\Exception $e) { return []; }
+        }
+        if (!is_array($schedule)) return [];
+
+        // Regular Class
+        if (isset($schedule['day'])) {
+            $targetDay = $schedule['day']; // "Monday"
+            
+            // Loop through each day in window
+            $current = clone $startWindow;
+            $end = clone $endWindow;
+            
+            while($current->lessThanOrEqualTo($end)) {
+                if ($current->format('l') === $targetDay) {
+                     $occurrences[] = [
+                         'date' => $current->format('Y-m-d'),
+                         'start' => $schedule['start'],
+                         'end' => $schedule['end']
+                     ];
+                }
+                $current->addDay();
+            }
+        } 
+        // Extra/One-off Class
+        elseif (isset($schedule['date'])) {
+            $date = \Carbon\Carbon::parse($schedule['date']);
+            if ($date->between($startWindow, $endWindow)) {
+                 $occurrences[] = [
+                     'date' => $schedule['date'],
+                     'start' => $schedule['start'],
+                     'end' => $schedule['end']
+                 ];
+            }
+        }
+        
+        return $occurrences;
+    }
 }
