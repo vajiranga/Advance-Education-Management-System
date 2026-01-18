@@ -26,5 +26,18 @@ export default defineRouter(function (/* { store, ssrContext } */) {
     history: createHistory(process.env.VUE_ROUTER_BASE)
   })
 
+  // Auth Guard
+  Router.beforeEach((to, from, next) => {
+    const publicPages = ['/login'];
+    const authRequired = !publicPages.includes(to.path);
+    const loggedIn = localStorage.getItem('token');
+
+    if (authRequired && !loggedIn) {
+      return next('/login');
+    }
+
+    next();
+  });
+
   return Router
 })

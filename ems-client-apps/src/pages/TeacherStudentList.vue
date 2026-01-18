@@ -96,7 +96,7 @@ const currentMonth = new Date().toLocaleString('default', { month: 'long' })
 const columns = [
   { name: 'avatar', label: '', field: 'avatar', align: 'center' },
   { name: 'name', label: 'Student Name', field: 'name', align: 'left', sortable: true },
-  { name: 'grade', label: 'Grade/Batch', field: 'grade', align: 'left', sortable: true },
+  { name: 'grade', label: 'Grade', field: 'grade', align: 'left', sortable: true },
   { name: 'fees', label: `Fees (${currentMonth})`, field: 'payment_status', align: 'center', sortable: true },
   { name: 'contact', label: 'Contact', field: 'contact', align: 'left' },
   { name: 'status', label: 'Status', field: 'active', align: 'center' },

@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { api } from 'boot/axios'
+import { useAuthStore } from './auth-store'
 
 export const useTeacherStore = defineStore('teacher', () => {
     const loading = ref(false)
@@ -46,6 +47,9 @@ export const useTeacherStore = defineStore('teacher', () => {
     }
 
     async function fetchCourses(params = {}) {
+        const auth = useAuthStore()
+        if (!auth.token) return
+
         loading.value = true
         try {
             const res = await api.get('/v1/courses', { params })

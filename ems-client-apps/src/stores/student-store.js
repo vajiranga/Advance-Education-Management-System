@@ -22,6 +22,11 @@ export const useStudentStore = defineStore('student', () => {
     }
 
     async function fetchMyCourses() {
+        // Double check auth to prevent 401 loops
+        const index = parseInt(localStorage.getItem('auth_active_index') || '0')
+        const accounts = JSON.parse(localStorage.getItem('auth_accounts') || '[]')
+        if (!accounts[index]?.token) return
+
         loading.value = true
         try {
             const res = await api.get('/v1/my-courses')
@@ -34,6 +39,11 @@ export const useStudentStore = defineStore('student', () => {
     }
 
     async function fetchAllCourses() {
+        // Double check auth
+        const index = parseInt(localStorage.getItem('auth_active_index') || '0')
+        const accounts = JSON.parse(localStorage.getItem('auth_accounts') || '[]')
+        if (!accounts[index]?.token) return
+
         loading.value = true
         try {
             // Fetch all approved courses

@@ -105,12 +105,12 @@ export const useAuthStore = defineStore('auth', {
                 this.persist()
 
                 if (this.accounts.length === 0) {
-                    window.location.href = 'http://localhost:9002'
+                    window.location.href = 'http://localhost:9003'
                 } else {
                     window.location.reload()
                 }
             } else {
-                window.location.href = 'http://localhost:9002'
+                window.location.href = 'http://localhost:9003'
             }
         },
 
@@ -126,6 +126,59 @@ export const useAuthStore = defineStore('auth', {
             } else {
                 delete api.defaults.headers.common['Authorization']
             }
+        },
+        async login(credentials) {
+            try {
+                // Backend expects 'email' key which handles both email and username
+                const payload = {
+                    email: credentials.username,
+                    password: credentials.password
+                }
+
+                const res = await api.post('/login', payload)
+                const { user, token } = res.data
+
+                this.addAccount({ user, token })
+
+                return { success: true, role: user.role }
+            } catch (e) {
+                return {
+                    success: false,
+                    message: e.response?.data?.message || 'Login failed. Please check credentials.'
+                }
+            }
+        },
+
+        async loginParent(credentials) {
+            try {
+                const res = await api.post('/parent-login', {
+                    phone: credentials.phone,
+                    student_id: credentials.student_id
+                })
+                const { user, token } = res.data
+
+                this.addAccount({ user, token })
+
+                return { success: true, role: 'parent' }
+            } catch (e) {
+                return {
+                    success: false,
+                    message: e.response?.data?.message || 'Parent Login Failed.'
+                }
+            }
+        },
+
+        addAccount({ user, token }) {
+            const existing = this.accounts.findIndex(a => a.user.id === user.id)
+            if (existing !== -1) {
+                this.accounts[existing] = { token, user }
+                this.activeAccountIndex = existing
+            } else {
+                this.accounts.push({ token, user })
+                this.activeAccountIndex = this.accounts.length - 1
+            }
+            this.persist()
+            this.setAxiosHeader()
         }
     }
 })

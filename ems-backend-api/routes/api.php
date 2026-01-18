@@ -92,6 +92,7 @@ Route::prefix('v1')->group(function () {
              Route::get('admin/payments/export', [App\Http\Controllers\Api\V1\PaymentController::class, 'exportReport']);
              Route::post('admin/payments/generate', [App\Http\Controllers\Api\V1\PaymentController::class, 'generateMonthlyFees']);
              Route::post('admin/payments/record-cash', [App\Http\Controllers\Api\V1\PaymentController::class, 'recordCashPayment']);
+             Route::get('admin/payments/pending-list', [App\Http\Controllers\Api\V1\PaymentController::class, 'getPendingFeeList']);
              Route::post('payments/{id}/approve', [App\Http\Controllers\Api\V1\PaymentController::class, 'approve']);
              Route::post('payments/{id}/reject', [App\Http\Controllers\Api\V1\PaymentController::class, 'reject']);
              Route::post('subjects', [App\Http\Controllers\Api\V1\AcademicController::class, 'createSubject']);

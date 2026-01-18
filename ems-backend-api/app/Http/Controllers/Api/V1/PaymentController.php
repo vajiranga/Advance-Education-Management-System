@@ -365,7 +365,7 @@ class PaymentController extends Controller
      */
     public function getAdminPaymentSummary(Request $request)
     {
-         $query = Payment::query()->with(['student', 'course']); // Changed from StudentFee to Payment to match UI expectation of transactions
+         $query = Payment::query()->with(['student', 'course']);
          
          if ($request->has('status')) {
              $query->where('status', $request->status);
@@ -380,10 +380,28 @@ class PaymentController extends Controller
              });
          }
          
+         // Calculate Global Stats
+         $totalRevenue = Payment::where('status', 'paid')->sum('amount');
+         $totalPendingCount = Payment::where('status', 'pending')->count();
+         // Uncollected comes from Fee table (pending bills)
+         $uncollectedAmount = \App\Models\StudentFee::where('status', 'pending')->sum('amount');
+         
          // Default sort
          $query->orderBy('created_at', 'desc');
+         $paginated = $query->paginate(20);
 
-         return response()->json($query->paginate(20));
+         // Custom response format to include stats
+         return response()->json([
+             'data' => $paginated->items(),
+             'current_page' => $paginated->currentPage(),
+             'last_page' => $paginated->lastPage(),
+             'total' => $paginated->total(),
+             'stats' => [
+                 'total_revenue' => $totalRevenue,
+                 'pending_count' => $totalPendingCount,
+                 'uncollected_fees' => $uncollectedAmount
+             ]
+         ]);
     }
 
     /**
@@ -417,9 +435,18 @@ class PaymentController extends Controller
             ->take(5)
             ->values();
             
+        // 3. Payment Method Distribution
+        $paymentMethods = Payment::select('type', \Illuminate\Support\Facades\DB::raw('count(*) as count'))
+            ->groupBy('type')
+            ->get()
+            ->map(function($row) {
+                 return ['type' => ucfirst(str_replace('_', ' ', $row->type)), 'count' => $row->count];
+            });
+
         return response()->json([
             'monthly_revenue' => $monthlyRevenue,
-            'course_revenue' => $courseRevenue
+            'course_revenue' => $courseRevenue,
+            'payment_methods' => $paymentMethods
         ]);
     }
 
@@ -507,33 +534,76 @@ class PaymentController extends Controller
     }
 
     /**
-     * Admin: Get Teacher Settlements
+     * Admin: Get Teacher Settlements (Detailed)
      */
     public function getTeacherSettlements(Request $request) {
         $month = $request->month ?? Carbon::now()->format('Y-m');
 
-        // Fetch payments with nested relationships
-        $payments = Payment::where('status', 'paid')
-            ->where('month', $month)
+        // Fetch Fees (Expectations) with nested relationships
+        // fees -> course -> teacher
+        $fees = \App\Models\StudentFee::where('month', $month)
             ->with(['course.teacher']) 
             ->get();
 
         // Group by Teacher ID
-        $settlements = $payments->groupBy(function($payment) {
-            return $payment->course->teacher_id ?? 'unknown';
+        $settlements = $fees->groupBy(function($fee) {
+            return $fee->course->teacher_id ?? 'unknown';
         })->map(function($group) {
             $teacher = $group->first()->course->teacher;
-            $total = $group->sum('amount');
             
+            $totalExpected = $group->sum('amount');
+            $collected = $group->where('status', 'paid')->sum('amount');
+            $pendingAmount = $group->where('status', 'pending')->sum('amount');
+            
+            $totalStudents = $group->count(); // Total fee records (enrollments)
+            $paidCount = $group->where('status', 'paid')->count();
+            $pendingCount = $group->where('status', 'pending')->count();
+
             return [
                 'teacher_id' => $teacher->id ?? 0,
                 'teacher_name' => $teacher->name ?? 'Unknown Teacher',
-                'payment_count' => $group->count(),
-                'total_collected' => $total,
-                'teacher_share' => $total * 0.8
+                'payment_count' => $paidCount,
+                'pending_count' => $pendingCount,
+                'total_students' => $totalStudents, 
+                'total_collected' => $collected,
+                'total_pending' => $pendingAmount,
+                'teacher_share' => $collected * 0.8 // Default 80% (Frontend handles custom)
             ];
         })->values();
 
         return response()->json($settlements);
+    }
+    /**
+     * Admin: Get List of Students with Pending Fees
+     * Exclude students with >= 4 months of consecutive pending fees (likely dropouts)
+     */
+    public function getPendingFeeList(Request $request) {
+        $pendingFees = \App\Models\StudentFee::where('status', 'pending')
+            ->with(['student', 'course'])
+            ->orderBy('month', 'desc')
+            ->get();
+            
+        $grouped = $pendingFees->groupBy('student_id');
+        $result = [];
+        
+        foreach ($grouped as $studentId => $fees) {
+             // If student has 4 or more pending records, treat as "Dropped Out" and hide from active collection list
+             if ($fees->count() >= 4) {
+                 continue;
+             }
+             
+             foreach ($fees as $fee) {
+                 $result[] = [
+                     'id' => $fee->id,
+                     'student' => $fee->student, // Return full object for display if needed
+                     'course' => $fee->course,
+                     'amount' => $fee->amount,
+                     'month' => $fee->month,
+                     'status' => 'pending'
+                 ];
+             }
+        }
+        
+        return response()->json($result);
     }
 }

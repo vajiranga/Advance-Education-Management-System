@@ -26,10 +26,32 @@
             <q-tooltip>Toggle {{ $q.dark.isActive ? 'Light' : 'Dark' }} Mode</q-tooltip>
           </q-btn>
 
-          <q-btn round flat icon="search" :color="$q.dark.isActive ? 'white' : 'grey-7'" />
+          <!-- Notification Button -->
           <q-btn round flat icon="notifications_none" :color="$q.dark.isActive ? 'white' : 'grey-7'">
-            <q-badge floating color="red" rounded dot />
+            <q-badge floating color="red" rounded dot v-if="notifications.length > 0" />
+            <q-menu :class="$q.dark.isActive ? 'bg-dark text-white' : 'bg-white'">
+               <q-list style="min-width: 300px">
+                  <q-item-label header :class="$q.dark.isActive ? 'text-grey-5' : 'text-grey-7'">Notifications</q-item-label>
+                  
+                  <q-item v-for="note in notifications" :key="note.id" clickable v-close-popup class="q-py-md">
+                     <q-item-section avatar>
+                        <q-avatar color="primary" text-color="white" icon="info" font-size="20px" size="md" />
+                     </q-item-section>
+                     <q-item-section>
+                        <q-item-label>{{ note.title }}</q-item-label>
+                        <q-item-label caption :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey-8'">{{ note.message }}</q-item-label>
+                        <div class="text-caption text-grey-6 q-mt-xs">{{ note.time }}</div>
+                     </q-item-section>
+                  </q-item>
+
+                  <div v-if="notifications.length === 0" class="text-center q-pa-lg text-grey">
+                      <q-icon name="notifications_off" size="xl" class="q-mb-sm" />
+                      <div>No new notifications</div>
+                  </div>
+               </q-list>
+            </q-menu>
           </q-btn>
+
           <q-avatar size="36px" class="q-ml-sm cursor-pointer shadow-1">
             <img src="https://cdn.quasar.dev/img/avatar2.jpg">
             <q-menu :class="$q.dark.isActive ? 'bg-dark text-white' : 'bg-white'">
@@ -162,6 +184,11 @@ const leftDrawerOpen = ref(false)
 const authStore = useAuthStore()
 const route = useRoute()
 const $q = useQuasar()
+
+const notifications = ref([
+    { id: 1, title: 'Welcome to EMS', message: 'Your student portal is ready to use.', time: 'Just now' },
+    { id: 2, title: 'Exam Schedule Released', message: 'The schedule for Physics has been updated.', time: '2 hours ago' }
+])
 
 // Set default dark mode if saved or system preference (Quasar might do this auto if configured)
 // For now, let's verify if toggle works.

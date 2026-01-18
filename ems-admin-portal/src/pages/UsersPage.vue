@@ -29,6 +29,8 @@
                 :columns="teacherCols"
                 row-key="id"
                 :filter="filter"
+                :pagination="tablePagination"
+                :rows-per-page-options="[100, 200, 500, 1000, 0]"
               >
                 <template v-slot:top-right>
                   <q-input borderless dense debounce="300" v-model="filter" placeholder="Search">
@@ -65,6 +67,8 @@
                 :filter="filter"
                 selection="multiple"
                 v-model:selected="selectedStudents"
+                :pagination="tablePagination"
+                :rows-per-page-options="[100, 200, 500, 1000, 0]"
               >
                 <template v-slot:top-right>
                   <div class="row q-gutter-sm">
@@ -117,6 +121,8 @@
                 :columns="parentCols"
                 row-key="id"
                 :filter="filter"
+                :pagination="tablePagination"
+                :rows-per-page-options="[100, 200, 500, 1000, 0]"
               >
                 <template v-slot:top-right>
                   <q-input borderless dense debounce="300" v-model="filter" placeholder="Search">
@@ -226,7 +232,7 @@
                 <div class="text-subtitle2 q-mb-sm">Academic Details</div>
                 <div class="row q-col-gutter-sm">
                     <div class="col-6">
-                         <q-select outlined v-model="form.grade" :options="['Grade 6','Grade 7','Grade 8','Grade 9','Grade 10','Grade 11','2025 A/L','2026 A/L']" label="Grade/Batch" />
+                         <q-select outlined v-model="form.grade" :options="['Grade 01','Grade 02','Grade 03','Grade 04','Grade 05','Grade 06','Grade 07','Grade 08','Grade 09','Grade 10','Grade 11','O/L','Grade 12','Grade 13','A/L','Others']" label="Grade" />
                     </div>
                     <div class="col-6">
                         <q-input outlined v-model="form.school" label="School" />
@@ -279,6 +285,9 @@ const tab = ref('students')
 const filter = ref('')
 const visiblePasswords = ref({})
 const loading = ref(false)
+const tablePagination = ref({
+    rowsPerPage: 100
+})
 
 const teachers = computed(() => userStore.teachers)
 const students = computed(() => userStore.students)
@@ -345,7 +354,7 @@ const studentCols = [
   { name: 'phone', label: 'Phone', align: 'left', field: 'phone' },
   { name: 'whatsapp', label: 'WhatsApp', align: 'left', field: 'whatsapp' },
   { name: 'email', label: 'Email', align: 'left', field: 'email' },
-  { name: 'grade', label: 'Grade/Batch', align: 'left', field: 'grade' },
+  { name: 'grade', label: 'Grade', align: 'left', field: 'grade' },
   { name: 'school', label: 'School', align: 'left', field: 'school' },
   { name: 'guardian', label: 'Guardian Details', align: 'left', field: 'parent_name' },
   { name: 'plain_password', label: 'Password', align: 'left', field: 'plain_password' },

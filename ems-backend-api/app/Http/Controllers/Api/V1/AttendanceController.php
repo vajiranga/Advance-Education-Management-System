@@ -222,9 +222,20 @@ class AttendanceController extends Controller
     public function getAdminDashboard(Request $request)
     {
         // Lists sessions (classes) that happened recently or are upcoming, to allow marking.
-        // Range: Last 3 days to Next 24 hours.
-        $startWindow = now()->subDays(3);
-        $endWindow = now()->addHours(24);
+        // Range: Custom or Default (Last 3 days to Next 24 hours)
+        if ($request->has('from') && $request->has('to')) {
+             try {
+                $startWindow = \Carbon\Carbon::parse($request->from)->startOfDay();
+                $endWindow = \Carbon\Carbon::parse($request->to)->endOfDay();
+             } catch (\Exception $e) {
+                // Fallback
+                $startWindow = now()->subDays(3);
+                $endWindow = now()->addHours(24);
+             }
+        } else {
+            $startWindow = now()->subDays(3);
+            $endWindow = now()->addHours(24);
+        }
         
         $courses = Course::where('status', 'approved')->get(); // Active courses
         

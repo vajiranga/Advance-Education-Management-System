@@ -14,14 +14,22 @@ class BatchController extends Controller
         
         if ($batches->isEmpty()) {
             $defaults = [
-                ['name' => 'Grade 6'],
-                ['name' => 'Grade 7'],
-                ['name' => 'Grade 8'],
-                ['name' => 'Grade 9'],
+                ['name' => 'Grade 01'],
+                ['name' => 'Grade 02'],
+                ['name' => 'Grade 03'],
+                ['name' => 'Grade 04'],
+                ['name' => 'Grade 05'],
+                ['name' => 'Grade 06'],
+                ['name' => 'Grade 07'],
+                ['name' => 'Grade 08'],
+                ['name' => 'Grade 09'],
                 ['name' => 'Grade 10'],
                 ['name' => 'Grade 11'],
-                ['name' => '2025 A/L'],
-                ['name' => '2026 A/L'],
+                ['name' => 'O/L'],
+                ['name' => 'Grade 12'],
+                ['name' => 'Grade 13'],
+                ['name' => 'A/L'],
+                ['name' => 'Others'],
             ];
             // Mass assignment if guarded=[] or name in fillable
             foreach ($defaults as $data) {

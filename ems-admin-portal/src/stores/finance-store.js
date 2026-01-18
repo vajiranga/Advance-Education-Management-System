@@ -16,17 +16,25 @@ export const useFinanceStore = defineStore('finance', () => {
         loading.value = true
         try {
             const res = await api.get('/v1/admin/payments/summary', { params })
-            // Logic to separate pending vs completed or just store all
-            // Ideally backend returns paginated. For now assuming simple list.
-            const all = res.data.data
 
-            transactions.value = all
-            pendingTransactions.value = all.filter(t => t.status === 'pending')
+            // Handle custom response format with stats
+            if (res.data.stats) {
+                transactions.value = res.data.data
+                // Pending from list is still useful for table interactive buttons
+                pendingTransactions.value = res.data.data.filter(t => t.status === 'pending')
 
-            // Calculate stats locally for now (Backend should ideally provide this)
-            stats.value.revenue = all.filter(t => t.status === 'paid').reduce((sum, t) => sum + parseFloat(t.amount || 0), 0)
-            stats.value.pending_fees = all.filter(t => t.status === 'pending').reduce((sum, t) => sum + parseFloat(t.amount || 0), 0)
+                // Update global stats from backend
+                stats.value.revenue = parseFloat(res.data.stats.total_revenue || 0)
+                stats.value.pending_fees = parseFloat(res.data.stats.uncollected_fees || 0)
+                // pending_count might be useful if we add a counter for it
 
+            } else {
+                // Fallback for old format (paginated directly)
+                const all = res.data.data || res.data
+                transactions.value = all
+                pendingTransactions.value = all.filter(t => t.status === 'pending')
+                // No accurate global stats in fallback
+            }
         } catch (e) {
             console.error(e)
         } finally {
@@ -44,13 +52,14 @@ export const useFinanceStore = defineStore('finance', () => {
         await fetchTransactions()
     }
 
-    const analyticsData = ref({ monthly: [], courses: [] })
+    const analyticsData = ref({ monthly: [], courses: [], methods: [] })
 
     async function fetchAnalytics() {
         try {
             const res = await api.get('/v1/admin/payments/analytics')
             analyticsData.value.monthly = res.data.monthly_revenue || []
             analyticsData.value.courses = res.data.course_revenue || []
+            analyticsData.value.methods = res.data.payment_methods || []
         } catch (e) {
             console.error('Analytics fetch failed', e)
         }
@@ -85,10 +94,21 @@ export const useFinanceStore = defineStore('finance', () => {
     }
 
     const settlements = ref([])
-    async function fetchSettlements() {
+    async function fetchSettlements(params = {}) {
         try {
-            const res = await api.get('/v1/admin/payments/settlements')
+            const res = await api.get('/v1/admin/payments/settlements', { params })
             settlements.value = res.data
+        } catch (e) {
+            console.error(e)
+        }
+    }
+
+    const uncollectedFees = ref([])
+
+    async function fetchUncollectedFees() {
+        try {
+            const res = await api.get('/v1/admin/payments/pending-list')
+            uncollectedFees.value = res.data
         } catch (e) {
             console.error(e)
         }
@@ -113,10 +133,12 @@ export const useFinanceStore = defineStore('finance', () => {
         fetchTransactions,
         fetchAnalytics,
         fetchSettlements,
+        fetchUncollectedFees,
         downloadReport,
         generateFees,
         recordCashPayment,
         approvePayment,
-        rejectPayment
+        rejectPayment,
+        uncollectedFees
     }
 })

@@ -386,8 +386,10 @@ function isEnrolled(courseId) {
 }
 
 onMounted(() => {
-    studentStore.fetchMyCourses()
-    studentStore.fetchAllCourses()
+    if (authStore.user) {
+        studentStore.fetchMyCourses()
+        studentStore.fetchAllCourses()
+    }
 })
 
 // Confirm Enrollment

@@ -77,22 +77,25 @@ const authStore = useAuthStore()
 const $q = useQuasar()
 
 onMounted(() => {
-  vantaEffect.value = NET({
-    el: vantaRef.value,
-    THREE: THREE,
-    mouseControls: true,
-    touchControls: true,
-    gyroControls: false,
-    minHeight: 200.00,
-    minWidth: 200.00,
-    scale: 1.00,
-    scaleMobile: 1.00,
-    color: 0x2563eb, // Primary Blue
-    backgroundColor: 0xf8fafc, // Light Gray
-    points: 12.00,
-    maxDistance: 22.00,
-    spacing: 16.00
-  })
+  window.THREE = THREE
+  try {
+      vantaEffect.value = NET({
+        el: vantaRef.value,
+        THREE: THREE,
+        mouseControls: true,
+        touchControls: true,
+        gyroControls: false,
+        minHeight: 200.00,
+        minWidth: 200.00,
+        scale: 1.00,
+        scaleMobile: 1.00,
+        color: 0x2563eb,
+        backgroundColor: 0xf8fafc,
+        points: 12.00,
+        maxDistance: 22.00,
+        spacing: 16.00
+      })
+  } catch(e) { console.error('Vanta Error:', e) }
 })
 
 onBeforeUnmount(() => {

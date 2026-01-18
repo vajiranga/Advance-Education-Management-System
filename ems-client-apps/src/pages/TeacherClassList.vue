@@ -98,7 +98,7 @@
             <q-card-section class="q-gutter-md">
                 <q-input v-model="newCourse.name" label="Class Name (e.g. Science Grade 6)" outlined :rules="[val => !!val || 'Required']" :bg-color="$q.dark.isActive ? 'grey-9' : 'white'" :dark="$q.dark.isActive" />
                 <q-select v-model="newCourse.subject_id" :options="subjects" option-label="name" option-value="id" label="Subject" emit-value map-options outlined :rules="[val => !!val || 'Required']" :bg-color="$q.dark.isActive ? 'grey-9' : 'white'" :dark="$q.dark.isActive" />
-                <q-select v-model="newCourse.batch_id" :options="batches" option-label="name" option-value="id" label="Batch / Grade" emit-value map-options outlined :rules="[val => !!val || 'Required']" :bg-color="$q.dark.isActive ? 'grey-9' : 'white'" :dark="$q.dark.isActive" />
+                <q-select v-model="newCourse.batch_id" :options="batches" option-label="name" option-value="id" label="Grade" emit-value map-options outlined :rules="[val => !!val || 'Required']" :bg-color="$q.dark.isActive ? 'grey-9' : 'white'" :dark="$q.dark.isActive" />
                 <q-input v-model="newCourse.fee_amount" label="Fee (LKR)" type="number" outlined :rules="[val => !!val || 'Required']" :bg-color="$q.dark.isActive ? 'grey-9' : 'white'" :dark="$q.dark.isActive" />
                 
                 <div class="row q-col-gutter-sm">

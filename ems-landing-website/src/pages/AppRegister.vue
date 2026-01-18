@@ -67,7 +67,7 @@
                     </q-input>
                 </div>
                 <div class="col-12 col-md-6">
-                    <q-select outlined v-model="form.grade" :options="['Grade 6', 'Grade 7', 'Grade 8', 'Grade 9', 'Grade 10', 'Grade 11', 'A/L']" label="Grade" />
+                    <q-select outlined v-model="form.grade" :options="['Grade 01','Grade 02','Grade 03','Grade 04','Grade 05','Grade 06','Grade 07','Grade 08','Grade 09','Grade 10','Grade 11','O/L','Grade 12','Grade 13','A/L','Others']" label="Grade" />
                 </div>
               </div>
             </div>

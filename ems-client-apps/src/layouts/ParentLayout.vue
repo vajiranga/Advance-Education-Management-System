@@ -23,7 +23,28 @@
           </q-btn>
 
           <q-btn round flat icon="notifications" :color="$q.dark.isActive ? 'white' : 'grey-7'">
-            <q-badge floating color="red" rounded dot />
+             <q-badge floating color="red" rounded dot v-if="notifications.length > 0" />
+             <q-menu :class="$q.dark.isActive ? 'bg-dark text-white' : 'bg-white'">
+               <q-list style="min-width: 300px">
+                  <q-item-label header :class="$q.dark.isActive ? 'text-grey-5' : 'text-grey-7'">Notifications</q-item-label>
+                  
+                  <q-item v-for="note in notifications" :key="note.id" clickable v-close-popup class="q-py-md">
+                     <q-item-section avatar>
+                        <q-avatar color="primary" text-color="white" icon="info" font-size="20px" size="md" />
+                     </q-item-section>
+                     <q-item-section>
+                        <q-item-label>{{ note.title }}</q-item-label>
+                        <q-item-label caption :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey-8'">{{ note.message }}</q-item-label>
+                        <div class="text-caption text-grey-6 q-mt-xs">{{ note.time }}</div>
+                     </q-item-section>
+                  </q-item>
+
+                  <div v-if="notifications.length === 0" class="text-center q-pa-lg text-grey">
+                      <q-icon name="notifications_off" size="xl" class="q-mb-sm" />
+                      <div>No new notifications</div>
+                  </div>
+               </q-list>
+            </q-menu>
           </q-btn>
           <div class="column items-end q-mr-sm display-xs-none" :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey-8'">
              <div class="text-subtitle2" style="line-height: 1.2">{{ authStore.user?.name || 'Loading...' }}</div>
@@ -177,8 +198,13 @@
 import { ref, onMounted, computed } from 'vue'
 import { useAuthStore } from 'stores/auth-store'
 import { useRoute } from 'vue-router'
+import { useQuasar } from 'quasar'
 
 const leftDrawerOpen = ref(false)
+const $q = useQuasar()
+const notifications = ref([
+    { id: 1, title: 'Fee Due', message: 'School fees for Feb are due.', time: '1 day ago' }
+])
 const authStore = useAuthStore()
 const route = useRoute()
 const children = ref([])

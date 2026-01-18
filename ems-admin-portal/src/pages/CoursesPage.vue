@@ -245,7 +245,7 @@
                                 v-model="form.batch" 
                                 :options="batches" 
                                 option-label="name" 
-                                label="Grade/Batch *" 
+                                label="Grade *" 
                                 :rules="[val => !!val || 'Required']" 
                            />
                        </div>
