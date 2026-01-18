@@ -1,7 +1,15 @@
 const routes = [
   {
     path: '/',
-    redirect: '/login'
+    component: () => import('layouts/LandingLayout.vue'),
+    children: [
+      { path: '', component: () => import('pages/LandingPage.vue') },
+      { path: 'register', component: () => import('pages/RegisterPage.vue') }
+    ]
+  },
+  {
+    path: '/login',
+    component: () => import('layouts/LoginLayout.vue')
   },
   {
     path: '/student',
@@ -41,10 +49,6 @@ const routes = [
       { path: 'attendance', component: () => import('pages/TeacherAttendanceSheet.vue') },
       { path: 'exams', component: () => import('pages/TeacherExamBoard.vue') },
     ]
-  },
-  {
-    path: '/login',
-    component: () => import('layouts/LoginLayout.vue')
   },
   {
     path: '/:catchAll(.*)*',

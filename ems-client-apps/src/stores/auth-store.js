@@ -105,12 +105,12 @@ export const useAuthStore = defineStore('auth', {
                 this.persist()
 
                 if (this.accounts.length === 0) {
-                    window.location.href = 'http://localhost:9003'
+                    window.location.href = '/'
                 } else {
                     window.location.reload()
                 }
             } else {
-                window.location.href = 'http://localhost:9003'
+                window.location.href = '/'
             }
         },
 

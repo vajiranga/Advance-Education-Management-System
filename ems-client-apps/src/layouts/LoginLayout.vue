@@ -29,28 +29,63 @@
           <q-card-section class="q-px-lg q-mt-md">
             <q-form @submit="onSubmit" class="q-gutter-md">
               
-              <!-- Parent Login Fields -->
               <div v-if="role === 'parent'">
                   <div class="text-caption text-grey-7 q-mb-sm">Enter the Student ID and Registered Parent Phone Number</div>
-                  <q-input outlined v-model="studentId" label="Student ID (e.g. STU2026...)" :rules="[val => !!val || 'Student ID is required']">
-                    <template v-slot:prepend><q-icon name="badge" /></template>
+                  <q-input 
+                    outlined 
+                    bg-color="grey-1"
+                    color="primary"
+                    label-color="grey-8"
+                    input-class="text-grey-9"
+                    v-model="studentId" 
+                    label="Student ID (e.g. STU2026...)" 
+                    :rules="[val => !!val || 'Student ID is required']"
+                  >
+                    <template v-slot:prepend><q-icon name="badge" color="primary" /></template>
                   </q-input>
-                  <q-input outlined v-model="parentPhone" label="Parent Phone Number" :rules="[val => !!val || 'Phone Number is required']">
-                    <template v-slot:prepend><q-icon name="phone" /></template>
+                  <q-input 
+                    outlined 
+                    bg-color="grey-1"
+                    color="primary"
+                    label-color="grey-8"
+                    input-class="text-grey-9"
+                    v-model="parentPhone" 
+                    label="Parent Phone Number" 
+                    :rules="[val => !!val || 'Phone Number is required']"
+                  >
+                    <template v-slot:prepend><q-icon name="phone" color="primary" /></template>
                   </q-input>
               </div>
 
-              <!-- Standard Login Fields -->
               <div v-else>
-                  <q-input outlined v-model="email" label="Email or Index Number" :rules="[val => !!val || 'This field is required']">
+                  <q-input 
+                    outlined 
+                    bg-color="grey-1"
+                    color="primary"
+                    label-color="grey-8"
+                    input-class="text-grey-9"
+                    v-model="email" 
+                    label="Email or Index Number" 
+                    :rules="[val => !!val || 'This field is required']"
+                  >
                     <template v-slot:prepend>
-                      <q-icon name="account_circle" />
+                      <q-icon name="account_circle" color="primary" />
                     </template>
                   </q-input>
 
-                  <q-input outlined v-model="password" label="Password" type="password" :rules="[val => !!val || 'Password is required']">
+                  <q-input 
+                    outlined 
+                    bg-color="grey-1"
+                    color="primary"
+                    label-color="grey-8"
+                    input-class="text-grey-9"
+                    v-model="password" 
+                    label="Password" 
+                    type="password" 
+                    :rules="[val => !!val || 'Password is required']"
+                  >
                     <template v-slot:prepend>
-                      <q-icon name="lock" />
+                      <q-icon name="lock" color="primary" />
                     </template>
                   </q-input>
               </div>
@@ -60,7 +95,7 @@
           </q-card-section>
 
           <div class="text-center q-mt-sm">
-            <a href="http://localhost:9003/register" class="text-primary" style="text-decoration: none">Create an account</a>
+            <router-link to="/register" class="text-primary" style="text-decoration: none">Create an account</router-link>
           </div>
         </q-card>
       </q-page>
@@ -105,6 +140,17 @@ async function onSubmit() {
         }
         
         if (res.success) {
+            // Strict Role Validation
+            if (res.role !== role.value) {
+                 $q.notify({ 
+                     type: 'negative', 
+                     message: `Access Denied: You cannot login as ${role.value.toUpperCase()} using ${res.role.toUpperCase()} credentials.` 
+                 })
+                 // Force logout to clear the invalid session
+                 await authStore.logout()
+                 return
+            }
+
             $q.notify({ type: 'positive', message: `Welcome ${res.role.toUpperCase()}!` })
             
             // Redirect based on role
