@@ -95,23 +95,18 @@ export const useAuthStore = defineStore('auth', {
             }
         },
 
-        logout() {
+        logout(redirectPath = '/') {
+            // Remove ONLY the current account to prevent logging out other users (e.g., Parent)
             if (this.accounts.length > 0) {
                 this.accounts.splice(this.activeAccountIndex, 1)
-                // Adjust index
-                if (this.activeAccountIndex >= this.accounts.length) {
-                    this.activeAccountIndex = Math.max(0, this.accounts.length - 1)
-                }
-                this.persist()
-
-                if (this.accounts.length === 0) {
-                    window.location.href = '/'
-                } else {
-                    window.location.reload()
-                }
-            } else {
-                window.location.href = '/'
             }
+
+            // Reset index to ensure it points to a valid account if any remain
+            this.activeAccountIndex = 0
+            this.persist()
+
+            // Redirect to specified path (default: Login)
+            window.location.href = redirectPath
         },
 
         persist() {

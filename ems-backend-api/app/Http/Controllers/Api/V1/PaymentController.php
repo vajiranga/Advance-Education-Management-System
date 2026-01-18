@@ -64,24 +64,21 @@ class PaymentController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'fee_id' => 'required|exists:student_fees,id',
-            'amount' => 'required|numeric|min:0',
+            'fee_id' => 'required_without:fee_ids|exists:student_fees,id',
+            'fee_ids' => 'required_without:fee_id|array', 
+            'fee_ids.*' => 'exists:student_fees,id',
+            // 'amount' is treated as Total Paid. 
+            'amount' => 'required|numeric|min:0', 
             'type' => 'required|in:cash,bank_transfer,online,card',
             'note' => 'nullable|string',
-            'slip' => 'nullable|image|max:2048' // Max 2MB
+            'slip' => 'nullable|image|max:5120' // Increased limit for ease
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        $fee = \App\Models\StudentFee::findOrFail($request->fee_id);
-
-        if ($fee->status === 'paid') {
-            return response()->json(['message' => 'Fee already paid'], 400);
-        }
-
-        // Handle File Upload
+        // Handle File Upload once
         $slipPath = null;
         if ($request->hasFile('slip')) {
             $file = $request->file('slip');
@@ -90,40 +87,98 @@ class PaymentController extends Controller
             $slipPath = 'uploads/slips/' . $filename;
         }
 
+        // Normalize IDs
+        $ids = $request->filled('fee_ids') ? $request->fee_ids : [$request->fee_id];
+
+        // Ensure we handle array input if it came as string due to FormData
+        // If coming from FormData, arrays might look like fee_ids[0], fee_ids[1]...
+        // Laravel handles this if name is "fee_ids" array.
+        // However, if manual CSV string passed? Assuming Standard Array or Single ID.
+        if (is_string($ids)) {
+             $ids = explode(',', $ids);
+        }
+
+        // Create Single Payment Record (Grouping)
+        // If multiple IDs, we sum up the amount and create One Payment.
+        // But we need to link this Payment to multiple Fees?
+        // The 'Payment' model has 'course_id'. If bulk, course_id is singular?
+        // If we pay for Math, Science, History -> Which course_id?
+        // Solution: Create ONE Payment record with course_id = null (or first one) and a special flag/note.
+        // OR: Strictly speaking, a Payment belongs to a User. The specific breakdown is in the Fees table.
+
+        $totalAmount = 0;
+        $validFees = [];
+        $feeMonth = null;
+        $courseId = null;
+
+        foreach ($ids as $id) {
+            $fee = \App\Models\StudentFee::find($id);
+            if (!$fee || $fee->status === 'paid') continue;
+            
+            $validFees[] = $fee;
+            $totalAmount += $fee->amount;
+            
+            // Capture first valid fee details for metadata
+            if (!$courseId) {
+                $courseId = $fee->course_id;
+                $feeMonth = $fee->month;
+            }
+        }
+
+        if (empty($validFees)) {
+             return response()->json(['message' => 'No eligible fees found or already paid'], 400);
+        }
+
         // Determine Status
-        // Online payments are instant (mocked as valid), Bank Transfers are pending
         $status = ($request->type === 'bank_transfer') ? 'pending' : 'paid';
 
+        // Create ONE Payment Record
         $payment = Payment::create([
-            'user_id' => $fee->student_id,
-            'course_id' => $fee->course_id,
-            'amount' => $request->amount,
-            'month' => $fee->month,
+            'user_id' => $validFees[0]->student_id,
+            'course_id' => (count($validFees) === 1) ? $courseId : null, // If mixed courses, null
+            'amount' => $totalAmount,
+            'month' => (count($validFees) === 1) ? $feeMonth : now()->format('Y-m'), // Use current month for bulk
             'type' => $request->type,
             'paid_at' => ($status === 'paid') ? now() : null,
             'status' => $status, 
-            'note' => $request->note,
+            'note' => $request->note . (count($validFees) > 1 ? ' (Bulk: ' . count($validFees) . ' items)' : ''),
             'slip_image' => $slipPath
         ]);
 
-        // Only update Fee record if payment is confirmed immediately
-        if ($status === 'paid') {
-            $fee->update([
-                'status' => 'paid',
-                'paid_at' => now(),
-                'payment_method' => $request->type,
-                'transaction_ref' => $payment->id
-            ]);
+        // Update All Fees to point to this Payment
+        foreach ($validFees as $fee) {
+            if ($status === 'paid') {
+                $fee->update([
+                    'status' => 'paid',
+                    'paid_at' => now(),
+                    'payment_method' => $request->type,
+                    'transaction_ref' => $payment->id
+                ]);
+            } else {
+                 // For pending bank transfer, we might want to link them too?
+                 // Currently 'transaction_ref' implies a successful payment reference.
+                 // We can leave them pending. The Admin will Approve the *Payment*.
+                 // But the Payment doesn't know WHICH fees it covers if we don't store it?
+                 // *Critical*: We need to know which fees this Payment covers to mark them paid on approval.
+                 // We can store a JSON list in Payment 'metadata' or 'description' if specific columns don't exist,
+                 // OR we can update the fees with a 'pending_payment_id' column (custom).
+                 // SIMPLER: Just link transaction_ref NOW, but keep status 'pending'.
+                 $fee->update([
+                    'transaction_ref' => $payment->id
+                 ]);
+            }
+        }
 
-            // Reactivate Student
-            $student = \App\Models\User::find($fee->student_id);
+        // Reactivate Student (if paid)
+        if ($status === 'paid') {
+            $student = \App\Models\User::find($validFees[0]->student_id);
             if ($student && $student->status === 'inactive') {
                 $student->status = 'active';
                 $student->save();
             }
         }
 
-        return response()->json(['message' => 'Payment recorded', 'payment' => $payment], 201);
+        return response()->json(['message' => "Payment recorded for " . count($validFees) . " fees", 'payment' => $payment], 201);
     }
 
     /**

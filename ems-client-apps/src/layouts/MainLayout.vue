@@ -52,13 +52,13 @@
             </q-menu>
           </q-btn>
 
-          <q-avatar size="36px" class="q-ml-sm cursor-pointer shadow-1">
-            <img src="https://cdn.quasar.dev/img/avatar2.jpg">
+          <q-avatar size="36px" class="q-ml-sm cursor-pointer shadow-1 bg-primary text-white">
+            <span class="text-weight-bold">{{ authStore.user?.name?.charAt(0) || 'S' }}</span>
             <q-menu :class="$q.dark.isActive ? 'bg-dark text-white' : 'bg-white'">
               <q-list style="min-width: 220px">
                 <q-item class="bg-primary text-white">
                   <q-item-section>
-                    <div class="text-subtitle2">{{ authStore.user?.name || 'Guest' }}</div>
+                    <div class="text-subtitle2">{{ authStore.user?.name || 'Student' }}</div>
                     <div class="text-caption">{{ authStore.user?.username }}</div>
                   </q-item-section>
                 </q-item>
@@ -103,7 +103,7 @@
 
                 <q-separator :class="$q.dark.isActive ? 'bg-grey-8' : ''" />
 
-                <q-item clickable v-close-popup @click="authStore.logout()">
+                <q-item clickable v-close-popup @click="authStore.logout('/login')">
                   <q-item-section avatar><q-icon name="logout" color="negative" /></q-item-section>
                   <q-item-section class="text-negative">Logout</q-item-section>
                 </q-item>
@@ -120,20 +120,12 @@
       bordered
       :class="$q.dark.isActive ? 'bg-dark' : 'bg-white'"
     >
-      <div class="q-pa-md" :class="$q.dark.isActive ? 'bg-transparent' : 'bg-blue-1'">
-        <template v-if="authStore.user">
-           <div class="text-subtitle1 text-weight-bold" :class="$q.dark.isActive ? 'text-white' : 'text-primary'">{{ authStore.user.name }}</div>
-           <div class="text-caption" :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey-8'">{{ authStore.user.username }}</div>
-           <div class="q-mt-xs">
-              <q-chip size="xs" :color="$q.dark.isActive ? 'grey-8' : 'white'" :text-color="$q.dark.isActive ? 'grey-4' : 'grey-7'" icon="school">Student</q-chip>
-           </div>
-        </template>
-        <template v-else>
-           <div class="row items-center q-gutter-sm">
-             <q-skeleton type="text" width="60%" />
-           </div>
-           <q-skeleton type="text" width="40%" class="q-mt-xs" />
-        </template>
+      <div class="q-pa-lg">
+         <div class="row items-center">
+            <q-icon name="school" size="sm" class="q-mr-sm" :color="$q.dark.isActive ? 'white' : 'primary'" />
+            <div class="text-h6 text-weight-bold" :class="$q.dark.isActive ? 'text-white' : 'text-primary'">EMS Portal</div>
+         </div>
+         <div class="text-caption q-ml-none" :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey-7'">Student Dashboard</div>
       </div>
       <q-separator :class="$q.dark.isActive ? 'bg-grey-8' : ''" />
       <q-list class="q-mt-md">
@@ -161,10 +153,8 @@
           <q-item-section avatar><q-icon name="person" /></q-item-section>
           <q-item-section>Profile</q-item-section>
         </q-item>
-        <q-item clickable v-ripple @click="authStore.logout()">
-          <q-item-section avatar><q-icon name="logout" /></q-item-section>
-          <q-item-section>Logout</q-item-section>
-        </q-item>
+        
+        <!-- Sidebar logout removed -->
       </q-list>
     </q-drawer>
 

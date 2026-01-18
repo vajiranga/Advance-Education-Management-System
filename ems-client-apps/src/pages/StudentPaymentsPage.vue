@@ -7,20 +7,22 @@
       </div>
     </div>
 
-    <!-- Tabs -->
-    <q-tabs
-      v-model="tab"
-      dense
-      active-color="primary"
-      indicator-color="primary"
-      align="left"
-      narrow-indicator
-      class="q-mb-md"
-      :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey'"
-    >
-      <q-tab name="pending" label="Pending Fees" icon="pending_actions" />
-      <q-tab name="history" label="Payment History" icon="receipt_long" />
-    </q-tabs>
+    <div class="row items-center q-mb-sm">
+       <q-checkbox v-model="selectAll" label="Select All" dense size="sm" @update:model-value="toggleSelectAll" v-if="tab === 'pending' && pending.length > 0"/>
+       <q-tabs
+          v-model="tab"
+          dense
+          active-color="primary"
+          indicator-color="primary"
+          align="left"
+          narrow-indicator
+          class="col"
+          :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey'"
+        >
+          <q-tab name="pending" label="Pending Fees" icon="pending_actions" />
+          <q-tab name="history" label="Payment History" icon="receipt_long" />
+        </q-tabs>
+    </div>
 
     <q-tab-panels v-model="tab" animated class="bg-transparent">
       
@@ -32,9 +34,12 @@
                <q-card class="payment-card no-shadow q-pa-sm" :class="$q.dark.isActive ? 'bg-dark border-dark' : 'bg-white border-light'">
                  <q-card-section>
                    <div class="row justify-between items-start">
-                      <div>
-                        <div class="text-subtitle1 text-weight-bold" :class="$q.dark.isActive ? 'text-white' : ''">{{ fee.course_name }}</div>
-                        <div class="text-caption" :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey'">{{ fee.month }}</div>
+                      <div class="row items-start">
+                        <q-checkbox v-model="selectedFeeIds" :val="fee.id" dense size="sm" class="q-mr-sm" />
+                        <div>
+                            <div class="text-subtitle1 text-weight-bold" :class="$q.dark.isActive ? 'text-white' : ''">{{ fee.course_name }}</div>
+                            <div class="text-caption" :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey'">{{ fee.month }}</div>
+                        </div>
                       </div>
                       <q-chip :color="$q.dark.isActive ? 'red-9' : 'red-1'" :text-color="$q.dark.isActive ? 'red-2' : 'red'" label="Due" size="sm" />
                    </div>
@@ -105,16 +110,36 @@
 
     </q-tab-panels>
 
+    <!-- Bulk Pay Sticky Footer -->
+    <q-page-sticky position="bottom" :offset="[0, 18]" v-if="selectedCount > 0 && tab === 'pending'">
+      <q-card class="shadow-10 q-px-lg q-py-sm rounded-borders" :class="$q.dark.isActive ? 'bg-grey-9' : 'bg-white'">
+          <div class="row items-center q-gutter-x-md">
+              <div class="text-subtitle1">
+                  Selected: <span class="text-weight-bold text-primary">{{ selectedCount }}</span>
+              </div>
+              <div class="text-h6 text-weight-bold text-primary">
+                  LKR {{ totalSelectedAmount }}
+              </div>
+              <q-btn unelevated rounded color="primary" label="Pay Selected" icon="payment" @click="openBulkPayDialog" />
+          </div>
+      </q-card>
+    </q-page-sticky>
+
     <!-- Payment Dialog -->
     <q-dialog v-model="showPaymentDialog">
       <q-card style="min-width: 400px" :class="$q.dark.isActive ? 'bg-dark' : 'bg-white'">
         <q-card-section>
           <div class="text-h6" :class="$q.dark.isActive ? 'text-white' : ''">Make Payment</div>
-          <div class="text-subtitle2 text-primary">{{ selectedFee?.course_name }} - {{ selectedFee?.month }}</div>
+          <div class="text-subtitle2 text-primary" v-if="isBulkPayment">
+              Paying for {{ selectedFees.length }} Items
+          </div>
+          <div class="text-subtitle2 text-primary" v-else>
+              {{ selectedFees[0]?.course_name }} - {{ selectedFees[0]?.month }}
+          </div>
         </q-card-section>
 
         <q-card-section class="q-pt-none">
-           <div class="text-h5 text-center q-mb-md font-weight-bold">LKR {{ selectedFee?.amount }}</div>
+           <div class="text-h5 text-center q-mb-md font-weight-bold">Total: LKR {{ totalPayAmount }}</div>
            
            <div class="text-subtitle2 q-mb-sm" :class="$q.dark.isActive ? 'text-grey-4' : ''">Select Payment Method:</div>
            <div class="q-gutter-sm">
@@ -146,10 +171,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useQuasar } from 'quasar'
 import { usePaymentStore } from 'stores/payment-store'
 import { storeToRefs } from 'pinia'
+import { useRoute } from 'vue-router'
+import { useAuthStore } from 'stores/auth-store'
 
 const $q = useQuasar()
 const paymentStore = usePaymentStore()
@@ -159,7 +186,10 @@ const authStore = useAuthStore()
 
 const tab = ref('pending')
 const showPaymentDialog = ref(false)
-const selectedFee = ref(null)
+const selectedFees = ref([]) // Array of selected fees for payment dialog
+const selectedFeeIds = ref([]) // IDs selected by checkboxes
+const selectAll = ref(false)
+
 const paymentMethod = ref('online')
 const slipFile = ref(null)
 const processing = ref(false)
@@ -186,10 +216,6 @@ onMounted(() => {
     fetchData()
 })
 
-// Watch for child change if in parent view
-import { watch } from 'vue'
-import { useRoute } from 'vue-router'
-import { useAuthStore } from 'stores/auth-store'
 
 if (route.meta.isParentView) {
     watch(() => authStore.selectedChild, () => {
@@ -304,13 +330,42 @@ function printReceipt(payment) {
 }
 
 const openPayDialog = (fee) => {
-    selectedFee.value = fee
+    selectedFees.value = [fee] // Single pay
     paymentMethod.value = 'online'
     slipFile.value = null
     showPaymentDialog.value = true
 }
 
-// ... existing code ...
+const openBulkPayDialog = () => {
+    selectedFees.value = pending.value.filter(f => selectedFeeIds.value.includes(f.id))
+    paymentMethod.value = 'online'
+    slipFile.value = null
+    showPaymentDialog.value = true
+}
+
+const toggleSelectAll = (val) => {
+    if (val) {
+        selectedFeeIds.value = pending.value.map(f => f.id)
+    } else {
+        selectedFeeIds.value = []
+    }
+}
+
+
+
+
+const selectedCount = computed(() => selectedFeeIds.value.length)
+const totalSelectedAmount = computed(() => {
+    return pending.value
+        .filter(f => selectedFeeIds.value.includes(f.id))
+        .reduce((sum, f) => sum + parseFloat(f.amount), 0)
+})
+
+const isBulkPayment = computed(() => selectedFees.value.length > 1)
+const totalPayAmount = computed(() => selectedFees.value.reduce((sum, f) => sum + parseFloat(f.amount), 0))
+
+
+
 
 const submitPayment = async () => {
     if (paymentMethod.value === 'bank_transfer' && !slipFile.value) {
@@ -326,16 +381,21 @@ const submitPayment = async () => {
         
         if (paymentMethod.value === 'bank_transfer') {
              const formData = new FormData()
-             formData.append('fee_id', selectedFee.value.id)
-             formData.append('amount', selectedFee.value.amount)
+             
+             // Append multiple fee_ids
+             selectedFees.value.forEach((fee, index) => {
+                 formData.append(`fee_ids[${index}]`, fee.id)
+             })
+
+             formData.append('amount', totalPayAmount.value)
              formData.append('type', 'bank_transfer')
-             formData.append('note', 'Bank Transfer Upload')
+             formData.append('note', 'Bank Transfer Upload (Bulk)')
              formData.append('slip', slipFile.value)
              payload = formData
         } else {
              payload = {
-                fee_id: selectedFee.value.id,
-                amount: selectedFee.value.amount,
+                fee_ids: selectedFees.value.map(f => f.id),
+                amount: totalPayAmount.value,
                 type: 'online', 
                 note: 'Online Payment via Student Portal'
             }

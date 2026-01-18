@@ -184,8 +184,8 @@
                             {{ course.subject?.name }} | {{ course.batch?.name }}
                         </div>
                         <div class="row items-center q-mt-sm">
-                            <q-avatar size="24px" class="q-mr-sm">
-                                <img :src="course.teacher?.avatar || 'https://cdn.quasar.dev/img/boy-avatar.png'">
+                            <q-avatar size="24px" class="q-mr-sm" color="primary" text-color="white">
+                                <span class="text-caption text-weight-bold">{{ course.teacher?.name?.charAt(0) || 'T' }}</span>
                             </q-avatar>
                             <div :class="$q.dark.isActive ? 'text-grey-3' : 'text-grey-8'">{{ course.teacher?.name }}</div>
                         </div>

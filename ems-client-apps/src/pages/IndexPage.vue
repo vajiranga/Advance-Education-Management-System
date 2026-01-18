@@ -8,12 +8,10 @@
           <!-- Profile Info -->
           <div class="col-12 col-md-8">
             <div class="row items-center">
-              <q-avatar size="80px" class="q-mr-md" :class="$q.dark.isActive ? 'bg-slate-700' : ''">
-                <img src="https://cdn.quasar.dev/img/boy-avatar.png">
-              </q-avatar>
+              <!-- Avatar Removed -->
               <div>
-                <div class="text-h5 text-weight-bold" :class="$q.dark.isActive ? 'text-white' : ''">{{ authStore.user?.name || 'Student' }}</div>
-                <div class="text-subtitle1" :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey-7'">{{ authStore.user?.username || 'ID: ???' }}</div>
+                <div class="text-h5 text-weight-bold" :class="$q.dark.isActive ? 'text-white' : ''">{{ effectiveStudent?.name || 'Student' }}</div>
+                <div class="text-subtitle1" :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey-7'">{{ effectiveStudent?.username || 'ID: ???' }}</div>
                 <q-chip size="sm" :color="$q.dark.isActive ? 'grey-8' : 'blue-1'" :text-color="$q.dark.isActive ? 'blue-2' : 'primary'" icon="school">
                   Student
                 </q-chip>
@@ -25,14 +23,64 @@
           <div class="col-12 col-md-4 text-center">
              <div class="q-pa-sm rounded-borders inline-block" :class="$q.dark.isActive ? 'bg-white' : 'bg-grey-2'">
                <div style="font-family: 'Libre Barcode 39', sans-serif; font-size: 48px; line-height: 1; color: black !important;">
-                 *{{ authStore.user?.username || '0000' }}*
+                 *{{ effectiveStudent?.username || '0000' }}*
                </div>
              </div>
              <div class="text-caption q-mt-sm" :class="$q.dark.isActive ? 'text-grey-5' : 'text-grey'">Scan at Entrance</div>
+             <q-btn flat dense color="primary" icon="download" label="Download ID" class="q-mt-sm" size="sm" @click="downloadIdCard" :disable="!effectiveStudent"/>
           </div>
         </div>
       </q-card-section>
     </q-card>
+
+    <!-- Hidden ID Card Template -->
+    <div style="position: fixed; left: -9999px; top: 0;">
+        <div ref="idCardRef" id="id-card-element" style="width: 400px; height: 280px; background: linear-gradient(135deg, #1976D2 0%, #0D47A1 100%); color: white; border-radius: 12px; padding: 20px; font-family: 'Roboto', sans-serif; position: relative; overflow: hidden; box-shadow: 0 4px 8px rgba(0,0,0,0.2);">
+            <!-- Decorative Circle -->
+            <div style="position: absolute; top: -50px; right: -50px; width: 150px; height: 150px; background: rgba(255,255,255,0.1); border-radius: 50%;"></div>
+            
+            <div class="row items-center no-wrap full-height">
+                 <!-- Photo Placeholder -->
+                  <div style="width: 100px; height: 100px; background: white; border-radius: 8px; margin-right: 20px; display: flex; align-items: center; justify-content: center; color: #1976D2; font-weight: bold; font-size: 40px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                       {{ effectiveStudent?.name?.charAt(0) || 'S' }}
+                  </div>
+                  
+                  <!-- Details -->
+                  <div style="flex: 1; z-index: 1;">
+                       <div style="font-size: 12px; opacity: 0.8; letter-spacing: 1px; margin-bottom: 4px;">EMS STUDENT IDENTITY</div>
+                       <div style="font-size: 20px; font-weight: bold; margin-bottom: 4px; line-height: 1.2;">{{ effectiveStudent?.name || 'Student Name' }}</div>
+                       <div style="font-size: 14px; opacity: 0.9; margin-bottom: 12px;">{{ effectiveStudent?.username || 'ID-00000' }}</div>
+                       
+                       <div class="row q-col-gutter-xs">
+                            <div class="col-6">
+                                <div style="font-size: 9px; opacity: 0.7; text-transform: uppercase;">Grade</div>
+                                <div style="font-size: 13px; font-weight: 500;">{{ effectiveStudent?.grade || 'N/A' }}</div>
+                            </div>
+                            <div class="col-6">
+                                <div style="font-size: 9px; opacity: 0.7; text-transform: uppercase;">Date of Birth</div>
+                                <div style="font-size: 13px; font-weight: 500;">{{ effectiveStudent?.dob || 'N/A' }}</div>
+                            </div>
+                       </div>
+                       
+                       <div class="row q-col-gutter-xs q-mt-xs">
+                           <div class="col-6">
+                               <div style="font-size: 9px; opacity: 0.7; text-transform: uppercase;">Phone</div>
+                               <div style="font-size: 13px; font-weight: 500;">{{ effectiveStudent?.phone || 'N/A' }}</div>
+                           </div>
+                           <div class="col-6">
+                               <div style="font-size: 9px; opacity: 0.7; text-transform: uppercase;">Year</div>
+                               <div style="font-size: 13px; font-weight: 500;">2026</div>
+                           </div>
+                       </div>
+                  </div>
+            </div>
+
+            <!-- Barcode Footer -->
+            <div style="position: absolute; bottom: 15px; left: 20px; right: 20px; background: white; padding: 4px 10px; text-align: center; border-radius: 6px;">
+                 <div style="font-family: 'Libre Barcode 39', sans-serif; font-size: 36px; color: black; line-height: 1; margin-bottom: -5px;">*{{ effectiveStudent?.username || '0000' }}*</div>
+            </div>
+        </div>
+    </div>
 
     <!-- Schedule Section (Calendar) -->
     <div class="q-mb-lg">
@@ -274,11 +322,42 @@ import { useAuthStore } from 'stores/auth-store'
 import { useStudentStore } from 'stores/student-store'
 import { storeToRefs } from 'pinia'
 import { useQuasar } from 'quasar'
+import html2canvas from 'html2canvas'
 
 const $q = useQuasar()
 const authStore = useAuthStore()
+const idCardRef = ref(null)
+
+async function downloadIdCard() {
+    if(!idCardRef.value) return
+    $q.loading.show({ message: 'Generating ID Card...' })
+    try {
+        const canvas = await html2canvas(idCardRef.value, {
+            backgroundColor: null,
+            scale: 2,
+            useCORS: true
+        })
+        const link = document.createElement('a')
+        link.download = `Student_ID_${effectiveStudent.value?.username || 'student'}.png`
+        link.href = canvas.toDataURL('image/png')
+        link.click()
+        $q.notify({ type: 'positive', message: 'ID Card Downloaded!' })
+    } catch (e) {
+        console.error(e)
+        $q.notify({ type: 'negative', message: 'Failed to generate ID' })
+    } finally {
+        $q.loading.hide()
+    }
+}
 const studentStore = useStudentStore()
 const { myCourses, allCourses, loading } = storeToRefs(studentStore)
+
+const effectiveStudent = computed(() => {
+    if(authStore.user?.role === 'parent') {
+        return authStore.selectedChild || null // Fallback to null if no child selected
+    }
+    return authStore.user // Normal student login
+})
 
 const regularCourses = computed(() => (myCourses.value || []).filter(c => c.type === 'regular' || !c.type))
 const extraCourses = computed(() => (myCourses.value || []).filter(c => c.type === 'extra'))

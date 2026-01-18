@@ -50,13 +50,13 @@
              <div class="text-subtitle2" style="line-height: 1.2">{{ authStore.user?.name || 'Loading...' }}</div>
              <div class="text-caption opacity-80" style="font-size: 10px;">Parent</div>
           </div>
-          <q-avatar size="36px" class="cursor-pointer bg-primary text-white">
+          <q-avatar size="36px" class="cursor-pointer bg-primary text-white shadow-1">
             <span class="text-weight-bold">{{ authStore.user?.name?.charAt(0) || 'P' }}</span>
             <q-menu :class="$q.dark.isActive ? 'bg-dark text-white' : 'bg-white'">
               <q-list style="min-width: 220px">
                 <q-item class="bg-primary text-white">
                   <q-item-section>
-                    <div class="text-subtitle2">{{ authStore.user?.name || 'Guest' }}</div>
+                    <div class="text-subtitle2">{{ authStore.user?.name || 'Parent' }}</div>
                     <div class="text-caption">{{ authStore.user?.email || authStore.user?.phone }}</div>
                   </q-item-section>
                 </q-item>
@@ -100,7 +100,7 @@
 
                 <q-separator :class="$q.dark.isActive ? 'bg-grey-8' : ''" />
 
-                <q-item clickable v-close-popup @click="authStore.logout()">
+                <q-item clickable v-close-popup @click="authStore.logout('/login')">
                   <q-item-section avatar><q-icon name="logout" color="negative" /></q-item-section>
                   <q-item-section class="text-negative">Logout</q-item-section>
                 </q-item>
@@ -117,12 +117,21 @@
       bordered
       :class="$q.dark.isActive ? 'bg-dark' : 'bg-white'"
     >
+      <div class="q-pa-lg">
+         <div class="row items-center">
+            <q-icon name="family_restroom" size="sm" class="q-mr-sm" :color="$q.dark.isActive ? 'white' : 'primary'" />
+            <div class="text-h6 text-weight-bold" :class="$q.dark.isActive ? 'text-white' : 'text-primary'">EMS Portal</div>
+         </div>
+         <div class="text-caption q-ml-none" :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey-7'">Parent Dashboard</div>
+      </div>
+      <q-separator :class="$q.dark.isActive ? 'bg-grey-8' : ''" />
+
       <div class="q-pa-md" :class="$q.dark.isActive ? 'bg-transparent' : 'bg-blue-1'">
         <div class="text-subtitle1 text-weight-bold" :class="$q.dark.isActive ? 'text-white' : 'text-primary'">My Children</div>
         
         <div class="row items-center q-mt-sm q-pa-sm rounded-borders shadow-1 cursor-pointer" :class="$q.dark.isActive ? 'bg-grey-9' : 'bg-white'">
-           <q-avatar size="32px">
-             <img :src="currentChild?.avatar || 'https://cdn.quasar.dev/img/boy-avatar.png'">
+           <q-avatar size="32px" color="primary" text-color="white">
+             <span class="text-weight-bold">{{ currentChild?.name?.charAt(0) || 'C' }}</span>
            </q-avatar>
            <div class="q-ml-sm">
              <div class="text-weight-bold text-caption" :class="$q.dark.isActive ? 'text-white' : ''">{{ currentChild?.name || 'Select Child' }}</div>
@@ -135,8 +144,8 @@
                <q-list style="min-width: 150px">
                    <q-item clickable v-close-popup v-for="child in children" :key="child.id" @click="selectChild(child)">
                        <q-item-section avatar>
-                           <q-avatar size="24px">
-                               <img :src="child.avatar || 'https://cdn.quasar.dev/img/boy-avatar.png'">
+                           <q-avatar size="24px" color="primary" text-color="white">
+                               <span class="text-weight-bold" style="font-size: 10px">{{ child.name?.charAt(0) || 'C' }}</span>
                            </q-avatar>
                        </q-item-section>
                        <q-item-section>
@@ -179,12 +188,7 @@
           <q-item-section>Profile</q-item-section>
         </q-item>
 
-        <q-separator class="q-my-md" :class="$q.dark.isActive ? 'bg-grey-8' : ''" />
-
-        <q-item clickable v-ripple class="text-red" @click="authStore.logout()">
-          <q-item-section avatar><q-icon name="logout" /></q-item-section>
-          <q-item-section>Logout</q-item-section>
-        </q-item>
+        <!-- Sidebar logout removed -->
       </q-list>
     </q-drawer>
 

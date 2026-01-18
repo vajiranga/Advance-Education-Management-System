@@ -6,13 +6,11 @@
        <q-card-section>
          <div class="row items-center q-col-gutter-md">
            <!-- Profile Info -->
-           <div class="col-12 col-md-8">
-             <div class="row items-center">
-               <q-avatar size="80px" class="q-mr-md font-roboto">
-                 <img src="https://cdn.quasar.dev/img/avatar2.jpg">
-               </q-avatar>
-               <div>
-                 <div class="text-h5 text-weight-bold" :class="$q.dark.isActive ? 'text-teal-2' : 'text-teal-9'">{{ authStore.user?.name || 'Teacher' }}</div>
+             <div class="col-12 col-md-8">
+               <div class="row items-center">
+                 <!-- Avatar Removed -->
+                 <div>
+                   <div class="text-h5 text-weight-bold" :class="$q.dark.isActive ? 'text-teal-2' : 'text-teal-9'">{{ authStore.user?.name || 'Teacher' }}</div>
                  <div class="text-subtitle1" :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey-7'">{{ authStore.user?.username || 'ID: ???' }}</div>
                  <div class="row q-gutter-x-sm q-mt-xs">
                      <q-chip size="sm" :color="$q.dark.isActive ? 'teal-9' : 'teal-1'" :text-color="$q.dark.isActive ? 'teal-1' : 'teal'" icon="verified_user" label="Verified Teacher" />
