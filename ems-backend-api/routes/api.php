@@ -38,6 +38,7 @@ Route::prefix('v1')->group(function () {
     Route::get('subjects', [App\Http\Controllers\Api\V1\AcademicController::class, 'getAllSubjects']);
     Route::get('grades', [App\Http\Controllers\Api\V1\AcademicController::class, 'getGrades']);
     Route::get('grades/{gradeId}/subjects', [App\Http\Controllers\Api\V1\AcademicController::class, 'getSubjects']);
+    Route::get('public/courses', [CourseController::class, 'index']);
     
     // Authenticated Routes
     Route::middleware('auth:sanctum')->group(function () {

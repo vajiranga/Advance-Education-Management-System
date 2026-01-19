@@ -3,8 +3,14 @@ const routes = [
     path: '/',
     component: () => import('layouts/LandingLayout.vue'),
     children: [
-      { path: '', component: () => import('pages/LandingPage.vue') },
-      { path: 'register', component: () => import('pages/RegisterPage.vue') }
+      { path: '', component: () => import('pages/LandingPage.vue') }
+    ]
+  },
+  {
+    path: '/register',
+    component: () => import('layouts/AuthLayout.vue'),
+    children: [
+      { path: '', component: () => import('pages/RegisterPage.vue') }
     ]
   },
   {

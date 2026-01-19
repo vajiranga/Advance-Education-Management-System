@@ -607,6 +607,7 @@ function editCourse(course) {
     showAddDialog.value = true
 }
 
+
 async function saveCourse() {
     submitting.value = true
     try {

@@ -30,7 +30,8 @@ export default defineRouter(function (/* { store, ssrContext } */) {
   Router.beforeEach((to, from, next) => {
     const publicPages = ['/login'];
     const authRequired = !publicPages.includes(to.path);
-    const loggedIn = localStorage.getItem('token');
+    const authAccounts = JSON.parse(localStorage.getItem('auth_accounts') || '[]');
+    const loggedIn = authAccounts.length > 0;
 
     if (authRequired && !loggedIn) {
       return next('/login');

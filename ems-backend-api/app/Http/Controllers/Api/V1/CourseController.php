@@ -49,10 +49,20 @@ class CourseController extends Controller
              $query->where('parent_course_id', $request->query('parent_course_id'));
         }
 
+        // Featured Filter
+        if ($request->has('featured')) {
+             $query->where('is_featured', true);
+        }
+
         // Visibility Logic by Role
         if ($user && $user->role === 'student') {
             $query->where('status', 'approved');
         } 
+        
+        // Public Access (No User) - Only Approved
+        if (!$user) {
+            $query->where('status', 'approved');
+        }
 
         if ($request->has('all')) {
             return response()->json($query->with(['subject', 'batch', 'teacher', 'hall', 'parentCourse'])->withCount('students')->orderBy('created_at', 'desc')->get());
@@ -76,7 +86,8 @@ class CourseController extends Controller
             'cover_image_url' => 'nullable|string',
             'type' => 'nullable|in:regular,extra',
             'parent_course_id' => 'nullable|exists:courses,id',
-            'hall_id' => 'nullable|exists:halls,id'
+            'hall_id' => 'nullable|exists:halls,id',
+            'is_featured' => 'nullable|boolean'
         ]);
 
         $user = $request->user();
@@ -96,6 +107,7 @@ class CourseController extends Controller
         $courseData = $validated;
         $courseData['status'] = $status;
         $courseData['created_by'] = $user ? $user->id : null;
+        $courseData['is_featured'] = $validated['is_featured'] ?? false;
         
         // Ensure schedule is array if provided
         if(isset($courseData['schedule']) && !is_array($courseData['schedule'])) {
@@ -173,7 +185,8 @@ class CourseController extends Controller
             'batch_id' => 'nullable|exists:batches,id',
             'fee_amount' => 'nullable|numeric|min:0',
             'schedule' => 'nullable', 
-            'hall_id' => 'nullable|exists:halls,id'
+            'hall_id' => 'nullable|exists:halls,id',
+            'is_featured' => 'nullable|boolean'
         ]);
 
         $course->fill($validated);
