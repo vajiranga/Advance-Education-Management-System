@@ -19,13 +19,22 @@ class ParentController extends Controller
     {
         $user = $request->user();
         
-        // Link by email OR parent_id (Robust linking)
+        // Link by email OR parent_id OR parent_phone (Robust linking)
         $children = User::where(function($query) use ($user) {
-                $query->where('parent_email', $user->email)
-                      ->orWhere('parent_id', $user->id);
+                // If the user has an email that isn't auto-generated or is valid
+                if (!empty($user->email)) {
+                     $query->where('parent_email', $user->email);
+                }
+                
+                $query->orWhere('parent_id', $user->id);
+                
+                // Critical for phone-based parent login flow
+                if (!empty($user->phone)) {
+                    $query->orWhere('parent_phone', $user->phone);
+                }
             })
             ->where('role', 'student')
-            ->get(['id', 'name', 'grade', 'avatar', 'school']);
+            ->get(['id', 'name', 'grade', 'avatar', 'school', 'username']); // Included username for UI
             
         return response()->json($children);
     }
@@ -38,8 +47,13 @@ class ParentController extends Controller
         $parent = $request->user();
         
         // Verify this child belongs to the parent
+        // Verify this child belongs to the parent
         $child = User::where('id', $id)
-            ->where('parent_email', $parent->email)
+            ->where(function($q) use ($parent) {
+                 if (!empty($parent->email)) $q->where('parent_email', $parent->email);
+                 $q->orWhere('parent_id', $parent->id);
+                 if (!empty($parent->phone)) $q->orWhere('parent_phone', $parent->phone);
+            })
             ->firstOrFail();
 
         // 1. Attendance (Current Month)
@@ -108,7 +122,11 @@ class ParentController extends Controller
     {
         $parent = $request->user();
         $child = User::where('id', $id)
-            ->where('parent_email', $parent->email)
+            ->where(function($q) use ($parent) {
+                 if (!empty($parent->email)) $q->where('parent_email', $parent->email);
+                 $q->orWhere('parent_id', $parent->id);
+                 if (!empty($parent->phone)) $q->orWhere('parent_phone', $parent->phone);
+            })
             ->firstOrFail();
 
         $courses = $child->courses()
@@ -161,7 +179,11 @@ class ParentController extends Controller
     {
         $parent = $request->user();
         $child = User::where('id', $id)
-            ->where('parent_email', $parent->email)
+            ->where(function($q) use ($parent) {
+                 if (!empty($parent->email)) $q->where('parent_email', $parent->email);
+                 $q->orWhere('parent_id', $parent->id);
+                 if (!empty($parent->phone)) $q->orWhere('parent_phone', $parent->phone);
+            })
             ->firstOrFail();
 
         // Fetch published results
@@ -194,7 +216,11 @@ class ParentController extends Controller
     {
         $parent = $request->user();
         $child = User::where('id', $id)
-            ->where('parent_email', $parent->email)
+            ->where(function($q) use ($parent) {
+                 if (!empty($parent->email)) $q->where('parent_email', $parent->email);
+                 $q->orWhere('parent_id', $parent->id);
+                 if (!empty($parent->phone)) $q->orWhere('parent_phone', $parent->phone);
+            })
             ->firstOrFail();
 
         $attendance = Attendance::where('user_id', $child->id)
@@ -213,5 +239,50 @@ class ParentController extends Controller
             });
 
         return response()->json($attendance);
+    }
+
+    /**
+     * Get Child's Notices & Parent Meetings
+     */
+    public function getChildNotices(Request $request, $id)
+    {
+        $parent = $request->user();
+        $child = User::where('id', $id)
+            ->where(function($q) use ($parent) {
+                 if (!empty($parent->email)) $q->where('parent_email', $parent->email);
+                 $q->orWhere('parent_id', $parent->id);
+                 if (!empty($parent->phone)) $q->orWhere('parent_phone', $parent->phone);
+            })
+            ->firstOrFail();
+
+        // Get courses the child is enrolled in
+        $courseIds = $child->courses()->pluck('courses.id');
+
+        // Fetch notices for those courses OR general notices from teachers of those courses
+        $notices = \App\Models\Notice::whereIn('course_id', $courseIds)
+            ->orWhere(function($q) use ($courseIds) {
+                // General notices from teachers teaching this child
+                $teacherIds = \App\Models\Course::whereIn('id', $courseIds)->pluck('teacher_id');
+                $q->whereIn('teacher_id', $teacherIds)->whereNull('course_id');
+            })
+            ->with(['teacher', 'course'])
+            ->orderBy('scheduled_at', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->limit(20)
+            ->get()
+            ->map(function($notice) {
+                return [
+                    'id' => $notice->id,
+                    'title' => $notice->title,
+                    'message' => $notice->message,
+                    'type' => $notice->type, // notice, meeting
+                    'teacher_name' => $notice->teacher->name ?? 'N/A',
+                    'course_name' => $notice->course->name ?? 'General',
+                    'date' => $notice->scheduled_at ?? $notice->created_at,
+                    'icon' => $notice->type === 'meeting' ? 'event' : 'notifications'
+                ];
+            });
+
+        return response()->json($notices);
     }
 }

@@ -1,163 +1,181 @@
 <template>
-  <q-page class="flex flex-center bg-dark text-white relative-position overflow-hidden">
+  <q-page class="register-page flex flex-center relative-position">
     
-    <!-- 3D Background -->
-    <div ref="registerContainer" class="absolute-full" style="z-index: 0;"></div>
+    <!-- Background Elements (CSS Based - Matches Login) -->
+    <div class="stars"></div>
+    <div class="glow-spot spot-1"></div>
+    <div class="glow-spot spot-2"></div>
+    <div class="glow-spot spot-3"></div>
 
-    <q-card class="auth-card glass-panel no-shadow q-pb-lg relative-position z-10">
+    <q-card class="auth-card glass-panel shadow-24 q-my-xl relative-position z-10">
       <q-card-section class="text-center q-pt-xl q-pb-md">
-         <!-- Optional Logo -->
-         <div class="q-mb-md">
-            <q-icon name="person_add" size="50px" class="text-gradient-gold" />
-         </div>
          <!-- Home Button -->
-         <q-btn flat round icon="home" color="white" class="absolute-top-right q-ma-md hover-scale" to="/" title="Back to Home" />
+         <q-btn flat round icon="arrow_back" color="white" class="absolute-top-left q-ma-md hover-scale" to="/" title="Back to Home" />
+         
+         <!-- Icon -->
+         <div class="avatar-glow q-mx-auto q-mb-md flex flex-center" :class="role === 'student' ? 'bg-blue-dim' : 'bg-purple-dim'">
+            <q-icon :name="role === 'student' ? 'person_add' : 'cast_for_education'" size="40px" :color="role === 'student' ? 'blue' : 'purple'" />
+         </div>
 
-        <div class="text-h4 text-weight-bolder text-white q-mb-xs">Join Us</div>
-        <div class="text-grey-4">Create your new account</div>
+         <div class="text-h4 text-weight-bolder text-white q-mb-xs tracking-wide">Create Account</div>
+         <div class="text-grey-4">Join our community as a <span class="text-weight-bold" :class="role === 'student' ? 'text-blue' : 'text-purple'">{{ role === 'student' ? 'Student' : 'Teacher' }}</span></div>
       </q-card-section>
 
-      <q-tabs
-        v-model="role"
-        dense
-        class="text-grey-4"
-        active-color="secondary"
-        indicator-color="secondary"
-        align="justify"
-        narrow-indicator
-      >
-        <q-tab name="student" label="Student Registration" icon="school" />
-        <q-tab name="teacher" label="Teacher Registration" icon="person_outline" />
-      </q-tabs>
+      <!-- Role Tabs -->
+      <div class="q-px-lg q-mb-md">
+        <div class="glass-tabs row no-wrap p-1">
+             <div 
+                class="col tab-item text-center q-py-sm cursor-pointer relative-position"
+                :class="{ 'active': role === 'student' }"
+                @click="role = 'student'"
+             >
+                <q-icon name="school" size="20px" class="q-mr-xs" />
+                <span class="text-weight-medium">Student</span>
+                <div v-if="role === 'student'" class="absolute-full bg-white-10 rounded-borders transition-bg"></div>
+             </div>
+             <div 
+                class="col tab-item text-center q-py-sm cursor-pointer relative-position"
+                :class="{ 'active': role === 'teacher' }"
+                @click="role = 'teacher'"
+             >
+                <q-icon name="psychology" size="20px" class="q-mr-xs" />
+                <span class="text-weight-medium">Teacher</span>
+                <div v-if="role === 'teacher'" class="absolute-full bg-white-10 rounded-borders transition-bg"></div>
+             </div>
+        </div>
+      </div>
 
-      <q-separator dark />
-
-      <q-tab-panels v-model="role" animated class="q-pa-none bg-transparent">
+      <q-tab-panels v-model="role" animated class="bg-transparent text-white">
         <!-- STUDENT REGISTRATION FORM -->
         <q-tab-panel name="student" class="q-pa-lg">
-          <q-form @submit="onSubmit" class="q-gutter-y-md">
+          <q-form @submit="onSubmit" class="q-gutter-y-lg">
             
             <!-- Personal Info Section -->
             <div>
-              <div class="text-caption text-weight-bold text-grey-5 text-uppercase q-mb-sm">Personal Information</div>
+              <div class="text-caption text-weight-bold text-blue-4 text-uppercase q-mb-sm letter-spacing-1">Personal Information</div>
               <div class="row q-col-gutter-md">
                 <div class="col-12">
-                   <q-input dark outlined bg-color="transparent" v-model="form.name" label="Full Name (First, Second)" :rules="[val => !!val || 'Name is required']">
-                      <template v-slot:prepend><q-icon name="person" color="secondary" /></template>
+                   <q-input dark outlined class="input-glass" v-model="form.name" label="Full Name (First, Second)" color="blue" :rules="[val => !!val || 'Name is required']">
+                      <template v-slot:prepend><q-icon name="person" color="blue-5" /></template>
                    </q-input>
                 </div>
                 <div class="col-12 col-md-6">
-                    <q-input dark outlined bg-color="transparent" v-model="form.dob" label="Date of Birth" type="date" stack-label />
+                    <q-input dark outlined class="input-glass" v-model="form.dob" label="Date of Birth" type="date" stack-label color="blue" />
                 </div>
                 <div class="col-12 col-md-6">
-                     <q-select dark outlined bg-color="transparent" v-model="form.gender" :options="['Male', 'Female']" label="Gender" />
+                     <q-select dark outlined class="input-glass" v-model="form.gender" :options="['Male', 'Female']" label="Gender" color="blue" />
                 </div>
                 <!-- Contact -->
                 <div class="col-12 col-md-6">
-                    <q-input dark outlined bg-color="transparent" v-model="form.phone" label="Phone Number" mask="###-#######">
-                      <template v-slot:prepend><q-icon name="phone" color="secondary" /></template>
+                    <q-input dark outlined class="input-glass" v-model="form.phone" label="Phone Number" mask="###-#######" color="blue">
+                      <template v-slot:prepend><q-icon name="phone" color="blue-5" /></template>
                     </q-input>
                 </div>
                 <div class="col-12 col-md-6">
-                    <q-input dark outlined bg-color="transparent" v-model="form.whatsapp" label="Whatsapp Number" mask="###-#######">
+                    <q-input dark outlined class="input-glass" v-model="form.whatsapp" label="Whatsapp Number" mask="###-#######" color="green">
                       <template v-slot:prepend><q-icon name="chat" color="green-4" /></template>
                     </q-input>
                 </div>
               </div>
             </div>
 
-            <q-separator dark spaced />
+            <q-separator dark class="opacity-20" />
 
             <!-- Academic Info Section -->
             <div>
-              <div class="text-caption text-weight-bold text-grey-5 text-uppercase q-mb-sm">Academic Details</div>
+              <div class="text-caption text-weight-bold text-blue-4 text-uppercase q-mb-sm letter-spacing-1">Academic Details</div>
               <div class="row q-col-gutter-md">
                 <div class="col-12 col-md-6">
-                    <q-input dark outlined bg-color="transparent" v-model="form.school" label="School">
-                       <template v-slot:prepend><q-icon name="school" color="secondary" /></template>
+                    <q-input dark outlined class="input-glass" v-model="form.school" label="School" color="blue">
+                       <template v-slot:prepend><q-icon name="school" color="blue-5" /></template>
                     </q-input>
                 </div>
                 <div class="col-12 col-md-6">
-                    <q-select dark outlined bg-color="transparent" v-model="form.grade" :options="['Grade 01','Grade 02','Grade 03','Grade 04','Grade 05','Grade 06','Grade 07','Grade 08','Grade 09','Grade 10','Grade 11','O/L','Grade 12','Grade 13','A/L','Others']" label="Grade" />
+                    <q-select dark outlined class="input-glass" v-model="form.grade" :options="['Grade 01','Grade 02','Grade 03','Grade 04','Grade 05','Grade 06','Grade 07','Grade 08','Grade 09','Grade 10','Grade 11','O/L','Grade 12','Grade 13','A/L','Others']" label="Grade" color="blue" />
                 </div>
               </div>
             </div>
 
-            <q-separator dark spaced />
+            <q-separator dark class="opacity-20" />
 
             <!-- Login Info -->
              <div>
               <div class="row q-col-gutter-md">
                 <div class="col-12">
-                   <q-input dark outlined bg-color="transparent" v-model="form.email" label="Email Address (Optional)" type="email">
-                      <template v-slot:prepend><q-icon name="email" color="secondary" /></template>
+                   <q-input dark outlined class="input-glass" v-model="form.email" label="Email Address (Optional)" type="email" color="blue">
+                      <template v-slot:prepend><q-icon name="email" color="blue-5" /></template>
                    </q-input>
                 </div>
                 <div class="col-12 col-md-6">
-                     <q-input dark outlined bg-color="transparent" v-model="form.password" label="Password" type="password" :rules="[val => !!val || 'Required', val => val.length >= 8 || 'Min 8 chars']">
-                        <template v-slot:prepend><q-icon name="lock" color="secondary" /></template>
+                     <q-input dark outlined class="input-glass" v-model="form.password" label="Password" type="password" color="blue" :rules="[val => !!val || 'Required', val => val.length >= 8 || 'Min 8 chars']">
+                        <template v-slot:prepend><q-icon name="lock" color="blue-5" /></template>
                      </q-input>
                 </div>
                 <div class="col-12 col-md-6">
-                     <q-input dark outlined bg-color="transparent" v-model="form.password_confirmation" label="Confirm Password" type="password" :rules="[val => val === form.password || 'Passwords match']">
-                        <template v-slot:prepend><q-icon name="lock_clock" color="secondary" /></template>
+                     <q-input dark outlined class="input-glass" v-model="form.password_confirmation" label="Confirm Password" type="password" color="blue" :rules="[val => val === form.password || 'Passwords match']">
+                        <template v-slot:prepend><q-icon name="lock_clock" color="blue-5" /></template>
                      </q-input>
                 </div>
               </div>
             </div>
 
-            <q-separator dark spaced />
+            <q-separator dark class="opacity-20" />
 
             <!-- Parent Info -->
             <div>
-               <div class="text-caption text-weight-bold text-grey-5 text-uppercase q-mb-sm">Parent / Guardian Details</div>
+               <div class="text-caption text-weight-bold text-amber-4 text-uppercase q-mb-sm letter-spacing-1">Parent / Guardian Details</div>
+               <div class="glass-alert row items-center q-pa-sm rounded-borders text-amber-2 q-mb-md">
+                   <q-icon name="info" class="q-mr-sm" size="xs"/> 
+                   <div class="text-caption">Parent account will be created automatically using this number.</div>
+               </div>
+               
                <div class="row q-col-gutter-md">
                   <div class="col-12">
-                     <q-input dark outlined bg-color="transparent" v-model="form.parent_name" label="Parent Name" :rules="[val => !!val || 'Parent Name is required']">
-                        <template v-slot:prepend><q-icon name="family_restroom" color="secondary" /></template>
+                     <q-input dark outlined class="input-glass" v-model="form.parent_name" label="Parent Name" color="amber" :rules="[val => !!val || 'Parent Name is required']">
+                        <template v-slot:prepend><q-icon name="family_restroom" color="amber-5" /></template>
                      </q-input>
                   </div>
                   <div class="col-12 col-md-6">
-                     <q-input dark outlined bg-color="transparent" v-model="form.parent_phone" label="Emergency / WhatsApp" mask="###-#######" :rules="[val => !!val || 'Phone is required']">
-                        <template v-slot:prepend><q-icon name="contact_phone" color="secondary" /></template>
+                     <q-input dark outlined class="input-glass" v-model="form.parent_phone" label="Parent Phone (Login ID)" mask="###-#######" color="amber" :rules="[val => !!val || 'Phone is required']">
+                        <template v-slot:prepend><q-icon name="contact_phone" color="amber-5" /></template>
                      </q-input>
                   </div>
                   <div class="col-12 col-md-6">
-                     <q-input dark outlined bg-color="transparent" v-model="form.parent_email" label="Parent Email (Optional)" type="email" />
+                     <q-input dark outlined class="input-glass" v-model="form.parent_email" label="Parent Email (Optional)" type="email" color="amber" />
                   </div>
                </div>
             </div>
             
-            <q-btn unelevated color="secondary" size="lg" class="full-width q-mt-lg shadow-10 glow-btn-pulse" label="Register Student" type="submit" :loading="loading" />
+            <q-btn unelevated rounded color="primary" size="lg" class="full-width q-mt-lg glow-btn-blue text-weight-bold" label="Register Student" type="submit" :loading="loading" />
           </q-form>
         </q-tab-panel>
 
         <!-- TEACHER REGISTRATION FORM -->
         <q-tab-panel name="teacher" class="q-pa-lg">
-          <q-form @submit="onSubmit" class="q-gutter-y-md">
+          <q-form @submit="onSubmit" class="q-gutter-y-lg">
             
             <!-- Personal Info -->
             <div>
-              <div class="text-caption text-weight-bold text-grey-5 text-uppercase q-mb-sm">Personal Information</div>
+              <div class="text-caption text-weight-bold text-purple-3 text-uppercase q-mb-sm letter-spacing-1">Personal Information</div>
               <div class="row q-col-gutter-md">
                   <div class="col-12">
-                      <q-input dark outlined bg-color="transparent" v-model="form.name" label="Full Name" :rules="[val => !!val || 'Name is required']">
-                          <template v-slot:prepend><q-icon name="person" color="secondary" /></template>
+                      <q-input dark outlined class="input-glass" v-model="form.name" label="Full Name" color="purple" :rules="[val => !!val || 'Name is required']">
+                          <template v-slot:prepend><q-icon name="person" color="purple-4" /></template>
                       </q-input>
                   </div>
                   <div class="col-12 col-md-6">
-                      <q-input dark outlined bg-color="transparent" v-model="form.nic" label="NIC Number" mask="#############a">
-                         <template v-slot:prepend><q-icon name="badge" color="secondary" /></template>
+                      <q-input dark outlined class="input-glass" v-model="form.nic" label="NIC Number" mask="#############a" color="purple">
+                         <template v-slot:prepend><q-icon name="badge" color="purple-4" /></template>
                       </q-input>
                   </div>
                   <div class="col-12 col-md-6">
-                      <q-input dark outlined bg-color="transparent" v-model="form.phone" label="Phone Number" mask="###-#######">
-                         <template v-slot:prepend><q-icon name="phone" color="secondary" /></template>
+                      <q-input dark outlined class="input-glass" v-model="form.phone" label="Phone Number" mask="###-#######" color="purple">
+                         <template v-slot:prepend><q-icon name="phone" color="purple-4" /></template>
                       </q-input>
                   </div>
                   <div class="col-12">
-                      <q-input dark outlined bg-color="transparent" v-model="form.email" label="Email Address" type="email" :rules="[val => !!val || 'Email is required']">
-                          <template v-slot:prepend><q-icon name="email" color="secondary" /></template>
+                      <q-input dark outlined class="input-glass" v-model="form.email" label="Email Address" type="email" color="purple" :rules="[val => !!val || 'Email is required']">
+                          <template v-slot:prepend><q-icon name="email" color="purple-4" /></template>
                       </q-input>
                   </div>
               </div>
@@ -166,62 +184,58 @@
             <!-- Credentials -->
              <div class="row q-col-gutter-md">
                 <div class="col-12 col-md-6">
-                     <q-input dark outlined bg-color="transparent" v-model="form.password" label="Password" type="password" :rules="[val => !!val || 'Required', val => val.length >= 8 || 'Min 8 chars']">
-                        <template v-slot:prepend><q-icon name="lock" color="secondary" /></template>
+                     <q-input dark outlined class="input-glass" v-model="form.password" label="Password" type="password" color="purple" :rules="[val => !!val || 'Required', val => val.length >= 8 || 'Min 8 chars']">
+                        <template v-slot:prepend><q-icon name="lock" color="purple-4" /></template>
                      </q-input>
                 </div>
                 <div class="col-12 col-md-6">
-                     <q-input dark outlined bg-color="transparent" v-model="form.password_confirmation" label="Confirm Password" type="password" :rules="[val => val === form.password || 'Passwords match']">
-                        <template v-slot:prepend><q-icon name="lock_clock" color="secondary" /></template>
+                     <q-input dark outlined class="input-glass" v-model="form.password_confirmation" label="Confirm Password" type="password" color="purple" :rules="[val => val === form.password || 'Passwords match']">
+                        <template v-slot:prepend><q-icon name="lock_clock" color="purple-4" /></template>
                      </q-input>
                 </div>
             </div>
 
-            <q-separator dark spaced />
+            <q-separator dark class="opacity-20" />
 
             <!-- Professional Info -->
             <div>
-                <div class="text-caption text-weight-bold text-grey-5 text-uppercase q-mb-sm">Professional Qualifications</div>
+                <div class="text-caption text-weight-bold text-purple-3 text-uppercase q-mb-sm letter-spacing-1">Professional Qualifications</div>
                 
                 <div class="q-mb-md">
                   <div class="text-grey-4 q-mb-xs">Educational Level</div>
                   <div class="row q-gutter-sm bg-white-5 q-pa-sm rounded-borders">
-                      <q-checkbox dark v-model="form.qualifications" val="O/L" label="O/L" color="secondary" />
-                      <q-checkbox dark v-model="form.qualifications" val="A/L" label="A/L" color="secondary" />
-                      <q-checkbox dark v-model="form.qualifications" val="Degree" label="Degree" color="secondary" />
-                      <q-checkbox dark v-model="form.qualifications" val="Masters" label="Masters" color="secondary" />
-                      <q-checkbox dark v-model="form.qualifications" val="Other" label="Other" color="secondary" />
+                      <q-checkbox dark v-model="form.qualifications" val="Degree" label="Degree" color="purple" />
+                      <q-checkbox dark v-model="form.qualifications" val="Masters" label="Masters" color="purple" />
+                      <q-checkbox dark v-model="form.qualifications" val="PhD" label="PhD" color="purple" />
+                      <q-checkbox dark v-model="form.qualifications" val="Other" label="Other" color="purple" />
                   </div>
                 </div>
 
                 <div class="row q-col-gutter-md">
                     <div class="col-12">
                         <q-select 
-                            dark outlined bg-color="transparent"
+                            dark outlined class="input-glass"
                             v-model="form.subjects" 
                             multiple 
                             use-chips 
                             :options="['Mathematics', 'Science', 'English', 'Sinhala', 'History', 'ICT', 'Commerce', 'Art']" 
                             label="Expertise Subjects" 
-                            hint="Select multiple if applicable"
+                            color="purple"
                         >
-                           <template v-slot:prepend><q-icon name="menu_book" color="secondary" /></template>
+                           <template v-slot:prepend><q-icon name="menu_book" color="purple-4" /></template>
                         </q-select>
-                    </div>
-                    <div class="col-12">
-                         <q-input dark outlined bg-color="transparent" v-model="form.experience" label="Teaching Experience" type="textarea" rows="3" placeholder="Briefly describe your experience..." />
                     </div>
                 </div>
             </div>
 
-            <q-btn unelevated color="secondary" size="lg" class="full-width q-mt-lg shadow-10 glow-btn-pulse" label="Register as Teacher" type="submit" :loading="loading" />
+            <q-btn unelevated rounded color="purple-6" size="lg" class="full-width q-mt-lg glow-btn-purple text-weight-bold" label="Reqeust Teacher Account" type="submit" :loading="loading" />
           </q-form>
         </q-tab-panel>
 
       </q-tab-panels>
       
-      <div class="text-center q-mt-sm">
-        <router-link to="/login" class="text-secondary hover-underline" style="text-decoration: none">Already have an account? Login</router-link>
+      <div class="text-center q-pb-lg">
+        <router-link to="/login" class="text-grey-5 hover-text-white transition-colors" style="text-decoration: none">Already have an account? Login</router-link>
       </div>
     </q-card>
 
@@ -234,7 +248,7 @@
 
         <q-card-section class="q-pt-none text-center">
           <p>Your Index Number (User ID) is:</p>
-          <div class="text-h4 text-weight-bold text-secondary">{{ generatedIndexNumber }}</div>
+          <div class="text-h4 text-weight-bold text-blue-4 tracking-wide">{{ generatedIndexNumber }}</div>
           <p class="text-caption text-grey-4 q-mt-sm">Please save this number. You will need it to login.</p>
         </q-card-section>
 
@@ -248,17 +262,15 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, onUnmounted } from 'vue'
+import { ref, reactive } from 'vue'
 import { api } from 'boot/axios'
 import { useQuasar } from 'quasar'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from 'stores/auth-store'
-import * as THREE from 'three'
 
 const $q = useQuasar()
 const router = useRouter()
 const authStore = useAuthStore()
-const registerContainer = ref(null)
 
 const role = ref('student')
 const loading = ref(false)
@@ -285,73 +297,6 @@ const form = reactive({
   subjects: [],
   experience: ''
 })
-
-// 3D Background Logic
-let renderer, scene, camera, particlesMesh
-let animationId = null
-
-function init3DBackground() {
-   if (!registerContainer.value) return
-   
-   scene = new THREE.Scene()
-   camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000)
-   camera.position.z = 100
-
-   renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true })
-   renderer.setSize(window.innerWidth, window.innerHeight)
-   registerContainer.value.appendChild(renderer.domElement)
-
-   // Particles
-   const geometry = new THREE.BufferGeometry()
-   const vertices = []
-   const colors = []
-   const color1 = new THREE.Color(0x2563EB)
-   const color2 = new THREE.Color(0xFFD700)
-   
-   for (let i = 0; i < 1500; i++) {
-      const x = (Math.random() - 0.5) * 800
-      const y = (Math.random() - 0.5) * 800
-      const z = (Math.random() - 0.5) * 800
-      vertices.push(x, y, z)
-      
-      const mixedColor = Math.random() > 0.5 ? color1 : color2
-      colors.push(mixedColor.r, mixedColor.g, mixedColor.b)
-   }
-
-   geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3))
-   geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3))
-
-   const material = new THREE.PointsMaterial({ size: 2, vertexColors: true, opacity: 0.6, transparent: true })
-   particlesMesh = new THREE.Points(geometry, material)
-   scene.add(particlesMesh)
-
-   const animate = () => {
-      animationId = requestAnimationFrame(animate)
-      particlesMesh.rotation.y -= 0.001
-      particlesMesh.rotation.x += 0.0005
-      renderer.render(scene, camera)
-   }
-   animate()
-   
-   window.addEventListener('resize', onWindowResize)
-}
-
-function onWindowResize() {
-    if (!camera || !renderer) return
-    camera.aspect = window.innerWidth / window.innerHeight
-    camera.updateProjectionMatrix()
-    renderer.setSize(window.innerWidth, window.innerHeight)
-}
-
-onMounted(() => {
-   init3DBackground()
-})
-
-onUnmounted(() => {
-   if (animationId) cancelAnimationFrame(animationId)
-   window.removeEventListener('resize', onWindowResize)
-})
-
 
 const onSubmit = async () => {
   loading.value = true
@@ -392,22 +337,18 @@ const onSubmit = async () => {
 
     if (role.value === 'student' && response.data.index_number) {
         generatedIndexNumber.value = response.data.index_number
-        // registeredToken.value = response.data.token // Save token - Removed as per new code
         showSuccessDialog.value = true
         
-        // Auto-login logic could be here, but we let user see ID first
-        if (response.data.user && response.data.token) {
+        // Auto-login logic
+        if (response.data.user && response.data.token && authStore) {
            authStore.addAccount({ user: response.data.user, token: response.data.token })
         }
 
     } else {
         $q.notify({
-            color: 'positive',
-            message: 'Registration Successful!'
+            type: 'positive',
+            message: 'Registration Successful! Please wait for approval.'
         })
-        
-        // Teacher or other Redirect
-        // Since we are in the same app, just router push
         router.push('/login')
     }
 
@@ -423,7 +364,7 @@ const onSubmit = async () => {
     }
 
     $q.notify({
-        color: 'negative',
+        type: 'negative',
         message: msg
     })
   } finally {
@@ -432,40 +373,128 @@ const onSubmit = async () => {
 }
 
 const goToStudentDashboard = () => {
-    // Already in client app, so direct push
     router.push('/student/dashboard')
 }
 </script>
 
-<style scoped>
-.auth-card { width: 100%; max-width: 600px; border-radius: 24px; }
+<style lang="scss" scoped>
+.register-page {
+  background-color: #050505;
+  font-family: 'Inter', sans-serif;
+  min-height: 100vh;
+}
+
+/* Background Effects (Matches Login Style) */
+.stars {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  width: 100%; height: 100%;
+  background: #000;
+  background-image: 
+        radial-gradient(1px 1px at 20px 30px, #eee, rgba(0,0,0,0)),
+        radial-gradient(1px 1px at 40px 70px, #fff, rgba(0,0,0,0)),
+        radial-gradient(1px 1px at 50px 160px, #ddd, rgba(0,0,0,0)),
+        radial-gradient(1px 1px at 90px 40px, #fff, rgba(0,0,0,0)),
+        radial-gradient(1px 1px at 130px 80px, #fff, rgba(0,0,0,0)),
+        radial-gradient(1.5px 1.5px at 160px 120px, #ddd, rgba(0,0,0,0));
+  background-repeat: repeat;
+  background-size: 200px 200px;
+  animation: stars-move 100s linear infinite;
+  opacity: 0.6;
+  z-index: 0;
+  pointer-events: none;
+}
+@keyframes stars-move {
+    from { background-position: 0 0; }
+    to { background-position: -200px 200px; }
+}
+
+.glow-spot {
+   position: fixed;
+   border-radius: 50%;
+   filter: blur(100px);
+   opacity: 0.15;
+   z-index: 2;
+   pointer-events: none;
+}
+.spot-1 { width: 500px; height: 500px; top: -100px; left: -100px; background: #2563eb; }
+.spot-2 { width: 400px; height: 400px; bottom: -50px; right: -50px; background: #7c3aed; }
+.spot-3 { width: 300px; height: 300px; top: 40%; left: 50%; transform: translate(-50%, -50%); background: #FFD700; opacity: 0.08; }
+
+.auth-card { width: 100%; max-width: 700px; border-radius: 32px; }
+
+/* Glass Panel */
 .glass-panel {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(15, 15, 20, 0.6);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
 }
 
-.text-gradient-gold {
-  background: linear-gradient(to right, #FFD700, #FDB931);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+/* Tabs */
+.glass-tabs {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+.tab-item {
+  color: #9CA3AF;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+.tab-item.active {
+  color: white;
+  text-shadow: 0 0 10px rgba(255,255,255,0.3);
+}
+.bg-white-10 { background: rgba(255,255,255,0.1); }
+.transition-bg { transition: background 0.3s ease; }
+
+/* Inputs */
+.input-glass :deep(.q-field__control) {
+  background: rgba(255, 255, 255, 0.03) !important;
+  backdrop-filter: blur(4px);
+  border-radius: 12px;
+}
+.input-glass :deep(.q-field__control:before) {
+    border-color: rgba(255,255,255,0.1);
 }
 
-.glow-btn-pulse {
-   position: relative;
-   overflow: hidden;
-   animation: pulse-glow 2s infinite;
+/* Styles */
+.tracking-wide { letter-spacing: 0.025em; }
+.letter-spacing-1 { letter-spacing: 1px; }
+.opacity-20 { opacity: 0.2; }
+
+/* Buttons */
+.glow-btn-blue {
+    box-shadow: 0 4px 20px rgba(37, 99, 235, 0.4);
+    transition: all 0.3s ease;
 }
-@keyframes pulse-glow {
-   0% { box-shadow: 0 0 0 0 rgba(38, 166, 154, 0.7); }
-   70% { box-shadow: 0 0 0 10px rgba(38, 166, 154, 0); }
-   100% { box-shadow: 0 0 0 0 rgba(38, 166, 154, 0); }
+.glow-btn-blue:hover { box-shadow: 0 4px 30px rgba(37, 99, 235, 0.6); transform: translateY(-2px); }
+
+.glow-btn-purple {
+    box-shadow: 0 4px 20px rgba(124, 58, 237, 0.3);
+    transition: all 0.3s ease;
+}
+.glow-btn-purple:hover { box-shadow: 0 4px 30px rgba(124, 58, 237, 0.5); transform: translateY(-2px); }
+
+/* Avatar Glows */
+.avatar-glow {
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.1);
+    box-shadow: 0 0 30px rgba(0,0,0,0.5);
+}
+.bg-blue-dim { background: rgba(37, 99, 235, 0.15); box-shadow: 0 0 30px rgba(37, 99, 235, 0.2); }
+.bg-purple-dim { background: rgba(124, 58, 237, 0.15); box-shadow: 0 0 30px rgba(124, 58, 237, 0.2); }
+
+.glass-alert {
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.2);
 }
 
 .hover-scale { transition: transform 0.3s ease; }
 .hover-scale:hover { transform: scale(1.1); }
-.hover-underline:hover { text-decoration: underline !important; }
-
-.bg-white-5 { background: rgba(255, 255, 255, 0.05); }
+.hover-text-white:hover { color: white !important; }
+.transition-colors { transition: color 0.3s ease; }
 </style>

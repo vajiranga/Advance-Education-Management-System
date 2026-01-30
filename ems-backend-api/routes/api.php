@@ -73,6 +73,9 @@ Route::prefix('v1')->group(function () {
              
              // Payments View
              Route::get('teacher/payments', [App\Http\Controllers\Api\V1\PaymentController::class, 'getTeacherStudentPayments']);
+             
+             // Notices
+             Route::post('notices', [App\Http\Controllers\Api\V1\NoticeController::class, 'store']);
         });
 
         // --- PARENT ROUTES ---
@@ -82,6 +85,7 @@ Route::prefix('v1')->group(function () {
             Route::get('parent/children/{id}/courses', [App\Http\Controllers\Api\V1\ParentController::class, 'getChildCourses']);
             Route::get('parent/children/{id}/results', [App\Http\Controllers\Api\V1\ParentController::class, 'getChildResults']);
             Route::get('parent/children/{id}/attendance', [App\Http\Controllers\Api\V1\ParentController::class, 'getChildAttendance']);
+            Route::get('parent/children/{id}/notices', [App\Http\Controllers\Api\V1\ParentController::class, 'getChildNotices']);
             // Route::get('parent/fees/due', ...); // Moved to Shared
         });
 

@@ -53,7 +53,7 @@
                  <q-item class="bg-primary text-white">
                    <q-item-section>
                      <div class="text-subtitle2">{{ authStore.user?.name || 'Teacher' }}</div>
-                     <div class="text-caption">{{ authStore.user?.username }}</div>
+                     <div class="text-caption">{{ displayTeacherId }}</div>
                    </q-item-section>
                  </q-item>
 
@@ -104,11 +104,6 @@
           <q-item-section>My Classes</q-item-section>
         </q-item>
         
-        <q-item clickable v-ripple to="/teacher/students" :active-class="$q.dark.isActive ? 'text-teal-2 bg-grey-9 border-l-teal' : 'text-primary bg-blue-1'">
-          <q-item-section avatar><q-icon name="people" /></q-item-section>
-          <q-item-section>Students</q-item-section>
-        </q-item>
-        
         <q-item clickable v-ripple to="/teacher/attendance" :active-class="$q.dark.isActive ? 'text-teal-2 bg-grey-9 border-l-teal' : 'text-primary bg-blue-1'">
           <q-item-section avatar><q-icon name="fact_check" /></q-item-section>
           <q-item-section>Attendance</q-item-section>
@@ -132,13 +127,22 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useAuthStore } from 'stores/auth-store'
 import { useQuasar } from 'quasar'
 
 const leftDrawerOpen = ref(false)
 const authStore = useAuthStore()
 const $q = useQuasar()
+
+// Visual fix for ID display (STU -> TCH)
+const displayTeacherId = computed(() => {
+    let id = authStore.user?.username || ''
+    if (id && id.startsWith('STU')) {
+        return id.replace('STU', 'TCH')
+    }
+    return id
+})
 
 const notifications = ref([
     { id: 1, title: 'Class Cancelled', message: 'Physics 2026 class postponed.', time: '1 hour ago' }

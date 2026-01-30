@@ -108,7 +108,7 @@ const onSubmit = async () => {
   try {
       await authStore.login(email.value, password.value)
       $q.notify({ type: 'positive', message: 'Welcome Back, Admin!' })
-      router.push('/finance') // Direct to Finance for testing
+      router.push('/attendance') // Direct to Attendance as requested
   } catch (e) {
       console.error(e)
       $q.notify({ type: 'negative', message: e.message || 'Login Failed. Check credentials.' })

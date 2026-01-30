@@ -304,7 +304,7 @@ class CourseController extends Controller
                         'users.name as student_name',
                         'users.email as student_email',
                         'users.phone as student_contact',
-                        // 'users.avatar as student_avatar', // Column does not exist
+                        'users.avatar as student_avatar',
                         'courses.id as course_id',
                         'courses.name as course_name',
                         'courses.fee_amount',
@@ -312,8 +312,26 @@ class CourseController extends Controller
                         'enrollments.id as enrollment_id',
                         'enrollments.status as enrollment_status'
                     )
-                    ->where('courses.teacher_id', $user->id)
-                    ->whereNull('courses.deleted_at'); // Handle soft delete manually
+                    ->whereNull('courses.deleted_at'); 
+                    
+        $targetTeacherId = $user->id;
+        if ($request->has('teacher_id')) {
+             // Authorization: Only Admin can view other teachers
+             if ($user->role === 'admin' || $user->role === 'super_admin') {
+                 $targetTeacherId = $request->teacher_id;
+             } else {
+                 // If a teacher tries to view another, usually block or ignore. 
+                 // For now, let's enforce own ID to be safe, or 403.
+                 if ($request->teacher_id != $user->id) {
+                     // Log::warning("Unauthorized teacher access", ['user' => $user->id, 'target' => $request->teacher_id]);
+                     // return response()->json(['message' => 'Unauthorized'], 403);
+                     // Or just ignore and show own?
+                 }
+             }
+        }
+        
+        // Apply the filter
+        $query->where('courses.teacher_id', $targetTeacherId);
                     
         // Filter by specific Class (Course)
         if ($request->has('course_id') && $request->course_id !== 'all') {
@@ -358,7 +376,7 @@ class CourseController extends Controller
             return [
                  'id' => $row->student_id,
                  'name' => $row->student_name,
-                 'avatar' => 'https://cdn.quasar.dev/img/boy-avatar.png', // Default avatar
+                 'avatar' => $row->student_avatar ?? 'https://cdn.quasar.dev/img/boy-avatar.png', 
                  'course_name' => $row->course_name,
                  'grade' => $row->grade,
                  'contact' => $row->student_contact ?? $row->student_email,

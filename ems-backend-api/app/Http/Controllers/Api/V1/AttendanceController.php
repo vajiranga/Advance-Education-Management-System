@@ -60,19 +60,47 @@ class AttendanceController extends Controller
      */
     public function getStudents(Request $request)
     {
-        $request->validate([
-            'course_id' => 'required|exists:courses,id',
+        $validator = Validator::make($request->all(), [
+            'course_id' => 'required', 
             'date' => 'required|date'
         ]);
+        
+        if ($validator->fails()) return response()->json(['errors' => $validator->errors()], 422);
 
         $courseId = $request->course_id;
         $date = $request->date;
+        
+        if ($courseId === 'all') {
+             $teacherId = $request->user()->id;
+             // Get course IDs taught by this teacher
+             $courseIds = Course::where('teacher_id', $teacherId)->pluck('id');
+             
+             // Get unique students enrolled in these courses
+             $students = \App\Models\User::whereHas('courses', function($q) use ($courseIds) {
+                 $q->whereIn('courses.id', $courseIds);
+             })
+             ->with(['attendances' => function($q) use ($courseIds, $date) {
+                 $q->whereIn('course_id', $courseIds)->where('date', $date);
+             }])
+             ->get()
+             ->map(function($student) {
+                // Take the first attendance status found for this date (if any)
+                $att = $student->attendances->first();
+                $student->attendance_status = $att ? $att->status : null;
+                $student->attendance_note = $att ? $att->note : null;
+                unset($student->attendances);
+                return $student;
+             });
+
+             return response()->json(['data' => $students]);
+        }
+
+        // Standard validation for specific course ID
+        if (!Course::where('id', $courseId)->exists()) {
+             return response()->json(['message' => 'Invalid course ID'], 422);
+        }
 
         $course = Course::findOrFail($courseId);
-        
-        // Get students enrolled in the course
-        // Using 'students' relationship from Course model
-        // And joining/with-ing the attendance for the specific date
         
         $students = $course->students()
             ->with(['attendances' => function($q) use ($courseId, $date) {
@@ -80,7 +108,6 @@ class AttendanceController extends Controller
             }])
             ->get()
             ->map(function($student) {
-                // Flatten structural data for easier frontend consumption
                 $att = $student->attendances->first();
                 $student->attendance_status = $att ? $att->status : null;
                 $student->attendance_note = $att ? $att->note : null;

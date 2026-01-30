@@ -11,7 +11,7 @@
               <!-- Avatar Removed -->
               <div>
                 <div class="text-h5 text-weight-bold" :class="$q.dark.isActive ? 'text-white' : ''">{{ effectiveStudent?.name || 'Student' }}</div>
-                <div class="text-subtitle1" :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey-7'">{{ effectiveStudent?.username || 'ID: ???' }}</div>
+                <div class="text-subtitle1" :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey-7'">{{ displayId }}</div>
                 <q-chip size="sm" :color="$q.dark.isActive ? 'grey-8' : 'blue-1'" :text-color="$q.dark.isActive ? 'blue-2' : 'primary'" icon="school">
                   Student
                 </q-chip>
@@ -23,7 +23,7 @@
           <div class="col-12 col-md-4 text-center">
              <div class="q-pa-sm rounded-borders inline-block" :class="$q.dark.isActive ? 'bg-white' : 'bg-grey-2'">
                <div style="font-family: 'Libre Barcode 39', sans-serif; font-size: 48px; line-height: 1; color: black !important;">
-                 *{{ effectiveStudent?.username || '0000' }}*
+                 *{{ displayId }}*
                </div>
              </div>
              <div class="text-caption q-mt-sm" :class="$q.dark.isActive ? 'text-grey-5' : 'text-grey'">Scan at Entrance</div>
@@ -49,7 +49,7 @@
                   <div style="flex: 1; z-index: 1;">
                        <div style="font-size: 12px; opacity: 0.8; letter-spacing: 1px; margin-bottom: 4px;">EMS STUDENT IDENTITY</div>
                        <div style="font-size: 20px; font-weight: bold; margin-bottom: 4px; line-height: 1.2;">{{ effectiveStudent?.name || 'Student Name' }}</div>
-                       <div style="font-size: 14px; opacity: 0.9; margin-bottom: 12px;">{{ effectiveStudent?.username || 'ID-00000' }}</div>
+                       <div style="font-size: 14px; opacity: 0.9; margin-bottom: 12px;">{{ displayId }}</div>
                        
                        <div class="row q-col-gutter-xs">
                             <div class="col-6">
@@ -77,7 +77,7 @@
 
             <!-- Barcode Footer -->
             <div style="position: absolute; bottom: 15px; left: 20px; right: 20px; background: white; padding: 4px 10px; text-align: center; border-radius: 6px;">
-                 <div style="font-family: 'Libre Barcode 39', sans-serif; font-size: 36px; color: black; line-height: 1; margin-bottom: -5px;">*{{ effectiveStudent?.username || '0000' }}*</div>
+                 <div style="font-family: 'Libre Barcode 39', sans-serif; font-size: 36px; color: black; line-height: 1; margin-bottom: -5px;">*{{ displayId }}*</div>
             </div>
         </div>
     </div>
@@ -224,21 +224,29 @@
                 <div class="absolute-top-right q-pa-sm">
                    <q-chip :color="$q.dark.isActive ? 'orange-9' : 'orange-1'" :text-color="$q.dark.isActive ? 'white' : 'orange'" size="xs" icon="star">Upcoming</q-chip>
                 </div>
-                <div class="text-h6 text-weight-bold ellipsis q-pr-xl" :class="$q.dark.isActive ? 'text-white' : ''">{{ course.name }}</div>
-                <div class="text-subtitle2" :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey-8'">For: {{ course.parent_course?.name }}</div>
                 
-                <div class="text-subtitle2 row items-center q-mt-sm" :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey-8'">
-                  <q-icon name="event" size="xs" class="q-mr-xs" />
-                  {{ course.schedule?.date }}
+                <div class="text-h6 text-weight-bold q-pr-xl" :class="$q.dark.isActive ? 'text-white' : ''">{{ course.name }}</div>
+                
+                <q-badge color="blue" transparent class="q-mt-xs">
+                    For: {{ course.parent_course?.name }}
+                </q-badge>
+                
+                <div class="q-mt-md text-subtitle2" :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey-8'">
+                   <q-icon name="meeting_room" class="q-mr-xs" /> {{ course.hall?.name || 'No Hall' }}
                 </div>
-                <div class="text-subtitle2 row items-center q-mt-xs" :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey-8'">
-                  <q-icon name="schedule" size="xs" class="q-mr-xs" />
-                  {{ course.schedule?.start }} - {{ course.schedule?.end }}
+                
+                <div class="text-caption q-mt-xs" :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey-8'">
+                   <q-icon name="event" size="xs" class="q-mr-xs" />
+                   {{ course.schedule?.date }}
+                   <span class="q-mx-xs">|</span>
+                   <q-icon name="schedule" size="xs" class="q-mr-xs" />
+                   {{ course.schedule?.start }} - {{ course.schedule?.end }}
                 </div>
-                <div class="text-subtitle2 row items-center q-mt-xs" :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey-8'">
-                  <q-icon name="meeting_room" class="q-mr-xs" />
-                  {{ course.hall?.name || 'No Hall' }}
+
+                <div class="q-mt-sm text-weight-bold" :class="$q.dark.isActive ? 'text-green-4' : 'text-green-8'">
+                   Fee: LKR {{ course.fee_amount }}
                 </div>
+
              </q-card-section>
            </q-card>
         </div>
@@ -338,7 +346,7 @@ async function downloadIdCard() {
             useCORS: true
         })
         const link = document.createElement('a')
-        link.download = `Student_ID_${effectiveStudent.value?.username || 'student'}.png`
+        link.download = `Student_ID_${displayId.value || 'student'}.png`
         link.href = canvas.toDataURL('image/png')
         link.click()
         $q.notify({ type: 'positive', message: 'ID Card Downloaded!' })
@@ -357,6 +365,15 @@ const effectiveStudent = computed(() => {
         return authStore.selectedChild || null // Fallback to null if no child selected
     }
     return authStore.user // Normal student login
+})
+
+const displayId = computed(() => {
+    const id = effectiveStudent.value?.username || '0000'
+    // Visual patch: Replace TCH with STD if it appears on student profile
+    if (id && id.startsWith('TCH')) {
+        return id.replace('TCH', 'STD')
+    }
+    return id
 })
 
 const regularCourses = computed(() => (myCourses.value || []).filter(c => c.type === 'regular' || !c.type))

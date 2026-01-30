@@ -20,6 +20,7 @@ const routes = [
   {
     path: '/student',
     component: () => import('layouts/MainLayout.vue'),
+    meta: { role: 'student' },
     children: [
       { path: '', redirect: 'dashboard' },
       { path: 'dashboard', component: () => import('pages/IndexPage.vue') },
@@ -34,11 +35,12 @@ const routes = [
   {
     path: '/parent',
     component: () => import('layouts/ParentLayout.vue'),
+    meta: { role: 'parent' },
     children: [
       { path: '', redirect: 'dashboard' },
       { path: 'dashboard', component: () => import('pages/ParentDashboard.vue') },
       { path: 'results', component: () => import('pages/ParentResults.vue') },
-      { path: 'payments', component: () => import('pages/StudentPaymentsPage.vue'), meta: { isParentView: true } },
+      { path: 'payments', component: () => import('pages/StudentPaymentsPage.vue'), meta: { role: 'parent', isParentView: true } },
       { path: 'attendance', component: () => import('pages/ParentAttendancePage.vue') },
 
       { path: 'profile', component: () => import('pages/ParentProfilePage.vue') }
@@ -47,11 +49,11 @@ const routes = [
   {
     path: '/teacher',
     component: () => import('layouts/TeacherLayout.vue'),
+    meta: { role: 'teacher' },
     children: [
       { path: '', redirect: 'dashboard' },
       { path: 'dashboard', component: () => import('pages/TeacherDashboardPage.vue') },
       { path: 'classes', component: () => import('pages/TeacherClassList.vue') },
-      { path: 'students', component: () => import('pages/TeacherStudentList.vue') },
       { path: 'attendance', component: () => import('pages/TeacherAttendanceSheet.vue') },
       { path: 'exams', component: () => import('pages/TeacherExamBoard.vue') },
     ]

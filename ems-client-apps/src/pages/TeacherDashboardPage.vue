@@ -11,7 +11,7 @@
                  <!-- Avatar Removed -->
                  <div>
                    <div class="text-h5 text-weight-bold" :class="$q.dark.isActive ? 'text-teal-2' : 'text-teal-9'">{{ authStore.user?.name || 'Teacher' }}</div>
-                 <div class="text-subtitle1" :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey-7'">{{ authStore.user?.username || 'ID: ???' }}</div>
+                 <div class="text-subtitle1" :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey-7'">{{ displayTeacherId }}</div>
                  <div class="row q-gutter-x-sm q-mt-xs">
                      <q-chip size="sm" :color="$q.dark.isActive ? 'teal-9' : 'teal-1'" :text-color="$q.dark.isActive ? 'teal-1' : 'teal'" icon="verified_user" label="Verified Teacher" />
                      <q-chip size="sm" :color="$q.dark.isActive ? 'blue-9' : 'blue-1'" :text-color="$q.dark.isActive ? 'blue-1' : 'blue'" icon="email" :label="authStore.user?.email" />
@@ -24,7 +24,7 @@
            <div class="col-12 col-md-4 text-center">
               <div class="q-pa-md rounded-borders inline-block" :class="$q.dark.isActive ? 'bg-white' : 'bg-grey-2'">
                 <div style="font-family: 'Libre Barcode 39', sans-serif; font-size: 48px; line-height: 1; color: black !important;">
-                  *{{ authStore.user?.username || '000000' }}*
+                  *{{ displayTeacherId }}*
                 </div>
               </div>
               <div class="text-caption q-mt-sm" :class="$q.dark.isActive ? 'text-grey-5' : 'text-grey'">Teacher ID Barcode</div>
@@ -108,15 +108,36 @@
                        <q-avatar :color="$q.dark.isActive ? 'teal-9' : 'teal-1'" :text-color="$q.dark.isActive ? 'teal-2' : 'teal'" icon="event" />
                    </q-item-section>
                    <q-item-section>
-                       <q-item-label class="text-weight-bold" :class="$q.dark.isActive ? 'text-white' : ''">{{ cls.name }}</q-item-label>
-                       <q-item-label caption :class="$q.dark.isActive ? 'text-grey-4' : ''">
-                           {{ typeof cls.schedule === 'string' ? JSON.parse(cls.schedule).date : cls.schedule.date }} | 
-                           {{ typeof cls.schedule === 'string' ? JSON.parse(cls.schedule).start : cls.schedule.start }}
-                       </q-item-label>
+                       <q-item-label class="text-weight-bold text-h6" :class="$q.dark.isActive ? 'text-white' : 'text-teal-9'">{{ cls.name }}</q-item-label>
+                       
+                        <div class="row items-center q-gutter-x-sm q-mt-xs">
+                           <q-badge :color="$q.dark.isActive ? 'blue-9' : 'blue-1'" :text-color="$q.dark.isActive ? 'blue-2' : 'blue'">
+                               {{ cls.subject?.name || 'Subject' }} - {{ cls.batch?.name || 'Grade' }}
+                           </q-badge>
+                           <q-badge v-if="cls.status === 'approved'" color="green" label="APPROVED" />
+                           <q-badge v-else color="orange" label="PENDING" />
+                       </div>
+
+                       <div class="q-mt-sm text-subtitle2" :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey-8'">
+                           <q-icon name="meeting_room" class="q-mr-xs" /> {{ cls.hall?.name || 'Hall TBA' }}
+                       </div>
+
+                       <div class="text-caption q-mt-none" :class="$q.dark.isActive ? 'text-grey-5' : 'text-grey'">
+                            <q-icon name="event" class="q-mr-xs" /> 
+                            {{ typeof cls.schedule === 'string' ? JSON.parse(cls.schedule).date : cls.schedule.date }}
+                            <span class="q-mx-xs">|</span>
+                            <q-icon name="schedule" class="q-mr-xs" />
+                            {{ typeof cls.schedule === 'string' ? JSON.parse(cls.schedule).start : cls.schedule.start }}
+                             - 
+                            {{ typeof cls.schedule === 'string' ? JSON.parse(cls.schedule).end : cls.schedule.end }}
+                       </div>
+
+                       <div class="q-mt-xs text-weight-bold" :class="$q.dark.isActive ? 'text-green-3' : 'text-green-7'">
+                            Fee: LKR {{ cls.fee_amount }}
+                       </div>
                    </q-item-section>
                    <q-item-section side>
                        <div class="row items-center q-gutter-xs">
-                           <q-chip size="sm" :color="$q.dark.isActive ? 'orange-9' : 'orange'" :text-color="$q.dark.isActive ? 'orange-1' : 'white'" :label="cls.status === 'approved' ? 'Approved' : 'Pending'" />
                            <q-btn flat round dense icon="more_vert" :color="$q.dark.isActive ? 'grey-4' : 'grey-7'">
                                <q-menu>
                                    <q-list style="min-width: 100px">
@@ -187,7 +208,7 @@
                       <q-btn outline class="full-width" color="teal" icon="add" label="Add Extra Class" stack @click="openAddClassDialog" />
                    </div>
                    <div class="col-6">
-                      <q-btn outline class="full-width" color="orange" icon="person_add" label="Add Student" stack />
+                      <q-btn outline class="full-width" color="purple" icon="campaign" label="Parent Meeting" stack @click="openMeetingDialog" />
                    </div>
                    <!-- ... -->
                 </div>
@@ -195,6 +216,49 @@
           </q-card>
        </div>
     </div>
+
+    <!-- Parent Meeting Dialog -->
+    <q-dialog v-model="showMeetingDialog">
+        <q-card style="min-width: 500px" :class="$q.dark.isActive ? 'bg-dark' : ''">
+             <q-card-section>
+                 <div class="text-h6" :class="$q.dark.isActive ? 'text-white' : ''">Call Parent Meeting / Notice</div>
+                 <div class="text-caption" :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey'">Notify parents about a meeting or important update.</div>
+             </q-card-section>
+             
+             <q-card-section class="q-gutter-md">
+                  <q-input v-model="meetingForm.title" label="Title (e.g. Term End Meeting)" outlined :rules="[val => !!val || 'Required']" :dark="$q.dark.isActive" :bg-color="$q.dark.isActive ? 'grey-9' : 'white'" />
+                  
+                  <q-input v-model="meetingForm.message" label="Message Details" type="textarea" outlined :rules="[val => !!val || 'Required']" :dark="$q.dark.isActive" :bg-color="$q.dark.isActive ? 'grey-9' : 'white'" />
+
+                  <div class="row items-center justify-between q-pa-sm rounded-borders" :class="$q.dark.isActive ? 'bg-grey-9' : 'bg-grey-2'">
+                      <div :class="$q.dark.isActive ? 'text-white' : ''">Send to All My Classes?</div>
+                      <q-toggle v-model="meetingForm.sendToAll" color="purple" />
+                  </div>
+
+                  <q-slide-transition>
+                      <div v-if="!meetingForm.sendToAll">
+                           <q-select 
+                                v-model="meetingForm.courseId"
+                                :options="activeRegularCourses"
+                                option-label="displayName"
+                                option-value="id"
+                                label="Select Specific Class"
+                                outlined
+                                emit-value
+                                map-options
+                                :dark="$q.dark.isActive"
+                                :bg-color="$q.dark.isActive ? 'grey-9' : 'white'"
+                           />
+                      </div>
+                  </q-slide-transition>
+             </q-card-section>
+
+             <q-card-actions align="right">
+                 <q-btn flat label="Cancel" v-close-popup :color="$q.dark.isActive ? 'grey-4' : 'primary'" />
+                 <q-btn color="purple" label="Send Notice" @click="sendNotice" :loading="sendingNotice" />
+             </q-card-actions>
+        </q-card>
+    </q-dialog>
 
     <!-- Add Extra Class Dialog -->
     <q-dialog v-model="showAddClassDialog">
@@ -346,6 +410,14 @@
  
  onMounted(() => {
      teacherStore.fetchCourses({ teacher_id: authStore.user?.id })
+ })
+
+ const displayTeacherId = computed(() => {
+     let id = authStore.user?.username || '0000'
+     if (id && id.startsWith('STU')) {
+         return id.replace('STU', 'TCH')
+     }
+     return id
  })
 
  const activeRegularCourses = computed(() => {
@@ -614,6 +686,57 @@
         const res = await api.get(`/v1/courses/${currentClassId.value}/students`)
         studentsList.value = res.data.data || res.data
     } catch(e) { console.error(e) }
+ }
+
+ // --- Meeting Logic ---
+ const showMeetingDialog = ref(false)
+ const sendingNotice = ref(false)
+ const meetingForm = ref({
+    title: '',
+    message: '',
+    sendToAll: false,
+    courseId: null,
+    type: 'meeting'
+ })
+
+ function openMeetingDialog() {
+    meetingForm.value = {
+        title: '',
+        message: '',
+        sendToAll: false,
+        courseId: null,
+        type: 'meeting'
+    }
+    showMeetingDialog.value = true
+ }
+
+ async function sendNotice() {
+    if (!meetingForm.value.title || !meetingForm.value.message) {
+        $q.notify({ type: 'warning', message: 'Please fill all details' })
+        return
+    }
+    if (!meetingForm.value.sendToAll && !meetingForm.value.courseId) {
+        $q.notify({ type: 'warning', message: 'Please select a class or choose Send All' })
+        return
+    }
+
+    sendingNotice.value = true
+    try {
+        await api.post('/v1/notices', {
+            title: meetingForm.value.title,
+            message: meetingForm.value.message,
+            type: meetingForm.value.type,
+            course_id: meetingForm.value.sendToAll ? 'all' : meetingForm.value.courseId,
+            scheduled_at: new Date().toISOString()
+        })
+        $q.notify({ type: 'positive', message: 'Notice Sent Successfully!' })
+        showMeetingDialog.value = false
+    } catch (e) {
+        console.error(e)
+        $q.notify({ type: 'negative', message: 'Failed to send notice' })
+    } finally {
+        sendingNotice.value = false
+    }
  }
  </script>
 

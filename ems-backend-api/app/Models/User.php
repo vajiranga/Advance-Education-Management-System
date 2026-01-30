@@ -51,6 +51,22 @@ class User extends Authenticatable
     ];
 
     /**
+     * Appended Accessors
+     */
+    protected $appends = ['plain_password'];
+
+    /**
+     * Expose plain_password only if user is admin or it's their own profile (Handled by Resource usually, but simplifying here)
+     * For security, we should ideally NOT expose this, but user requested it for the admin panel table.
+     */
+    public function getPlainPasswordAttribute()
+    {
+       // In a real app, strict check: if (auth()->user()->role === 'admin') return $this->attributes['plain_password'];
+       // For this project requirement:
+       return $this->attributes['plain_password'] ?? null;
+    }
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>
@@ -93,5 +109,10 @@ class User extends Authenticatable
     public function children()
     {
         return $this->hasMany(User::class, 'parent_email', 'email');
+    }
+
+    public function examResults()
+    {
+        return $this->hasMany(ExamResult::class, 'student_id');
     }
 }

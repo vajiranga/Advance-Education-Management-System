@@ -1,7 +1,15 @@
 import { boot } from 'quasar/wrappers'
 import axios from 'axios'
 
-const api = axios.create({ baseURL: 'http://localhost:8000/api' })
+// Set default headers for compatibility with Laravel API
+const api = axios.create({ 
+    baseURL: 'http://localhost:8000/api',
+    headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+    },
+    withCredentials: true 
+})
 
 // Add Request Interceptor for Token
 api.interceptors.request.use((config) => {
@@ -14,7 +22,7 @@ api.interceptors.request.use((config) => {
 
 import { useAuthStore } from 'stores/auth-store'
 
-export default boot(({ app, store }) => {
+export default boot(({ app, store, router }) => {
     app.config.globalProperties.$axios = axios
     app.config.globalProperties.$api = api
 
@@ -24,13 +32,9 @@ export default boot(({ app, store }) => {
     api.interceptors.response.use(
         response => response,
         error => {
-            if (error.response && (error.response.status === 401 || error.response.status === 403)) {
-                // Determine if it's just a permissions issue or invalid token
-                // const isForbidden = error.response.status === 403
-
-                // Only logout on 401 or if we want to force logout on 403 (often safer for this admin app)
-                // authStore.logout()
-                // router.push('/login')
+            if (error.response && error.response.status === 401) {
+                authStore.logout()
+                router.push('/login')
             }
             return Promise.reject(error)
         }

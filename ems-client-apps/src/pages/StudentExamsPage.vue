@@ -45,7 +45,7 @@
                  </q-card-section>
                  <q-separator :class="$q.dark.isActive ? 'bg-grey-8' : ''" />
                  <q-card-actions align="right">
-                   <q-btn flat color="primary" label="View Syllabus" />
+                   <q-btn flat color="green" label="ATTENDED" icon="check_circle" @click="viewExamDetails(exam)" />
                  </q-card-actions>
                </q-card>
              </div>
@@ -55,6 +55,45 @@
            <q-icon name="event_busy" size="64px" :color="$q.dark.isActive ? 'grey-7' : 'grey-4'" />
            <div class="text-h6 q-mt-md" :class="$q.dark.isActive ? 'text-grey-4' : ''">No upcoming exams</div>
         </div>
+
+        <!-- Exam Detail Dialog -->
+        <q-dialog v-model="detailsOpen">
+            <q-card style="min-width: 350px" :class="$q.dark.isActive ? 'bg-dark border-dark' : 'bg-white'">
+                <q-card-section>
+                    <div class="text-h6" :class="$q.dark.isActive ? 'text-white' : ''">{{ selectedExam?.subject }}</div>
+                    <div class="text-subtitle2 text-grey">{{ selectedExam?.title }}</div>
+                </q-card-section>
+                
+                <q-separator />
+
+                <q-card-section class="q-pt-none q-mt-md">
+                    <div class="row items-center justify-between q-mb-sm">
+                        <span :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey-8'">Student:</span>
+                        <span class="text-weight-bold" :class="$q.dark.isActive ? 'text-white' : ''">Me (Student)</span>
+                    </div>
+                    <div class="row items-center justify-between q-mb-sm">
+                         <span :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey-8'">Date:</span>
+                         <span :class="$q.dark.isActive ? 'text-white' : ''">{{ selectedExam?.date }}</span>
+                    </div>
+                    <div class="row items-center justify-between q-mb-lg">
+                         <span :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey-8'">Venue:</span>
+                         <span :class="$q.dark.isActive ? 'text-white' : ''">{{ selectedExam?.venue }}</span>
+                    </div>
+
+                    <div class="bg-blue-1 q-pa-md rounded-borders text-center" :class="$q.dark.isActive ? 'bg-grey-9' : ''">
+                        <div class="text-caption text-grey">Result Status</div>
+                        <div class="text-h5 text-primary text-weight-bold" v-if="selectedExamResult">{{ selectedExamResult.mark }}%</div>
+                        <div class="text-h6 text-grey" v-else>Pending Results</div>
+                        <div class="text-caption text-orange" v-if="!selectedExamResult">Teacher has not entered marks yet.</div>
+                    </div>
+                </q-card-section>
+
+                <q-card-actions align="right">
+                    <q-btn flat label="Close" color="primary" v-close-popup />
+                </q-card-actions>
+            </q-card>
+        </q-dialog>
+
       </q-tab-panel>
 
       <!-- Results Tab -->
@@ -88,13 +127,7 @@
            </q-table>
          </q-card>
          
-         <!-- Performance Chart Placeholder -->
-         <q-card class="q-mt-md no-shadow q-pa-md" :class="$q.dark.isActive ? 'bg-dark border-dark' : 'bg-white border-light'">
-            <div class="text-subtitle1 text-weight-bold q-mb-sm" :class="$q.dark.isActive ? 'text-white' : ''">Performance Analysis</div>
-            <div class="text-caption text-center" :class="$q.dark.isActive ? 'text-grey-5' : 'text-grey'" style="height: 150px; border: 2px dashed; border-radius: 8px; line-height: 150px; border-color: inherit;">
-               [Performance Chart Component]
-            </div>
-         </q-card>
+
       </q-tab-panel>
 
     </q-tab-panels>
@@ -102,21 +135,21 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useExamStore } from 'stores/exam-store'
 
 const tab = ref('upcoming')
 
 const examStore = useExamStore()
 
-onMounted(async () => {
+async function loadData() {
     const data = await examStore.fetchMyExams()
     upcomingExams.value = data.upcoming.map(e => ({
         id: e.id,
         subject: e.subject || 'Subject',
         title: e.title,
         date: new Date(e.date).toLocaleDateString(),
-        time: 'TBA', // Backend currently just stores date
+        time: 'TBA',
         duration: 'TBA',
         venue: 'Main Hall',
         description: e.description
@@ -127,14 +160,31 @@ onMounted(async () => {
         subject: r.subject,
         exam: r.exam_title,
         date: new Date(r.date).toLocaleDateString(),
-        mark: Number(r.marks), // Ensure number
+        mark: Number(r.marks),
         grade: r.grade || '-',
         feedback: r.feedback
     }))
+}
+
+onMounted(async () => {
+    await loadData()
 })
 
 const upcomingExams = ref([])
 const results = ref([])
+const detailsOpen = ref(false)
+const selectedExam = ref(null)
+
+const selectedExamResult = computed(() => {
+    if (!selectedExam.value) return null
+    return results.value.find(r => r.id === selectedExam.value.id)
+})
+
+function viewExamDetails(exam) {
+    selectedExam.value = exam
+    detailsOpen.value = true
+    loadData() // Silent refresh
+}
 
 const columns = [
   { name: 'subject', label: 'Subject', field: 'subject', align: 'left' },

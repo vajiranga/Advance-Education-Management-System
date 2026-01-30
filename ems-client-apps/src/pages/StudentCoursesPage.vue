@@ -71,19 +71,7 @@
               <q-separator :class="$q.dark.isActive ? 'bg-grey-8' : ''" />
 
               <q-card-actions align="right">
-                <q-btn flat dense icon="history" :color="$q.dark.isActive ? 'grey-5' : 'grey-7'" size="sm">
-                  <q-tooltip>Recordings</q-tooltip>
-                </q-btn>
-                <q-btn unelevated color="primary" label="Enter Class" size="sm" icon-right="login" />
-                <q-btn flat dense round icon="more_vert" size="sm" :color="$q.dark.isActive ? 'grey-5' : ''">
-                   <q-menu :class="$q.dark.isActive ? 'bg-dark' : ''">
-                      <q-list style="min-width: 100px">
-                        <q-item clickable v-close-popup @click="dropCourse(course.id)" class="text-negative">
-                          <q-item-section>Drop Course</q-item-section>
-                        </q-item>
-                      </q-list>
-                   </q-menu>
-                </q-btn>
+                <q-btn flat class="text-negative" label="Drop Course" size="sm" @click="dropCourse(course.id)" />
               </q-card-actions>
             </q-card>
           </div>
@@ -162,14 +150,22 @@ const isEnrolled = (courseId) => {
 }
 
 const dropCourse = async (courseId) => {
-    try {
-        await api.post(`/v1/courses/${courseId}/drop`) 
-        $q.notify({ type: 'info', message: 'Course Dropped' })
-        studentStore.fetchMyCourses()
-    } catch (err) {
-       console.error(err)
-       $q.notify({ type: 'negative', message: 'Failed to drop course' })
-    }
+    $q.dialog({
+        title: 'Confirm Drop',
+        message: 'Are you sure you want to drop this course? This action cannot be undone.',
+        cancel: true,
+        persistent: true,
+        ok: { label: 'Yes, Drop It', color: 'negative' }
+    }).onOk(async () => {
+        try {
+            await api.post(`/v1/courses/${courseId}/drop`) 
+            $q.notify({ type: 'info', message: 'Course Dropped' })
+            studentStore.fetchMyCourses()
+        } catch (err) {
+           console.error(err)
+           $q.notify({ type: 'negative', message: 'Failed to drop course' })
+        }
+    })
 }
 
 

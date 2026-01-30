@@ -1,23 +1,13 @@
 <template>
   <q-page :class="$q.dark.isActive ? 'q-pa-md bg-dark-page' : 'q-pa-md bg-grey-1'">
     
-    <!-- Header: Child Selector -->
+    <!-- Header -->
     <div class="row items-center justify-between q-mb-lg">
-      <div class="col-12 col-sm-6">
+      <div class="col-12">
         <div class="text-h5 text-weight-bold" :class="$q.dark.isActive ? 'text-white' : 'text-primary'">Attendance</div>
-        <div class="text-caption" :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey'">Manage class participation</div>
-      </div>
-      <div class="col-12 col-sm-6 row justify-end items-center q-gutter-x-md q-mt-sm q-mt-sm-none">
-         <div class="text-subtitle2" :class="$q.dark.isActive ? 'text-grey-4' : ''">Child:</div>
-         <q-select 
-            dense outlined 
-            v-model="selectedChild" 
-            :options="children" 
-            option-label="name"
-            :bg-color="$q.dark.isActive ? 'dark' : 'white'"
-            :dark="$q.dark.isActive" 
-            style="min-width: 200px"
-         />
+        <div class="text-caption" :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey'">
+             Manage class participation <span v-if="selectedChild">for {{ selectedChild.name }} ({{ selectedChild.username || 'No ID' }})</span>
+        </div>
       </div>
     </div>
 
@@ -106,31 +96,31 @@
 import { ref, onMounted, watch, computed } from 'vue'
 import { api } from 'boot/axios'
 import { date as qDate } from 'quasar'
+import { useAuthStore } from 'stores/auth-store'
 
-const children = ref([])
-const selectedChild = ref(null)
+const authStore = useAuthStore()
+
+// Remove local children ref
+// const children = ref([]) 
+const selectedChild = computed(() => authStore.selectedChild)
+
 const dashboardData = ref({ upcoming: [], recent: [] })
 const loading = ref(false)
 
 const upcoming = computed(() => dashboardData.value.upcoming || [])
 const recent = computed(() => dashboardData.value.recent || [])
 
-onMounted(async () => {
-    try {
-        const res = await api.get('/v1/parent/children')
-        children.value = res.data
-        if (children.value.length > 0) {
-            selectedChild.value = children.value[0]
-            fetchDashboard(selectedChild.value.id)
-        }
-    } catch (e) {
-        console.error('Error fetching children', e)
+onMounted(() => {
+    // Rely on global store selection
+    if (selectedChild.value) {
+        fetchDashboard(selectedChild.value.id)
     }
 })
 
+// Watch global selection
 watch(selectedChild, (newVal) => {
     if(newVal) fetchDashboard(newVal.id)
-})
+}, { immediate: true })
 
 async function fetchDashboard(childId) {
     loading.value = true

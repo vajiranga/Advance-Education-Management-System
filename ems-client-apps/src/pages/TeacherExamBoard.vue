@@ -166,7 +166,7 @@ const selectedExam = ref(null)
 const resultList = ref([])
 const loadingResults = ref(false)
 const saving = ref(false)
-const publishResults = ref(false)
+const publishResults = ref(true) // Default to true
 
 async function openResultsDialog(examId) {
     showResultsDialog.value = true

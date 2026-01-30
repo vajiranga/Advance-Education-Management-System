@@ -59,7 +59,7 @@
                 <q-item class="bg-primary text-white">
                   <q-item-section>
                     <div class="text-subtitle2">{{ authStore.user?.name || 'Student' }}</div>
-                    <div class="text-caption">{{ authStore.user?.username }}</div>
+                    <div class="text-caption">{{ displayUsername }}</div>
                   </q-item-section>
                 </q-item>
 
@@ -89,7 +89,7 @@
                    </q-item-section>
                    <q-item-section>
                      <q-item-label>{{ acc.user?.name }}</q-item-label>
-                     <q-item-label caption class="text-grey">{{ acc.user?.username }}</q-item-label>
+                     <q-item-label caption class="text-grey">{{ formatAccountId(acc.user?.username) }}</q-item-label>
                    </q-item-section>
                    <q-item-section side v-if="idx === authStore.activeAccountIndex">
                      <q-icon name="check" color="primary" size="xs" />
@@ -165,7 +165,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useAuthStore } from 'stores/auth-store'
 import { useRoute } from 'vue-router'
 import { useQuasar } from 'quasar'
@@ -179,6 +179,20 @@ const notifications = ref([
     { id: 1, title: 'Welcome to EMS', message: 'Your student portal is ready to use.', time: 'Just now' },
     { id: 2, title: 'Exam Schedule Released', message: 'The schedule for Physics has been updated.', time: '2 hours ago' }
 ])
+
+// Visual Fix: Ensure Student Portal shows STD prefix even if backend sends TCH (e.g. reused account)
+const displayUsername = computed(() => {
+    const id = authStore.user?.username || ''
+    if (id.startsWith('TCH')) return id.replace('TCH', 'STD')
+    return id
+})
+
+// Helper for Switch Account list
+function formatAccountId(id) {
+    if (!id) return ''
+    if (id.startsWith('TCH')) return id.replace('TCH', 'STD')
+    return id
+}
 
 // Set default dark mode if saved or system preference (Quasar might do this auto if configured)
 // For now, let's verify if toggle works.

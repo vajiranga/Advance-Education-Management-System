@@ -23,7 +23,7 @@
             dense 
             outlined 
             v-model="selectedClass" 
-            :options="courses" 
+            :options="classOptions" 
             option-label="name"
             option-value="id" 
             label="Choose Class"
@@ -83,9 +83,9 @@
           
           <q-separator :class="$q.dark.isActive ? 'bg-grey-8' : ''" />
           
-          <div class="row justify-end q-pa-md">
-             <q-btn color="teal" label="Save Attendance" icon="save" @click="saveAttendance" :loading="loading" />
-          </div>
+           <div class="row justify-end q-pa-md" v-if="selectedClass?.id !== 'all'">
+              <q-btn color="teal" label="Save Attendance" icon="save" @click="saveAttendance" :loading="loading" />
+           </div>
        </q-card-section>
     </q-card>
     
@@ -108,6 +108,14 @@ const authStore = useAuthStore()
 const { courses, loading } = storeToRefs(teacherStore)
 
 const selectedClass = ref(null)
+
+const classOptions = computed(() => {
+    return [
+        { id: 'all', name: 'All Students' },
+        ...courses.value
+    ]
+})
+
 const selectedDate = ref(qDate.formatDate(Date.now(), 'YYYY-MM-DD'))
 const attendanceList = ref([])
 

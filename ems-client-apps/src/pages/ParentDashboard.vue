@@ -1,6 +1,7 @@
 <template>
   <q-page :class="$q.dark.isActive ? 'q-pa-md bg-dark-page' : 'q-pa-md bg-grey-1'">
     <!-- Header: Child Selector -->
+    <!-- Header: Child Info (Simplified) -->
     <div class="row items-center justify-between q-mb-lg q-pa-md rounded-borders shadow-1" :class="$q.dark.isActive ? 'bg-dark border-dark' : 'bg-white border-light'">
       <div>
         <div class="text-subtitle2" :class="$q.dark.isActive ? 'text-grey-5' : 'text-grey-7'">Viewing details for:</div>
@@ -9,19 +10,7 @@
             <template v-else>No Child Selected</template>
         </div>
       </div>
-      <q-btn-dropdown :color="$q.dark.isActive ? 'primary' : 'primary'" flat label="Switch Child" icon="child_care">
-        <q-list :class="$q.dark.isActive ? 'bg-dark text-white' : 'bg-white text-black'">
-          <q-item v-for="child in children" :key="child.id" clickable v-close-popup @click="selectedChild = child" :active-class="$q.dark.isActive ? 'bg-grey-8' : 'bg-blue-1'">
-            <q-item-section avatar>
-              <q-avatar icon="face" color="primary" text-color="white" />
-            </q-item-section>
-            <q-item-section>
-              <q-item-label>{{ child.name }}</q-item-label>
-              <q-item-label caption :class="$q.dark.isActive ? 'text-grey-4' : ''">{{ child.grade }}</q-item-label>
-            </q-item-section>
-          </q-item>
-        </q-list>
-      </q-btn-dropdown>
+      <!-- Switch Child Removed (Administered via Sidebar/Layout) -->
     </div>
 
     <!-- Quick Stats -->
@@ -206,8 +195,12 @@
 <script setup>
 import { ref, onMounted, watch, computed } from 'vue'
 import { api } from 'boot/axios'
-const children = ref([])
-const selectedChild = ref(null)
+import { useAuthStore } from 'stores/auth-store' // Added Import
+const authStore = useAuthStore()
+
+// Use computed directly from store instead of local ref
+const selectedChild = computed(() => authStore.selectedChild)
+
 const stats = ref({
     attendance: 0,
     rank: '-',
@@ -223,14 +216,14 @@ const selectedDate = ref('2026/01/16')
 onMounted(async () => {
     loading.value = true
     try {
-        const res = await api.get('/v1/parent/children')
-        children.value = res.data
-        if (children.value.length > 0) {
-            selectedChild.value = children.value[0]
+        // We rely on Layout to fetch children usually, but okay to fetch here for safety
+        // But mainly we react to selectedChild availability
+        if (selectedChild.value) {
             fetchChildStats(selectedChild.value.id)
-        } 
+            fetchChildCourses(selectedChild.value.id)
+        }
     } catch (e) {
-        console.error('Failed to fetch children', e)
+        console.error('Failed to init dashboard', e)
     } finally {
         loading.value = false
     }
@@ -240,13 +233,13 @@ const childCourses = ref([])
 const selectedDateDetails = ref([])
 const showDateDialog = ref(false)
 
-// Watch for child switch
+// Watch for child switch in Store
 watch(selectedChild, (newVal) => {
     if(newVal) {
         fetchChildStats(newVal.id)
         fetchChildCourses(newVal.id)
     }
-})
+}, { immediate: true }) // Trigger immediately if already set
 
 async function fetchChildStats(childId) {
     try {

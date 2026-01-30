@@ -25,7 +25,7 @@
     </div>
 
     <q-tab-panels v-model="tab" animated class="bg-transparent">
-      
+
       <!-- Pending Fees Tab -->
       <q-tab-panel name="pending" class="q-pa-none">
          <div v-if="pending.length > 0">
@@ -43,7 +43,7 @@
                       </div>
                       <q-chip :color="$q.dark.isActive ? 'red-9' : 'red-1'" :text-color="$q.dark.isActive ? 'red-2' : 'red'" label="Due" size="sm" />
                    </div>
-                   
+
                    <div class="text-h5 text-primary text-weight-bold q-mt-md">LKR {{ fee.amount }}</div>
                    <div class="text-caption" :class="$q.dark.isActive ? 'text-grey-5' : 'text-grey'">Due: Immediately</div>
                  </q-card-section>
@@ -76,9 +76,9 @@
            >
              <template v-slot:body-cell-status="props">
                <q-td :props="props">
-                 <q-chip 
-                    :color="getStatusColor(props.row.status)" 
-                    :text-color="getStatusTextColor(props.row.status)" 
+                 <q-chip
+                    :color="getStatusColor(props.row.status)"
+                    :text-color="getStatusTextColor(props.row.status)"
                     size="sm"
                     :icon="getStatusIcon(props.row.status)"
                  >
@@ -93,13 +93,13 @@
               </template>
               <template v-slot:body-cell-actions="props">
                 <q-td :props="props">
-                   <q-btn 
+                   <q-btn
                      v-if="props.row.status === 'paid'"
-                     round flat dense 
-                     icon="print" 
-                     color="grey" 
+                     round flat dense
+                     icon="print"
+                     color="grey"
                      @click="printReceipt(props.row)"
-                     title="Download/Print Receipt" 
+                     title="Download/Print Receipt"
                    />
                 </q-td>
              </template>
@@ -140,7 +140,7 @@
 
         <q-card-section class="q-pt-none">
            <div class="text-h5 text-center q-mb-md font-weight-bold">Total: LKR {{ totalPayAmount }}</div>
-           
+
            <div class="text-subtitle2 q-mb-sm" :class="$q.dark.isActive ? 'text-grey-4' : ''">Select Payment Method:</div>
            <div class="q-gutter-sm">
              <q-radio v-model="paymentMethod" val="online" label="Online Payment (Card/Gateway)" :dark="$q.dark.isActive" />
@@ -317,14 +317,14 @@ function printReceipt(payment) {
                 <p>Thank you for your payment!</p>
                 <p>Generated on ${new Date().toLocaleString()}</p>
             </div>
-            
+
             <script>
                 setTimeout(() => { window.print(); window.close(); }, 500);
             ` + '<' + '/script>' + `
         </body>
         </html>
     `;
-    
+
     printWindow.document.write(htmlContent);
     printWindow.document.close();
 }
@@ -374,14 +374,14 @@ const submitPayment = async () => {
     }
 
     processing.value = true
-    
+
     // Simulate delay
     setTimeout(async () => {
         let payload;
-        
+
         if (paymentMethod.value === 'bank_transfer') {
              const formData = new FormData()
-             
+
              // Append multiple fee_ids
              selectedFees.value.forEach((fee, index) => {
                  formData.append(`fee_ids[${index}]`, fee.id)
@@ -396,15 +396,15 @@ const submitPayment = async () => {
              payload = {
                 fee_ids: selectedFees.value.map(f => f.id),
                 amount: totalPayAmount.value,
-                type: 'online', 
+                type: 'online',
                 note: 'Online Payment via Student Portal'
             }
         }
-        
+
         const res = await paymentStore.makePayment(payload)
         processing.value = false
         showPaymentDialog.value = false
-        
+
         if (res.success) {
             $q.notify({ type: 'positive', message: 'Payment Submitted! Status: ' + (paymentMethod.value === 'bank_transfer' ? 'Pending Approval' : 'Paid') })
         } else {

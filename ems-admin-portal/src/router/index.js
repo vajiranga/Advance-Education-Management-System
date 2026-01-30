@@ -26,15 +26,14 @@ export default function (/* { store, ssrContext } */) {
   })
 
   Router.beforeEach((to, from, next) => {
-    // Lazy load store to avoid circular dependency or early init issues
-    // Note: In Quasar, we can import store here if needed, or check localStorage directly for speed,
-    // but using store is cleaner. We need to import useAuthStore at top.
-    // However, inside this function 'store' (Pinia instance) is available via closure if we use it, 
-    // but 'export default function (/* { store } */)' is currently commented out.
-    // Let's use localStorage fallback for simplicity if store access is slightly complex here without imports.
-    // BETTER: Import useAuthStore.
-
     const token = localStorage.getItem('token')
+
+    // If going to login but already has token, redirect to home
+    if (to.path === '/login' && token) {
+      return next('/')
+    }
+
+    // If not public (login) and no token, redirect to login
     if (to.path !== '/login' && !token) {
       next('/login')
     } else {

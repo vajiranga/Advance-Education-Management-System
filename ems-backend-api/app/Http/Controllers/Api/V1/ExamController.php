@@ -84,25 +84,34 @@ class ExamController extends Controller
      */
     public function getResults(Request $request, $id)
     {
-         $exam = Exam::findOrFail($id);
-         
-         // Get all students in the course
-         $students = $exam->course->students()
-             ->with(['examResults' => function($q) use ($id) {
-                 $q->where('exam_id', $id);
-             }])
-             ->get()
-             ->map(function($student) {
-                 $res = $student->examResults->first();
-                 $student->marks = $res ? $res->marks : null;
-                 $student->grade = $res ? $res->grade : null;
-                 $student->feedback = $res ? $res->feedback : null;
-                 $student->is_published = $res ? $res->is_published : false;
-                 unset($student->examResults);
-                 return $student;
-             });
+         try {
+            $exam = Exam::with('course')->findOrFail($id);
+            
+            if (!$exam->course) {
+                return response()->json(['message' => 'Course not found'], 404);
+            }
+            
+            // Get all students in the course
+            $students = $exam->course->students()
+                ->with(['examResults' => function($q) use ($id) {
+                    $q->where('exam_id', $id);
+                }])
+                ->get()
+                ->map(function($student) {
+                    $res = $student->examResults->first();
+                    $student->marks = $res ? $res->marks : null;
+                    $student->grade = $res ? $res->grade : null;
+                    $student->feedback = $res ? $res->feedback : null;
+                    $student->is_published = $res ? (bool)$res->is_published : false;
+                    unset($student->examResults);
+                    return $student;
+                });
 
-         return response()->json(['exam' => $exam, 'students' => $students]);
+            return response()->json(['exam' => $exam, 'students' => $students]);
+         } catch (\Exception $e) {
+             // Log::error($e);
+             return response()->json(['message' => 'Server Error', 'error' => $e->getMessage()], 500);
+         }
     }
 
     /**

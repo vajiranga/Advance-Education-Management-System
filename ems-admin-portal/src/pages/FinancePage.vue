@@ -656,16 +656,17 @@ const chartSeries = ref([{
 
 // Watch for analytics data to update chart
 watch(() => analyticsData.value, (newVal) => {
-    if (newVal && newVal.monthly_revenue) {
+    // Fix: Use 'monthly' instead of 'monthly_revenue' as defined in analyticsData structure
+    if (newVal && newVal.monthly) {
         chartOptions.value = {
             ...chartOptions.value,
             xaxis: {
-                categories: newVal.monthly_revenue.map(item => item.month)
+                categories: newVal.monthly.map(item => item.month)
             }
         }
         chartSeries.value = [{
             name: 'Revenue',
-            data: newVal.monthly_revenue.map(item => item.total)
+            data: newVal.monthly.map(item => item.total)
         }]
     }
 

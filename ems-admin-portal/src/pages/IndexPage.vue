@@ -8,7 +8,7 @@
       </div>
       <div class="row q-gutter-sm">
         <q-btn icon="download" label="Export Report" color="primary" flat class="glass-btn" />
-        <q-btn icon="add" label="New Institute" color="secondary" unelevated class="shadow-2" @click="openRegistration" />
+        <q-btn icon="campaign" label="Send Broadcast" color="secondary" unelevated class="shadow-2" @click="openBroadcastDialog" />
       </div>
     </div>
 
@@ -77,57 +77,27 @@
       </div>
     </div>
 
-    <!-- Registration Dialog -->
-    <q-dialog v-model="showRegistrationDialog">
-      <q-card style="min-width: 400px" class="glass-panel">
+    <!-- Broadcast Dialog -->
+    <q-dialog v-model="showBroadcastDialog">
+      <q-card style="min-width: 500px" class="glass-panel">
         <q-card-section>
-          <div class="text-h6 text-primary">Register New Institute</div>
+          <div class="text-h6 text-primary">Send General Notice</div>
+          <div class="text-caption text-grey">This message will be visible to ALL parents/students.</div>
         </q-card-section>
 
-        <q-card-section class="q-pt-none">
-          <q-form @submit="onSubmitRegistration" class="q-gutter-md">
-            <q-input
-              filled
-              v-model="newInstitute.name"
-              label="Institute Name"
-              hint="e.g. Royal College"
-              lazy-rules
-              :rules="[ val => val && val.length > 0 || 'Name is required']"
-            />
-            
-            <q-input
-              filled
-              v-model="newInstitute.id"
-              label="Institute ID (Subdomain)"
-              prefix="https://"
-              suffix=".ems.lk"
-              hint="Unique identifier"
-              lazy-rules
-              :rules="[ val => val && val.length > 0 || 'ID is required']"
-            />
-
-            <q-input
-              filled
-              type="email"
-              v-model="newInstitute.email"
-              label="Admin Email"
-              lazy-rules
-              :rules="[ val => val && val.length > 0 || 'Email is required']"
-            />
-
-            <q-select
-              filled
-              v-model="newInstitute.plan_id"
-              :options="['basic', 'pro', 'enterprise']"
-              label="Subscription Plan"
-            />
-
-            <div align="right">
-              <q-btn flat label="Cancel" color="grey" v-close-popup />
-              <q-btn label="Create Institute" type="submit" color="primary" :loading="tenantStore.loading" />
-            </div>
-          </q-form>
+        <q-card-section class="q-pt-none q-gutter-md">
+             <q-input v-model="broadcastForm.title" label="Title" outlined :rules="[val => !!val || 'Required']" />
+             <q-input v-model="broadcastForm.message" label="Message" type="textarea" outlined :rules="[val => !!val || 'Required']" />
+             
+             <div class="bg-blue-1 text-blue-9 q-pa-sm rounded-borders">
+                 <q-icon name="info" /> Sending to <strong>All Active Students & Parents</strong>
+             </div>
         </q-card-section>
+
+        <q-card-actions align="right">
+            <q-btn flat label="Cancel" color="grey" v-close-popup />
+            <q-btn label="Send Broadcast" color="secondary" @click="sendBroadcast" :loading="sending" />
+        </q-card-actions>
       </q-card>
     </q-dialog>
   </q-page>
@@ -138,13 +108,18 @@ import { ref, computed, onMounted } from 'vue'
 import { useFinanceStore } from 'stores/finance-store'
 import { api } from 'boot/axios'
 
-const financeStore = useFinanceStore()
-const showRegistrationDialog = ref(false) // Keeping UI but might rename purpose later if needed
-const timeRange = ref('Last Month')
+import { useQuasar } from 'quasar'
+// ... imports
 
+const $q = useQuasar()
+const financeStore = useFinanceStore()
 const studentCount = ref(0)
 const courseCount = ref(0)
 const recentEnrollments = ref([])
+const showBroadcastDialog = ref(false)
+const sending = ref(false)
+const broadcastForm = ref({ title: '', message: '' })
+const timeRange = ref('Last Month')
 
 onMounted(async () => {
   await Promise.all([
@@ -162,25 +137,45 @@ async function fetchCounts() {
         
         const cRes = await api.get('/v1/courses', { params: { per_page: 1 } })
         courseCount.value = cRes.data.total
-    } catch (e) {
-        console.error(e)
-    }
+    } catch (e) { console.error(e) }
 }
 
 async function fetchRecentEnrollments() {
      try {
-         // Using payments as proxy for activity
          const res = await api.get('/v1/admin/payments/summary', { params: { page: 1, limit: 5 } })
          recentEnrollments.value = res.data.data
-     } catch {
-        // ignore
-     }
+     } catch { /* ignore */ }
 }
 
-// Dialog (Keeping placeholder)
-const newInstitute = ref({ name: '', id: '', email: '', plan_id: 'pro', domain: '' })
-const openRegistration = () => { showRegistrationDialog.value = true }
-const onSubmitRegistration = () => {}
+function openBroadcastDialog() {
+    broadcastForm.value = { title: '', message: '' }
+    showBroadcastDialog.value = true
+}
+
+async function sendBroadcast() {
+    if(!broadcastForm.value.title || !broadcastForm.value.message) {
+        $q.notify({ type: 'warning', message: 'Please fill all details' })
+        return
+    }
+
+    sending.value = true
+    try {
+        await api.post('/v1/notices', {
+            title: broadcastForm.value.title,
+            message: broadcastForm.value.message,
+            type: 'notice',
+            course_id: 'all',
+            scheduled_at: new Date().toISOString()
+        })
+        $q.notify({ type: 'positive', message: 'Broadcast Sent' })
+        showBroadcastDialog.value = false
+    } catch (e) {
+        console.error(e)
+        $q.notify({ type: 'negative', message: 'Failed to send' })
+    } finally {
+        sending.value = false
+    }
+}
 
 const stats = computed(() => [
   { title: 'Total Students', value: studentCount.value, icon: 'groups', color: 'primary', change: 0 },

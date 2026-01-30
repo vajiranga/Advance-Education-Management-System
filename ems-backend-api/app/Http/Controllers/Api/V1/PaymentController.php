@@ -19,6 +19,8 @@ class PaymentController extends Controller
         $user = $request->user();
         
         $payments = Payment::where('user_id', $user->id)
+            ->whereNotNull('course_id') // Filter out orphaned records
+            ->whereHas('course') // Ensure course relation exists
             ->with(['course', 'course.subject', 'course.batch'])
             ->orderBy('created_at', 'desc')
             ->paginate(20);
@@ -39,6 +41,7 @@ class PaymentController extends Controller
         
         $fees = \App\Models\StudentFee::where('student_id', $user->id)
             ->where('status', 'pending')
+            ->whereHas('course') // ONLY Return fees where course still exists
             ->with(['course.subject'])
             ->orderBy('month', 'desc')
             ->get()
@@ -303,8 +306,9 @@ class PaymentController extends Controller
         $user = $request->user();
         
         $childrenIds = \App\Models\User::where(function($query) use ($user) {
-                $query->where('parent_email', $user->email)
-                      ->orWhere('parent_id', $user->id);
+                if (!empty($user->email)) $query->where('parent_email', $user->email);
+                $query->orWhere('parent_id', $user->id);
+                if (!empty($user->phone)) $query->orWhere('parent_phone', $user->phone);
             })
             ->pluck('id');
         
@@ -337,8 +341,9 @@ class PaymentController extends Controller
         // Validation: Ensure child belongs to parent
         $isChild = \App\Models\User::where('id', $id)
              ->where(function($q) use ($user) {
-                 $q->where('parent_email', $user->email)
-                   ->orWhere('parent_id', $user->id);
+                 if (!empty($user->email)) $q->where('parent_email', $user->email);
+                 $q->orWhere('parent_id', $user->id);
+                 if (!empty($user->phone)) $q->orWhere('parent_phone', $user->phone);
              })->exists();
 
         if (!$isChild) return response()->json(['message' => 'Unauthorized'], 403);
@@ -373,8 +378,9 @@ class PaymentController extends Controller
         
         $isChild = \App\Models\User::where('id', $id)
              ->where(function($q) use ($user) {
-                 $q->where('parent_email', $user->email)
-                   ->orWhere('parent_id', $user->id);
+                 if (!empty($user->email)) $q->where('parent_email', $user->email);
+                 $q->orWhere('parent_id', $user->id);
+                 if (!empty($user->phone)) $q->orWhere('parent_phone', $user->phone);
              })->exists();
         
         if (!$isChild) return response()->json(['message' => 'Unauthorized'], 403);
