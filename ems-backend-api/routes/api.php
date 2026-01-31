@@ -9,25 +9,25 @@ use App\Http\Controllers\Api\AuthController;
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/parent-login', [AuthController::class, 'parentLogin']);
-// Temporary Setup Route
-Route::get('/setup-admin', function () {
-    $user = \App\Models\User::firstOrCreate(
-        ['email' => 'admin@ems.com'],
-        [
-            'name' => 'System Admin',
-            'password' => \Illuminate\Support\Facades\Hash::make('password'),
-            'plain_password' => 'password',
-            'role' => 'admin',
-            'username' => 'ADMIN001'
-        ]
-    );
-     // Update role just in case it existed but wasn't admin
-    if ($user->role !== 'admin') {
-        $user->role = 'admin';
-        $user->save();
-    }
-    return response()->json(['message' => 'Admin Ready', 'credentials' => ['email' => 'admin@ems.com', 'password' => 'password']]);
-});
+// Temporary Setup Route (DISABLED FOR PRODUCTION)
+// Route::get('/setup-admin', function () {
+//     $user = \App\Models\User::firstOrCreate(
+//         ['email' => 'admin@ems.com'],
+//         [
+//             'name' => 'System Admin',
+//             'password' => \Illuminate\Support\Facades\Hash::make('password'),
+//             'plain_password' => 'password',
+//             'role' => 'admin',
+//             'username' => 'ADMIN001'
+//         ]
+//     );
+//      // Update role just in case it existed but wasn't admin
+//     if ($user->role !== 'admin') {
+//         $user->role = 'admin';
+//         $user->save();
+//     }
+//     return response()->json(['message' => 'Admin Ready', 'credentials' => ['email' => 'admin@ems.com', 'password' => 'password']]);
+// });
 
 Route::prefix('v1')->group(function () {
 

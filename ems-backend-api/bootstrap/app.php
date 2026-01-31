@@ -14,6 +14,8 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'role' => \App\Http\Middleware\RoleMiddleware::class,
+            'cache.response' => \App\Http\Middleware\CacheResponse::class,
+            'api.rate.limit' => \App\Http\Middleware\ApiRateLimiter::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

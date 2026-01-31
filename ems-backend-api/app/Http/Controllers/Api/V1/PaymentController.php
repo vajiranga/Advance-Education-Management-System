@@ -606,9 +606,10 @@ class PaymentController extends Controller
 
         // Group by Teacher ID
         $settlements = $fees->groupBy(function($fee) {
-            return $fee->course->teacher_id ?? 'unknown';
+            return $fee->course && $fee->course->teacher_id ? $fee->course->teacher_id : 'unknown';
         })->map(function($group) {
-            $teacher = $group->first()->course->teacher;
+            $firstFee = $group->first();
+            $teacher = $firstFee && $firstFee->course ? $firstFee->course->teacher : null;
 
             $totalExpected = $group->sum('amount');
             $collected = $group->where('status', 'paid')->sum('amount');
@@ -619,8 +620,8 @@ class PaymentController extends Controller
             $pendingCount = $group->where('status', 'pending')->count();
 
             return [
-                'teacher_id' => $teacher->id ?? 0,
-                'teacher_name' => $teacher->name ?? 'Unknown Teacher',
+                'teacher_id' => $teacher ? $teacher->id : 0,
+                'teacher_name' => $teacher ? $teacher->name : 'Unknown Teacher',
                 'payment_count' => $paidCount,
                 'pending_count' => $pendingCount,
                 'total_students' => $totalStudents,
