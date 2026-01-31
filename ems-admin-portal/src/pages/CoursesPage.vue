@@ -93,8 +93,8 @@
               class="my-card column full-height no-shadow border-light"
               :class="course.type === 'extra' ? 'border-top-orange' : 'border-top-primary'"
             >
-              <q-card-section class="col relative-position">
-                <div class="absolute-top-right q-pa-sm">
+              <q-card-section class="col relative-position q-pb-none">
+                <div class="absolute-top-right q-pa-sm" style="z-index: 10">
                   <q-chip
                     :color="getStatusColor(course.status)"
                     text-color="white"
@@ -118,34 +118,45 @@
                     >EXTRA</q-chip
                   >
                 </div>
-                <div class="text-h6 ellipsis q-pr-xl">{{ course.name }}</div>
-                <div class="text-subtitle2 text-primary">
+
+                <div class="text-h6 ellipsis q-pr-xl q-mb-xs" :title="course.name">
+                  {{ course.name }}
+                </div>
+
+                <div class="text-subtitle2 text-primary ellipsis" :title="`${course.batch?.name || 'Unknown Grade'} - ${course.subject?.name || 'Unknown Subject'}`">
                   {{ course.batch?.name || 'Unknown Grade' }} -
                   {{ course.subject?.name || 'Unknown Subject' }}
                 </div>
-                <div class="text-subtitle2 text-grey-8 row items-center q-mt-sm">
-                  <q-icon name="person" class="q-mr-xs" />
-                  {{ course.teacher?.name || 'No Teacher' }}
-                </div>
-                <div class="text-subtitle2 text-grey-8 row items-center q-mt-xs">
-                  <q-icon name="meeting_room" class="q-mr-xs" />
-                  {{ course.hall?.name || 'No Hall' }}
-                </div>
-                <div class="text-subtitle2 text-grey-8 row items-center q-mt-xs">
-                  <q-icon name="group" class="q-mr-xs" /> {{ course.students_count || 0 }} Students
-                </div>
-                <div class="text-caption text-grey q-mt-xs" v-if="course.admin_note">
-                  <q-icon name="note" /> Note: {{ course.admin_note }}
+
+                <div class="q-mt-md">
+                   <div class="text-body2 text-grey-9 row items-center q-mb-xs ellipsis" :title="course.teacher?.name">
+                     <q-icon name="person" class="q-mr-sm text-primary" size="xs" />
+                     {{ course.teacher?.name || 'No Teacher' }}
+                   </div>
+
+                   <div class="text-caption text-grey-8 row items-center q-mb-xs ellipsis">
+                     <q-icon name="meeting_room" class="q-mr-sm text-grey" size="xs" />
+                     {{ course.hall?.name || 'No Hall' }}
+                   </div>
+
+                   <div class="text-caption text-grey-8 row items-center q-mb-xs">
+                     <q-icon name="group" class="q-mr-sm text-grey" size="xs" />
+                     {{ course.students_count || 0 }} Students
+                   </div>
+
+                   <div class="text-caption text-grey ellipsis" v-if="course.admin_note" :title="course.admin_note">
+                     <q-icon name="note" class="q-mr-xs" /> {{ course.admin_note }}
+                   </div>
                 </div>
               </q-card-section>
 
-              <q-card-section class="q-pt-none">
-                <div class="row items-center justify-between q-mb-sm">
-                  <div class="text-caption">
-                    <q-icon name="schedule" color="primary" />
+              <q-card-section class="q-pt-sm">
+                <div class="row no-wrap items-center justify-between">
+                  <div class="col ellipsis text-caption q-mr-sm" :title="formatSchedule(course.schedule)">
+                    <q-icon name="schedule" color="primary" class="q-mr-xs" />
                     {{ formatSchedule(course.schedule) }}
                   </div>
-                  <div class="text-caption text-weight-bold text-green">
+                  <div class="col-auto text-caption text-weight-bold text-green" style="white-space: nowrap">
                     Fee: LKR {{ course.fee_amount }}
                   </div>
                 </div>
@@ -636,14 +647,14 @@ const form = ref({
 const viewType = ref('regular')
 
 onMounted(async () => {
-  courseStore.fetchCourses({ type: viewType.value })
+  courseStore.fetchCourses({ type: viewType.value, all: true })
   courseStore.fetchMetadata()
   await userStore.fetchTeachers()
   teacherOptions.value = teachers.value
 })
 
 watch(viewType, (newType) => {
-  courseStore.fetchCourses({ type: newType })
+  courseStore.fetchCourses({ type: newType, all: true })
 })
 
 const filteredCourses = computed(() => {
@@ -772,11 +783,13 @@ async function saveCourse() {
       status: 'approved',
     }
 
+    const fetchParams = { type: viewType.value, all: true }
+
     if (isEditMode.value) {
-      await courseStore.updateCourse(form.value.id, payload)
+      await courseStore.updateCourse(form.value.id, payload, fetchParams)
       $q.notify({ type: 'positive', message: 'Class Updated Successfully' })
     } else {
-      await courseStore.addCourse(payload)
+      await courseStore.addCourse(payload, fetchParams)
       $q.notify({ type: 'positive', message: 'Class Created Successfully' })
     }
     showAddDialog.value = false
@@ -811,7 +824,8 @@ function openReviewDialog(course) {
 
 async function submitReview(status) {
   try {
-    await courseStore.updateStatus(reviewingCourse.value.id, status, reviewNote.value)
+    const fetchParams = { type: viewType.value, all: true }
+    await courseStore.updateStatus(reviewingCourse.value.id, status, reviewNote.value, fetchParams)
     $q.notify({ type: status === 'approved' ? 'positive' : 'negative', message: `Class ${status}` })
     reviewDialog.value = false
   } catch (e) {
@@ -822,7 +836,8 @@ async function submitReview(status) {
 
 function deleteCourse(id) {
   $q.dialog({ title: 'Confirm', message: 'Delete this class?', cancel: true }).onOk(async () => {
-    await courseStore.deleteCourse(id)
+    const fetchParams = { type: viewType.value, all: true }
+    await courseStore.deleteCourse(id, fetchParams)
     $q.notify({ type: 'positive', message: 'Deleted' })
   })
 }
@@ -835,7 +850,8 @@ function bulkDelete() {
     color: 'negative',
   }).onOk(async () => {
     const ids = filteredCourses.value.map((c) => c.id)
-    await courseStore.bulkAction('delete', ids)
+    const fetchParams = { type: viewType.value, all: true }
+    await courseStore.bulkAction('delete', ids, fetchParams)
     $q.notify({ type: 'positive', message: 'Deleted All' })
   })
 }
@@ -848,7 +864,8 @@ function bulkApprove() {
     color: 'positive',
   }).onOk(async () => {
     const ids = filteredCourses.value.map((c) => c.id)
-    await courseStore.bulkAction('approve', ids)
+    const fetchParams = { type: viewType.value, all: true }
+    await courseStore.bulkAction('approve', ids, fetchParams)
     $q.notify({ type: 'positive', message: 'Approved All' })
   })
 }

@@ -12,8 +12,10 @@ export const useCourseStore = defineStore('course', () => {
     async function fetchCourses(params = {}) {
         loading.value = true
         try {
-            const res = await api.get('/v1/courses', { params })
-            courses.value = res.data.data ? res.data.data : res.data // Handle paginate or collection
+            // Add cache buster
+            const queryParams = { ...params, _t: Date.now() }
+            const res = await api.get('/v1/courses', { params: queryParams })
+            courses.value = res.data.data ? res.data.data : res.data
         } catch (e) {
             console.error('Fetch courses failed', e)
         } finally {
@@ -36,29 +38,40 @@ export const useCourseStore = defineStore('course', () => {
         }
     }
 
-    async function addCourse(course) {
+    async function addCourse(course, params = {}) {
         await api.post('/v1/courses', course)
-        await fetchCourses()
+        await fetchCourses(params)
     }
 
-    async function updateCourse(id, course) {
-        await api.put(`/v1/courses/${id}`, course)
-        await fetchCourses()
+    async function updateCourse(id, course, params = {}) {
+        const res = await api.put(`/v1/courses/${id}`, course)
+
+        // Manual Local Update to ensure UI reflects change immediately
+        const updatedCourse = res.data.course
+        const index = courses.value.findIndex(c => c.id === id)
+        if (index !== -1 && updatedCourse) {
+            // Merge or replace
+            courses.value[index] = { ...courses.value[index], ...updatedCourse }
+            // If relations (batch, subject) were sent as IDs only, we might lose nested objects in the view
+            // So we still do a fetch, but this provides immediate feedback for basics
+        }
+
+        await fetchCourses(params)
     }
 
-    async function updateStatus(id, status, note) {
+    async function updateStatus(id, status, note, params = {}) {
         await api.put(`/v1/courses/${id}/status`, { status, admin_note: note })
-        await fetchCourses()
+        await fetchCourses(params)
     }
 
-    async function deleteCourse(id) {
+    async function deleteCourse(id, params = {}) {
         await api.delete(`/v1/courses/${id}`)
-        await fetchCourses()
+        await fetchCourses(params)
     }
 
-    async function bulkAction(action, ids) {
+    async function bulkAction(action, ids, params = {}) {
         await api.post('/v1/courses/bulk', { action, ids })
-        await fetchCourses()
+        await fetchCourses(params)
     }
 
     async function fetchStudents(courseId) {

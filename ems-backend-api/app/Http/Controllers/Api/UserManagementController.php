@@ -190,22 +190,99 @@ class UserManagementController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        $user->fill($request->except(['password', 'username', 'role'])); // Prevent role/username change for now if risky
+        try {
+            \Illuminate\Support\Facades\DB::beginTransaction();
 
-        // Sanitize phones on update too
-        if ($request->has('phone')) $user->phone = preg_replace('/[^0-9]/', '', $request->phone);
-        if ($request->has('whatsapp')) $user->whatsapp = preg_replace('/[^0-9]/', '', $request->whatsapp);
-        if ($request->has('parent_phone')) $user->parent_phone = preg_replace('/[^0-9]/', '', $request->parent_phone);
+            $user->fill($request->except(['password', 'username', 'role']));
 
+            // Sanitize phones on update
+            if ($request->has('phone')) $user->phone = preg_replace('/[^0-9]/', '', $request->phone);
+            if ($request->has('whatsapp')) $user->whatsapp = preg_replace('/[^0-9]/', '', $request->whatsapp);
+            if ($request->has('parent_phone')) $user->parent_phone = preg_replace('/[^0-9]/', '', $request->parent_phone);
 
-        if ($request->filled('password')) {
-            $user->password = \Illuminate\Support\Facades\Hash::make($request->password);
-            $user->plain_password = $request->password;
+            if ($request->filled('password')) {
+                $user->password = \Illuminate\Support\Facades\Hash::make($request->password);
+                $user->plain_password = $request->password;
+            }
+
+            // --- PARENT SYNC & AUTO-LINK LOGIC ---
+            if ($user->role === 'student') {
+
+                // 1. If NO parent linked yet, try to find or create one now
+                if (!$user->parent_id && ($request->parent_email || $user->parent_phone)) {
+                    $parentUser = User::where('role', 'parent')
+                        ->where(function($q) use ($request, $user) {
+                            if ($request->parent_email) $q->where('email', $request->parent_email);
+                            if ($user->parent_phone) $q->orWhere('phone', $user->parent_phone);
+                        })->first();
+
+                    if (!$parentUser) {
+                        // Create New Parent if not found
+                        $parentPrefix = 'PAR';
+                        do {
+                            $parentUsername = $parentPrefix . date('Y') . rand(1000, 9999);
+                        } while (User::where('username', $parentUsername)->exists());
+
+                        $parentUser = User::create([
+                            'name' => $request->parent_name ?? 'Parent of ' . $request->name,
+                            'email' => $request->parent_email,
+                            'phone' => $user->parent_phone,
+                            'username' => $parentUsername,
+                            'password' => \Illuminate\Support\Facades\Hash::make('ems12345'),
+                            'plain_password' => 'ems12345',
+                            'role' => 'parent'
+                        ]);
+                    }
+
+                    // Link the found/created parent
+                    $user->parent_id = $parentUser->id;
+                }
+
+                // 2. If parent IS linked (or just linked above), sync details
+                if ($user->parent_id) {
+                    $parentUser = User::find($user->parent_id);
+                    if ($parentUser) {
+                        $dataChanged = false;
+
+                        // Sync Name
+                        if ($request->filled('parent_name') && $parentUser->name !== $request->parent_name) {
+                            $parentUser->name = $request->parent_name;
+                            $dataChanged = true;
+                        }
+
+                        // Sync Phone (Sanitized)
+                        if ($user->parent_phone && $parentUser->phone !== $user->parent_phone) {
+                            $parentUser->phone = $user->parent_phone;
+                            $dataChanged = true;
+                        }
+
+                        // Sync Email
+                        if ($request->filled('parent_email') && $request->parent_email !== $parentUser->email) {
+                            // Check uniqueness ignoring self
+                            $exists = User::where('email', $request->parent_email)->where('id', '!=', $parentUser->id)->exists();
+                            if (!$exists) {
+                                $parentUser->email = $request->parent_email;
+                                $dataChanged = true;
+                            }
+                        }
+
+                        if ($dataChanged) {
+                            $parentUser->save();
+                        }
+                    }
+                }
+            }
+
+            $user->save();
+
+            \Illuminate\Support\Facades\DB::commit();
+            return response()->json(['message' => 'User updated successfully', 'user' => $user]);
+
+        } catch (\Exception $e) {
+             \Illuminate\Support\Facades\DB::rollBack();
+             \Illuminate\Support\Facades\Log::error('User Update Error: ' . $e->getMessage());
+             return response()->json(['message' => 'Server Error: ' . $e->getMessage()], 500);
         }
-
-        $user->save();
-
-        return response()->json(['message' => 'User updated successfully', 'user' => $user]);
     }
 
     public function destroy($id)

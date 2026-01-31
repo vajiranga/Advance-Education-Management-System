@@ -22,7 +22,7 @@ class CourseController extends Controller
         if ($request->has('batch_id')) {
             $query->where('batch_id', $request->query('batch_id'));
         }
-        
+
         if ($request->has('teacher_id')) {
             $query->where('teacher_id', $request->query('teacher_id'));
         }
@@ -43,7 +43,7 @@ class CourseController extends Controller
                 $query->where('type', 'regular');
             }
         }
-        
+
         // Parent Course Filter (for fetching extras of a course)
         if ($request->has('parent_course_id')) {
              $query->where('parent_course_id', $request->query('parent_course_id'));
@@ -57,8 +57,8 @@ class CourseController extends Controller
         // Visibility Logic by Role
         if ($user && $user->role === 'student') {
             $query->where('status', 'approved');
-        } 
-        
+        }
+
         // Public Access (No User) - Only Approved
         if (!$user) {
             $query->where('status', 'approved');
@@ -82,7 +82,7 @@ class CourseController extends Controller
             'batch_id' => 'required|exists:batches,id',
             'teacher_id' => 'required|exists:users,id',
             'fee_amount' => 'required|numeric|min:0',
-            'schedule' => 'nullable', 
+            'schedule' => 'nullable',
             'cover_image_url' => 'nullable|string',
             'type' => 'nullable|in:regular,extra',
             'parent_course_id' => 'nullable|exists:courses,id',
@@ -91,12 +91,12 @@ class CourseController extends Controller
         ]);
 
         $user = $request->user();
-        
+
         // If extra class, ensure parent is valid
         if (($request->type === 'extra') && !$request->parent_course_id) {
              return response()->json(['message' => 'Parent Course required for Extra Class'], 422);
         }
-        
+
         // Determine Status logic
         $status = 'pending';
         // Admin/SuperAdmin auto-approves
@@ -108,7 +108,7 @@ class CourseController extends Controller
         $courseData['status'] = $status;
         $courseData['created_by'] = $user ? $user->id : null;
         $courseData['is_featured'] = $validated['is_featured'] ?? false;
-        
+
         // Ensure schedule is array if provided
         if(isset($courseData['schedule']) && !is_array($courseData['schedule'])) {
             // If json string, maybe decode? Or assume array via axios.
@@ -130,6 +130,8 @@ class CourseController extends Controller
              }
         }
 
+        $course->fresh()->load(['subject', 'batch', 'teacher', 'hall']);
+
         return response()->json([
             'message' => 'Course created successfully',
             'course' => $course
@@ -145,12 +147,12 @@ class CourseController extends Controller
             'status' => 'required|in:approved,rejected',
             'admin_note' => 'nullable|string'
         ]);
-        
+
         $course = Course::findOrFail($id);
         $course->status = $request->status;
         $course->admin_note = $request->admin_note;
         $course->save();
-        
+
         // Notify Teacher
         Notification::create([
             'user_id' => $course->teacher_id,
@@ -159,7 +161,7 @@ class CourseController extends Controller
             'message' => "Your class '{$course->name}' was {$request->status} by Admin." . ($request->admin_note ? " Note: {$request->admin_note}" : ""),
             'data' => json_encode(['course_id' => $course->id])
         ]);
-        
+
         return response()->json(['message' => 'Status updated', 'course' => $course]);
     }
 
@@ -178,25 +180,25 @@ class CourseController extends Controller
     public function update(Request $request, $id)
     {
         $course = Course::findOrFail($id);
-        
+
         $validated = $request->validate([
             'name' => 'nullable|string|max:255',
             'subject_id' => 'nullable|exists:subjects,id',
             'batch_id' => 'nullable|exists:batches,id',
             'fee_amount' => 'nullable|numeric|min:0',
-            'schedule' => 'nullable', 
+            'schedule' => 'nullable',
             'hall_id' => 'nullable|exists:halls,id',
             'is_featured' => 'nullable|boolean'
         ]);
 
         $course->fill($validated);
-        
+
         // If updated by teacher, set status to pending for review
         $user = $request->user();
         if ($user && $user->role !== 'admin' && $user->role !== 'super_admin') {
             $course->status = 'pending';
             $course->admin_note = 'Course Updated by Teacher';
-            
+
             // Notify Admin
              $admins = User::whereIn('role', ['admin', 'super_admin'])->get();
              foreach($admins as $admin) {
@@ -211,7 +213,10 @@ class CourseController extends Controller
         }
 
         $course->save();
-        
+
+        // Load relationships for valid return
+        $course->load(['subject', 'batch', 'teacher', 'hall']);
+
         return response()->json(['message' => 'Course updated', 'course' => $course]);
     }
 
@@ -230,13 +235,13 @@ class CourseController extends Controller
     public function getStudents(Request $request, $id)
     {
         $course = Course::findOrFail($id);
-        
+
         $query = $course->students();
 
         if ($request->has('status')) {
              $query->wherePivot('status', $request->query('status'));
         }
-        
+
         // Enrich with Today's Attendance and Monthly Payment
         $today = now()->format('Y-m-d');
         $thisMonth = now()->format('Y-m'); // "2026-01"
@@ -258,7 +263,7 @@ class CourseController extends Controller
         return response()->json(['data' => $students]);
     }
 
-    public function bulkAction(Request $request) 
+    public function bulkAction(Request $request)
     {
         $request->validate([
             'action' => 'required|in:delete,approve',
@@ -292,7 +297,7 @@ class CourseController extends Controller
     public function getMyStudents(Request $request)
     {
         $user = $request->user();
-        
+
         Log::info('getMyStudents calling', ['teacher_id' => $user->id]);
 
         $query = \Illuminate\Support\Facades\DB::table('enrollments')
@@ -312,15 +317,15 @@ class CourseController extends Controller
                         'enrollments.id as enrollment_id',
                         'enrollments.status as enrollment_status'
                     )
-                    ->whereNull('courses.deleted_at'); 
-                    
+                    ->whereNull('courses.deleted_at');
+
         $targetTeacherId = $user->id;
         if ($request->has('teacher_id')) {
              // Authorization: Only Admin can view other teachers
              if ($user->role === 'admin' || $user->role === 'super_admin') {
                  $targetTeacherId = $request->teacher_id;
              } else {
-                 // If a teacher tries to view another, usually block or ignore. 
+                 // If a teacher tries to view another, usually block or ignore.
                  // For now, let's enforce own ID to be safe, or 403.
                  if ($request->teacher_id != $user->id) {
                      // Log::warning("Unauthorized teacher access", ['user' => $user->id, 'target' => $request->teacher_id]);
@@ -329,10 +334,10 @@ class CourseController extends Controller
                  }
              }
         }
-        
+
         // Apply the filter
         $query->where('courses.teacher_id', $targetTeacherId);
-                    
+
         // Filter by specific Class (Course)
         if ($request->has('course_id') && $request->course_id !== 'all') {
              $query->where('enrollments.course_id', $request->course_id);
@@ -353,7 +358,7 @@ class CourseController extends Controller
 
         // Process Fees manually
         $thisMonth = now()->format('Y-m');
-        
+
         $data = $results->map(function($row) use ($thisMonth) {
             // Check fees
             $fee = \Illuminate\Support\Facades\DB::table('student_fees')
@@ -361,7 +366,7 @@ class CourseController extends Controller
                         ->where('course_id', $row->course_id)
                         ->where('month', $thisMonth)
                         ->first();
-            
+
             $feeStatus = 'no_fee';
             if ($fee) {
                 $feeStatus = $fee->status;
@@ -376,7 +381,7 @@ class CourseController extends Controller
             return [
                  'id' => $row->student_id,
                  'name' => $row->student_name,
-                 'avatar' => $row->student_avatar ?? 'https://cdn.quasar.dev/img/boy-avatar.png', 
+                 'avatar' => $row->student_avatar ?? 'https://cdn.quasar.dev/img/boy-avatar.png',
                  'course_name' => $row->course_name,
                  'grade' => $row->grade,
                  'contact' => $row->student_contact ?? $row->student_email,
