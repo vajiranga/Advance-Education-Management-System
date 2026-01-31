@@ -6,7 +6,7 @@
 
         <q-toolbar-title class="text-weight-bold row items-center">
           <q-icon name="school" size="md" class="q-mr-sm" />
-          <span>EMS</span> 
+          <span>EMS</span>
           <span class="q-ml-sm text-subtitle2" :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey-7'">
             Student Portal
           </span>
@@ -16,12 +16,12 @@
 
         <div class="row q-gutter-sm items-center">
           <!-- Dark Mode Toggle -->
-          <q-btn 
-            flat 
-            round 
-            :icon="$q.dark.isActive ? 'light_mode' : 'dark_mode'" 
-            :color="$q.dark.isActive ? 'yellow' : 'grey-7'" 
-            @click="$q.dark.toggle()" 
+          <q-btn
+            flat
+            round
+            :icon="$q.dark.isActive ? 'light_mode' : 'dark_mode'"
+            :color="$q.dark.isActive ? 'yellow' : 'grey-7'"
+            @click="$q.dark.toggle()"
           >
             <q-tooltip>Toggle {{ $q.dark.isActive ? 'Light' : 'Dark' }} Mode</q-tooltip>
           </q-btn>
@@ -32,15 +32,18 @@
             <q-menu :class="$q.dark.isActive ? 'bg-dark text-white' : 'bg-white'">
                <q-list style="min-width: 300px">
                   <q-item-label header :class="$q.dark.isActive ? 'text-grey-5' : 'text-grey-7'">Notifications</q-item-label>
-                  
-                  <q-item v-for="note in notifications" :key="note.id" clickable v-close-popup class="q-py-md">
+
+                  <q-item v-for="note in notifications" :key="note.id" clickable v-close-popup class="q-py-md" @click="handleNotificationClick(note)">
                      <q-item-section avatar>
-                        <q-avatar color="primary" text-color="white" icon="info" font-size="20px" size="md" />
+                        <q-avatar :color="getIconColor(note.type)" text-color="white" :icon="getIcon(note.type)" font-size="20px" size="md" />
                      </q-item-section>
                      <q-item-section>
-                        <q-item-label>{{ note.title }}</q-item-label>
+                        <q-item-label :class="{'text-weight-bold': !note.read_at}">{{ note.title }}</q-item-label>
                         <q-item-label caption :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey-8'">{{ note.message }}</q-item-label>
                         <div class="text-caption text-grey-6 q-mt-xs">{{ note.time }}</div>
+                     </q-item-section>
+                     <q-item-section side v-if="!note.read_at">
+                         <q-badge color="blue" rounded dot />
                      </q-item-section>
                   </q-item>
 
@@ -48,6 +51,11 @@
                       <q-icon name="notifications_off" size="xl" class="q-mb-sm" />
                       <div>No new notifications</div>
                   </div>
+
+                  <q-separator v-if="notifications.length > 0" />
+                  <q-item v-if="notifications.length > 0" clickable class="text-center justify-center text-primary" @click="notificationStore.markAllRead()">
+                      <q-item-label class="text-caption">Mark all as read</q-item-label>
+                  </q-item>
                </q-list>
             </q-menu>
           </q-btn>
@@ -64,7 +72,7 @@
                 </q-item>
 
                 <q-separator :class="$q.dark.isActive ? 'bg-grey-8' : ''" />
-                
+
                 <q-item clickable v-close-popup to="/student/profile">
                   <q-item-section avatar><q-icon name="person" /></q-item-section>
                   <q-item-section>My Profile</q-item-section>
@@ -73,11 +81,11 @@
                 <q-separator :class="$q.dark.isActive ? 'bg-grey-8' : ''" />
                 <q-item-label header :class="$q.dark.isActive ? 'text-grey-5' : 'text-grey-7'">Switch Account</q-item-label>
 
-                <q-item 
-                  v-for="(acc, idx) in authStore.accounts" 
-                  :key="idx" 
-                  clickable 
-                  v-close-popup 
+                <q-item
+                  v-for="(acc, idx) in authStore.accounts"
+                  :key="idx"
+                  clickable
+                  v-close-popup
                   @click="authStore.switchAccount(idx)"
                   :active="idx === authStore.activeAccountIndex"
                   :active-class="$q.dark.isActive ? 'bg-grey-8 text-primary' : 'bg-blue-1 text-primary'"
@@ -153,8 +161,7 @@
           <q-item-section avatar><q-icon name="person" /></q-item-section>
           <q-item-section>Profile</q-item-section>
         </q-item>
-        
-        <!-- Sidebar logout removed -->
+
       </q-list>
     </q-drawer>
 
@@ -167,55 +174,88 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useAuthStore } from 'stores/auth-store'
-import { useRoute } from 'vue-router'
+import { useNotificationStore } from 'stores/notification-store'
+import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
+import { storeToRefs } from 'pinia'
 
 const leftDrawerOpen = ref(false)
 const authStore = useAuthStore()
+const notificationStore = useNotificationStore()
+const { notifications } = storeToRefs(notificationStore)
 const route = useRoute()
+const router = useRouter()
 const $q = useQuasar()
 
-const notifications = ref([
-    { id: 1, title: 'Welcome to EMS', message: 'Your student portal is ready to use.', time: 'Just now' },
-    { id: 2, title: 'Exam Schedule Released', message: 'The schedule for Physics has been updated.', time: '2 hours ago' }
-])
-
-// Visual Fix: Ensure Student Portal shows STD prefix even if backend sends TCH (e.g. reused account)
+// Visual Fix: Ensure Student Portal shows STD prefix
 const displayUsername = computed(() => {
     const id = authStore.user?.username || ''
     if (id.startsWith('TCH')) return id.replace('TCH', 'STD')
     return id
 })
 
-// Helper for Switch Account list
 function formatAccountId(id) {
     if (!id) return ''
     if (id.startsWith('TCH')) return id.replace('TCH', 'STD')
     return id
 }
 
-// Set default dark mode if saved or system preference (Quasar might do this auto if configured)
-// For now, let's verify if toggle works.
-
 onMounted(async () => {
-    // ... logic ...
     authStore.init()
 
-  if (route.query.token) {
-    // Add new account from token
-    await authStore.addAccountFromToken(route.query.token)
-    
-    // Clean URL
-    const url = new URL(window.location.href)
-    url.searchParams.delete('token')
-    window.history.replaceState({}, document.title, url.toString())
-  } else if (!authStore.user) {
-    // Try to fetch user if token exists but no user loaded
-    await authStore.fetchUser()
-  }
+    // Auth Logic
+    if (route.query.token) {
+        await authStore.addAccountFromToken(route.query.token)
+        const url = new URL(window.location.href)
+        url.searchParams.delete('token')
+        window.history.replaceState({}, document.title, url.toString())
+    } else if (!authStore.user) {
+        await authStore.fetchUser()
+    }
+
+    // Fetch Notifications
+    await notificationStore.fetchNotifications()
+    setInterval(() => notificationStore.fetchNotifications(), 60000)
 })
 
 function toggleLeftDrawer () {
   leftDrawerOpen.value = !leftDrawerOpen.value
+}
+
+// Notification Helpers
+function getIcon(type) {
+    switch(type) {
+        case 'payment_success': return 'check_circle'
+        case 'payment_pending': return 'hourglass_empty'
+        case 'fee_due': return 'payment'
+        case 'exam_scheduled': return 'event'
+        case 'exam_results': return 'assignment'
+        default: return 'notifications'
+    }
+}
+
+function getIconColor(type) {
+    switch(type) {
+        case 'payment_success': return 'positive' // Green
+        case 'payment_pending': return 'warning' // Orange
+        case 'fee_due': return 'negative' // Red
+        case 'exam_scheduled': return 'info' // Cyan
+        case 'exam_results': return 'primary' // Blue
+        default: return 'primary'
+    }
+}
+
+function handleNotificationClick(note) {
+    // Mark as read
+    if (!note.read_at) {
+        notificationStore.markAsRead(note.id)
+    }
+
+    // Navigate based on type
+    if (note.type === 'payment_success' || note.type === 'fee_due' || note.type === 'payment_pending') {
+        router.push('/student/payments')
+    } else if (note.type === 'exam_scheduled' || note.type === 'exam_results') {
+        router.push('/student/exams')
+    }
 }
 </script>

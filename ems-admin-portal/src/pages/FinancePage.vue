@@ -25,7 +25,7 @@
           </q-card-section>
         </q-card>
       </div>
-      
+
       <div class="col-12 col-sm-6 col-md-3">
         <q-card class="bg-green-8 text-white full-height">
           <q-card-section>
@@ -50,7 +50,7 @@
           </q-card-section>
         </q-card>
       </div>
-      
+
       <div class="col-12 col-sm-6 col-md-3">
         <q-card class="bg-indigo-7 text-white full-height">
           <q-card-section>
@@ -309,7 +309,7 @@
              <div class="text-h6">Record Cash Payment</div>
              <q-btn flat round dense icon="close" v-close-popup />
           </q-card-section>
-          
+
           <q-card-section class="q-gutter-md q-pt-md">
              <!-- Barcode / Search Input -->
              <q-input
@@ -344,53 +344,36 @@
                  </div>
              </transition>
 
-             <!-- Course Select (Filtered to Enrolled) -->
-             <q-select
-                v-if="cashStudent"
-                outlined
-                v-model="cashCourse"
-                :options="cashStudentCourses"
-                option-label="name"
-                option-value="id"
-                label="Select Enrolled Course"
-                :disable="!cashStudent"
-                behavior="menu"
-             >
-                 <template v-slot:option="scope">
-                  <q-item v-bind="scope.itemProps">
-                    <q-item-section>
-                      <q-item-label>{{ scope.opt.name }}</q-item-label>
-                      <q-item-label caption>Fee: LKR {{ scope.opt.fee_amount }}</q-item-label>
-                    </q-item-section>
-                  </q-item>
-                </template>
-                <template v-slot:no-option>
-                    <q-item>
-                        <q-item-section class="text-grey">Student is not enrolled in any courses</q-item-section>
-                    </q-item>
-                </template>
-             </q-select>
+             <!-- Pending Fees Table -->
+             <div v-if="cashStudent">
+                 <div v-if="cashPendingFees.length > 0">
+                     <div class="text-caption text-grey-8 q-mb-xs">Select Pending Fees:</div>
+                     <q-table
+                        flat bordered dense
+                        :rows="cashPendingFees"
+                        :columns="[
+                            { name: 'course', label: 'Course', field: 'course_name', align: 'left' },
+                            { name: 'month', label: 'Month', field: 'month_label', align: 'left' },
+                            { name: 'amount', label: 'Amount', field: 'amount', align: 'right', format: val => 'LKR ' + val }
+                        ]"
+                        row-key="id"
+                        selection="multiple"
+                        v-model:selected="selectedFees"
+                        :rows-per-page-options="[0]"
+                        hide-bottom
+                        class="sticky-header-table"
+                        style="max-height: 250px"
+                     />
 
-             <div class="row q-col-gutter-sm">
-                <div class="col-6">
-                    <q-input 
-                        outlined 
-                        v-model="cashMonth" 
-                        mask="####-##" 
-                        label="Month (YYYY-MM)" 
-                     >
-                       <template v-slot:append>
-                         <q-icon name="event" class="cursor-pointer">
-                           <q-popup-proxy cover transition-show="scale" transition-hide="scale">
-                             <q-date v-model="cashMonth" mask="YYYY-MM" minimal emit-immediately v-close-popup />
-                           </q-popup-proxy>
-                         </q-icon>
-                       </template>
-                    </q-input>
-                </div>
-                <div class="col-6">
-                    <q-input outlined v-model="cashAmount" type="number" label="Amount (LKR)" :disable="!cashCourse" />
-                </div>
+                     <div class="row justify-between items-center q-mt-md bg-blue-1 q-pa-md rounded-borders">
+                         <div class="text-subtitle1 text-weight-bold">Total Payment:</div>
+                         <div class="text-h5 text-primary text-weight-bold">LKR {{ Number(cashAmount).toLocaleString() }}</div>
+                     </div>
+                 </div>
+                 <div v-else class="text-center q-pa-lg text-grey">
+                     <q-icon name="check_circle" size="md" color="positive" class="q-mb-sm" />
+                     <div>No pending fees found for this student.</div>
+                 </div>
              </div>
 
              <q-input outlined v-model="cashNote" label="Note (Optional)" type="textarea" rows="2" />
@@ -398,7 +381,7 @@
 
           <q-card-actions align="right" class="q-pa-md bg-grey-1">
              <q-btn flat label="Cancel" v-close-popup color="grey" />
-             <q-btn unelevated color="green-7" icon="print" label="Record & Print" @click="handleCashPayment" :loading="cashProcessing" :disable="!cashStudent || !cashCourse || !cashAmount" />
+             <q-btn unelevated color="green-7" icon="print" label="Record & Print" @click="handleCashPayment" :loading="cashProcessing" :disable="!cashStudent || selectedFees.length === 0" />
           </q-card-actions>
        </q-card>
     </q-dialog>
@@ -527,7 +510,7 @@
                  Teacher Signature
             </div>
         </div>
-        
+
         <div style="margin-top: 50px; font-size: 10px; color: grey;">
             Generated by EMS Admin Portal on {{ new Date().toLocaleString() }}
         </div>
@@ -582,9 +565,8 @@ const generating = ref(false)
 
 const showCashDialog = ref(false)
 const cashStudent = ref(null)
-const cashCourse = ref(null)
-const cashStudentCourses = ref([])
-const cashMonth = ref(new Date().toISOString().slice(0, 7))
+const cashPendingFees = ref([])
+const selectedFees = ref([])
 const cashAmount = ref('')
 const cashNote = ref('')
 const cashProcessing = ref(false)
@@ -613,7 +595,8 @@ function focusSearch() {
 
 function clearCashStudent() {
     cashStudent.value = null
-    cashCourse.value = null
+    cashPendingFees.value = []
+    selectedFees.value = []
     cashAmount.value = ''
     cashSearchQuery.value = ''
     focusSearch()
@@ -628,16 +611,16 @@ async function searchStudentForCash() {
         // If it looks like a barcode (pure numbers/id), assume exact match intent
         // The API likely does 'LIKE %query%'
         const res = await api.get('/v1/users', { params })
-        
+
         const results = res.data.data
         if (results.length >= 1) {
              // If exact ID match exists, prioritize it
              const exact = results.find(s => s.username.toLowerCase() === cashSearchQuery.value.toLowerCase())
              const target = exact || results[0]
-             
+
              cashStudent.value = target
              $q.notify({ type: 'positive', message: `Student Found: ${target.name}`, position: 'top', timeout: 1000 })
-             cashSearchQuery.value = '' 
+             cashSearchQuery.value = ''
         } else {
              $q.notify({ type: 'negative', message: 'Student Not Found', position: 'top' })
              cashSearchInput.value.select() // Select text for retry
@@ -706,64 +689,62 @@ async function generateReport() {
     }
 }
 
-
-
-// Watch student selection to fetch courses
+// Watch student selection to fetch PENDING FEES
 watch(cashStudent, async (newVal) => {
     if (newVal && newVal.id) {
         try {
-            // Ideally backend should provide enrolled courses. 
-            // We can reuse getAdminPaymentSummary filter or just fetch student details
-            // For now, let's fetch all active courses (simplified) or specific enrollment endpoint
-            // HACK: Fetch courses via public/admin endpoint. 
-            // Better: use /v1/students/{id} if exists.
-            // Let's assume we can fetch enrollments.
-            const res = await api.get(`/v1/users/${newVal.id}/enrollments`)
-             // map to course objects
-            cashStudentCourses.value = res.data.map(e => e.course)
-        } catch {
-            // Fallback if that endpoint missing: Fetch all courses
-             const res = await api.get('/v1/courses')
-             cashStudentCourses.value = res.data.data || res.data // listing
+            // Fetch pending fees for this student
+            const res = await api.get(`/v1/admin/students/${newVal.id}/pending-fees`)
+            cashPendingFees.value = res.data
+
+            // Auto-Select All by default
+            selectedFees.value = cashPendingFees.value.map(fee => fee)
+        } catch (e) {
+             console.error(e)
+             $q.notify({ type: 'warning', message: 'Could not fetch pending fees' })
+             cashPendingFees.value = []
         }
     } else {
-        cashStudentCourses.value = []
-        cashCourse.value = null
+        cashPendingFees.value = []
+        selectedFees.value = []
     }
 })
 
-watch(cashCourse, (newVal) => {
-    if (newVal && newVal.fee_amount) {
-        cashAmount.value = newVal.fee_amount
-    }
-})
+// Compute Total Amount based on Selection
+watch(selectedFees, (newVal) => {
+    const total = newVal.reduce((sum, fee) => sum + parseFloat(fee.amount || 0), 0)
+    cashAmount.value = total
+}, { deep: true })
 
 async function handleCashPayment() {
+    if (selectedFees.value.length === 0) {
+         $q.notify({ type: 'warning', message: 'No fees selected' })
+         return
+    }
+
     cashProcessing.value = true
     try {
-        const res = await financeStore.recordCashPayment({
-            student_id: cashStudent.value.id,
-            course_id: cashCourse.value.id,
-            amount: cashAmount.value,
-            month: cashMonth.value,
+        const payload = {
+            student_id: cashStudent.value.id, // Optional depending on backend, but good for context
+            fee_ids: selectedFees.value.map(f => f.id),
+            amount: cashAmount.value, // Total amount
+            type: 'cash',
             note: cashNote.value
-        })
+        }
+
+        const res = await financeStore.recordBatchPayment(payload)
 
         if (res.success) {
-            $q.notify({ type: 'positive', message: 'Payment Recorded & Receipt Generated (Simulated)' })
+            $q.notify({ type: 'positive', message: 'Payment Recorded Successfully' })
             showCashDialog.value = false
             financeStore.fetchTransactions()
-            financeStore.fetchAnalytics() // Update totals
-            
-            // Print Receipt Logic (Admin Side)
-            // Reuse the print logic here if needed
-            printAdminReceipt(res.payment, cashStudent.value, cashCourse.value)
-            
+            financeStore.fetchAnalytics()
+
+            // Print Receipt Logic (Enhanced for Batch)
+            printAdminReceipt(res.payment || { id: 'BATCH', amount: cashAmount.value }, cashStudent.value, selectedFees.value)
+
             // Reset
-            cashStudent.value = null
-            cashCourse.value = null
-            cashAmount.value = ''
-            cashNote.value = ''
+            clearCashStudent()
         } else {
             $q.notify({ type: 'negative', message: res.error })
         }
@@ -885,7 +866,7 @@ const deductionNote = ref('')
 const instituteShareAmount = computed(() => {
    if (!activeSettlement.value) return 0
    const collected = parseFloat(activeSettlement.value.total_collected || 0)
-   return collected * (instituteCommission.value / 100) 
+   return collected * (instituteCommission.value / 100)
 })
 
 const activeShare = computed(() => {
@@ -920,7 +901,7 @@ async function handleGenerate() {
             month: genMonth.value,
             due_date: genDueDate.value
         })
-        
+
         if (res.success) {
              $q.notify({ type: 'positive', message: res.message })
              showGenerateDialog.value = false
@@ -961,12 +942,12 @@ async function handleGenerate() {
 @media print {
   body > * { display: none !important; }
   .q-dialog__backdrop { display: none !important; }
-  
-  .print-container { 
-      display: block !important; 
-      position: absolute; 
-      top: 0; 
-      left: 0; 
+
+  .print-container {
+      display: block !important;
+      position: absolute;
+      top: 0;
+      left: 0;
       width: 100%;
       height: 100%;
       background: white;

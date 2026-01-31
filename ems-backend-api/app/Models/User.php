@@ -115,4 +115,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(ExamResult::class, 'student_id');
     }
+
+    public function parentAccount()
+    {
+        return $this->belongsTo(User::class, 'parent_email', 'email');
+    }
 }

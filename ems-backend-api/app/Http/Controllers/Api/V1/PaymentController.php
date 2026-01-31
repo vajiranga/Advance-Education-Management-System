@@ -17,14 +17,14 @@ class PaymentController extends Controller
     public function myPayments(Request $request)
     {
         $user = $request->user();
-        
+
         $payments = Payment::where('user_id', $user->id)
-            ->whereNotNull('course_id') // Filter out orphaned records
-            ->whereHas('course') // Ensure course relation exists
-            ->with(['course', 'course.subject', 'course.batch'])
+            ->with(['course' => function ($q) {
+                $q->withTrashed();
+            }, 'course.subject', 'course.batch'])
             ->orderBy('created_at', 'desc')
             ->paginate(20);
-            
+
         return response()->json($payments);
     }
 
@@ -34,11 +34,11 @@ class PaymentController extends Controller
     public function getDueFees(Request $request)
     {
         $user = $request->user();
-        
-        // If parent, get children's fees? 
+
+        // If parent, get children's fees?
         // For now, assuming this endpoint is for Student to see their own dues.
         // Parent logic will be separate or handled via 'child_id' param if needed.
-        
+
         $fees = \App\Models\StudentFee::where('student_id', $user->id)
             ->where('status', 'pending')
             ->whereHas('course') // ONLY Return fees where course still exists
@@ -57,7 +57,7 @@ class PaymentController extends Controller
                     'is_overdue' => Carbon::now()->gt(Carbon::parse($fee->due_date))
                 ];
             });
-            
+
         return response()->json($fees);
     }
 
@@ -68,10 +68,10 @@ class PaymentController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'fee_id' => 'required_without:fee_ids|exists:student_fees,id',
-            'fee_ids' => 'required_without:fee_id|array', 
+            'fee_ids' => 'required_without:fee_id|array',
             'fee_ids.*' => 'exists:student_fees,id',
-            // 'amount' is treated as Total Paid. 
-            'amount' => 'required|numeric|min:0', 
+            // 'amount' is treated as Total Paid.
+            'amount' => 'required|numeric|min:0',
             'type' => 'required|in:cash,bank_transfer,online,card',
             'note' => 'nullable|string',
             'slip' => 'nullable|image|max:5120' // Increased limit for ease
@@ -117,10 +117,10 @@ class PaymentController extends Controller
         foreach ($ids as $id) {
             $fee = \App\Models\StudentFee::find($id);
             if (!$fee || $fee->status === 'paid') continue;
-            
+
             $validFees[] = $fee;
             $totalAmount += $fee->amount;
-            
+
             // Capture first valid fee details for metadata
             if (!$courseId) {
                 $courseId = $fee->course_id;
@@ -143,11 +143,45 @@ class PaymentController extends Controller
             'month' => (count($validFees) === 1) ? $feeMonth : now()->format('Y-m'), // Use current month for bulk
             'type' => $request->type,
             'paid_at' => ($status === 'paid') ? now() : null,
-            'status' => $status, 
+            'status' => $status,
             'note' => $request->note . (count($validFees) > 1 ? ' (Bulk: ' . count($validFees) . ' items)' : ''),
             'slip_image' => $slipPath
         ]);
 
+        // Link Payment ID to Fees and Update Fee Status
+        foreach ($validFees as $fee) {
+             // If cash/online (immediate success), mark fee as paid immediately
+             // If bank transfer, fee remains pending until admin approves payment
+             if ($status === 'paid') {
+                 $fee->update(['status' => 'paid', 'paid_at' => now(), 'payment_id' => $payment->id]);
+             } else {
+                 // Optionally link payment_id even if pending?
+                 // The schema might not have foreign key strictness?
+                 // Let's assume we can link it
+                 // $fee->payment_id = $payment->id; $fee->save();
+             }
+        }
+
+        // --- NOTIFICATION TRIGGERS ---
+        if ($status === 'paid') {
+            // Notify Student
+            \App\Models\Notification::create([
+                'user_id' => $payment->user_id,
+                'type' => 'payment_success',
+                'title' => 'Payment Successful',
+                'message' => 'Your payment of LKR ' . number_format($totalAmount) . ' has been successfully recorded.',
+                'data' => json_encode(['payment_id' => $payment->id])
+            ]);
+        } else {
+             // Notify Student (Pending Approval)
+            \App\Models\Notification::create([
+                'user_id' => $payment->user_id,
+                'type' => 'payment_pending',
+                'title' => 'Payment Under Review',
+                'message' => 'Your payment of LKR ' . number_format($totalAmount) . ' is pending verification.',
+                'data' => json_encode(['payment_id' => $payment->id]) // Should be array, Laravel casts to json automatically if cast is set, but explicit json_encode safer for string column
+            ]);
+        }
         // Update All Fees to point to this Payment
         foreach ($validFees as $fee) {
             if ($status === 'paid') {
@@ -201,7 +235,7 @@ class PaymentController extends Controller
 
         // Update the related Fee
         // Find the fee matching user, course, month (since we didn't store fee_id in payment directly, logic inferred)
-        // Ideally Payment should have fee_id, but current schema links loosely. 
+        // Ideally Payment should have fee_id, but current schema links loosely.
         // Let's find the fee:
         $fee = \App\Models\StudentFee::where('student_id', $payment->user_id)
             ->where('course_id', $payment->course_id)
@@ -223,67 +257,7 @@ class PaymentController extends Controller
     /**
      * Admin: Record Cash Payment (Manual)
      */
-    public function recordCashPayment(Request $request)
-    {
-        $request->validate([
-            'student_id' => 'required|exists:users,id',
-            'course_id' => 'required|exists:courses,id',
-            'amount' => 'required|numeric|min:0',
-            'month' => 'required|string', // YYYY-MM
-            'note' => 'nullable|string'
-        ]);
 
-        // Check if already paid
-        $existingFee = \App\Models\StudentFee::where('student_id', $request->student_id)
-            ->where('course_id', $request->course_id)
-            ->where('month', $request->month)
-            ->first();
-
-        if ($existingFee && $existingFee->status === 'paid') {
-            return response()->json(['message' => 'Fee is already marked as paid'], 400);
-        }
-
-        // Create Payment Record
-        $payment = Payment::create([
-            'user_id' => $request->student_id,
-            'course_id' => $request->course_id,
-            'amount' => $request->amount,
-            'month' => $request->month,
-            'type' => 'cash',
-            'status' => 'paid',
-            'paid_at' => now(),
-            'note' => $request->note ?? 'Cash Payment at Counter'
-        ]);
-
-        // Update or Create Fee Record
-        if ($existingFee) {
-            $existingFee->update([
-                'status' => 'paid',
-                'paid_at' => now(),
-                'amount' => $request->amount, // Update amount if different
-                'payment_method' => 'cash',
-                'transaction_ref' => $payment->id
-            ]);
-        } else {
-             // Create fee record on the fly if it didn't exist (e.g. paying in advance)
-             // Need due_date, defaulting to end of month
-             $dueDate = Carbon::parse($request->month)->endOfMonth()->format('Y-m-d');
-             
-             \App\Models\StudentFee::create([
-                'student_id' => $request->student_id,
-                'course_id' => $request->course_id,
-                'month' => $request->month,
-                'amount' => $request->amount,
-                'due_date' => $dueDate,
-                'status' => 'paid',
-                'paid_at' => now(),
-                'payment_method' => 'cash',
-                'transaction_ref' => $payment->id
-             ]);
-        }
-
-        return response()->json(['message' => 'Cash payment recorded successfully', 'payment' => $payment]);
-    }
 
     /**
      * Admin: Reject Payment
@@ -304,16 +278,17 @@ class PaymentController extends Controller
     public function getParentDueFees(Request $request)
     {
         $user = $request->user();
-        
+
         $childrenIds = \App\Models\User::where(function($query) use ($user) {
                 if (!empty($user->email)) $query->where('parent_email', $user->email);
                 $query->orWhere('parent_id', $user->id);
                 if (!empty($user->phone)) $query->orWhere('parent_phone', $user->phone);
             })
             ->pluck('id');
-        
+
         $fees = \App\Models\StudentFee::whereIn('student_id', $childrenIds)
             ->where('status', 'pending')
+            ->whereHas('course')
             ->with(['student', 'course'])
             ->orderBy('due_date', 'asc')
             ->get()
@@ -328,16 +303,16 @@ class PaymentController extends Controller
                     'is_overdue' => Carbon::now()->gt(Carbon::parse($fee->due_date))
                 ];
             });
-            
+
         return response()->json($fees);
     }
-    
+
     /**
      * Parent: Get Pending Fees for Specific Child (Mirrors getDueFees)
      */
     public function getChildDueFees(Request $request, $id) {
         $user = $request->user();
-        
+
         // Validation: Ensure child belongs to parent
         $isChild = \App\Models\User::where('id', $id)
              ->where(function($q) use ($user) {
@@ -351,12 +326,13 @@ class PaymentController extends Controller
         // Same logic as getDueFees but for $id
         $fees = \App\Models\StudentFee::where('student_id', $id)
             ->where('status', 'pending')
+            ->whereHas('course')
             ->with(['course.subject'])
             ->orderBy('month', 'desc')
             ->get()
             ->map(function($fee) {
                 return [
-                    'id' => $fee->id, 
+                    'id' => $fee->id,
                     'course_id' => $fee->course_id,
                     'course_name' => $fee->course->name ?? 'Unknown',
                     'subject' => $fee->course->subject->name ?? 'Subject',
@@ -366,7 +342,7 @@ class PaymentController extends Controller
                     'is_overdue' => Carbon::now()->gt(Carbon::parse($fee->due_date))
                 ];
             });
-            
+
         return response()->json($fees);
     }
 
@@ -375,24 +351,26 @@ class PaymentController extends Controller
      */
     public function getChildPayments(Request $request, $id) {
         $user = $request->user();
-        
+
         $isChild = \App\Models\User::where('id', $id)
              ->where(function($q) use ($user) {
                  if (!empty($user->email)) $q->where('parent_email', $user->email);
                  $q->orWhere('parent_id', $user->id);
                  if (!empty($user->phone)) $q->orWhere('parent_phone', $user->phone);
              })->exists();
-        
+
         if (!$isChild) return response()->json(['message' => 'Unauthorized'], 403);
-        
+
         $payments = Payment::where('user_id', $id)
-            ->with(['course', 'course.subject', 'course.batch'])
+            ->with(['course' => function ($q) {
+                $q->withTrashed();
+            }, 'course.subject', 'course.batch'])
             ->orderBy('created_at', 'desc')
             ->paginate(20);
-            
+
         return response()->json($payments);
     }
-    
+
     /**
      * Teacher: Get Payment Status for a Course & Month
      */
@@ -402,9 +380,9 @@ class PaymentController extends Controller
             'course_id' => 'required|exists:courses,id',
             'month' => 'nullable|string' // YYYY-MM
         ]);
-        
+
         $month = $request->month ?? Carbon::now()->format('Y-m');
-        
+
         $fees = \App\Models\StudentFee::where('course_id', $request->course_id)
             ->where('month', $month)
             ->with(['student'])
@@ -417,7 +395,7 @@ class PaymentController extends Controller
                     'paid_at' => $fee->paid_at ? Carbon::parse($fee->paid_at)->format('d M Y') : null
                 ];
             });
-            
+
         return response()->json($fees);
     }
 
@@ -427,11 +405,11 @@ class PaymentController extends Controller
     public function getAdminPaymentSummary(Request $request)
     {
          $query = Payment::query()->with(['student', 'course']);
-         
+
          if ($request->has('status')) {
              $query->where('status', $request->status);
          }
-         
+
          // Search by student name
          if ($request->has('search')) {
              $search = $request->search;
@@ -440,13 +418,13 @@ class PaymentController extends Controller
                    ->orWhere('username', 'like', "%{$search}%");
              });
          }
-         
+
          // Calculate Global Stats
          $totalRevenue = Payment::where('status', 'paid')->sum('amount');
          $totalPendingCount = Payment::where('status', 'pending')->count();
          // Uncollected comes from Fee table (pending bills)
          $uncollectedAmount = \App\Models\StudentFee::where('status', 'pending')->sum('amount');
-         
+
          // Default sort
          $query->orderBy('created_at', 'desc');
          $paginated = $query->paginate(20);
@@ -482,7 +460,7 @@ class PaymentController extends Controller
             })
             ->sortBy('month')
             ->values();
-            
+
         // 2. Revenue by Course (Top 5) - PHP Collection Fallback
         $courseRevenue = Payment::where('status', 'paid')
             ->with('course')
@@ -495,7 +473,7 @@ class PaymentController extends Controller
             ->sortByDesc('total')
             ->take(5)
             ->values();
-            
+
         // 3. Payment Method Distribution
         $paymentMethods = Payment::select('type', \Illuminate\Support\Facades\DB::raw('count(*) as count'))
             ->groupBy('type')
@@ -517,16 +495,16 @@ class PaymentController extends Controller
     public function exportReport(Request $request) {
         // ... (existing code) ...
         $month = $request->month ?? Carbon::now()->format('Y-m');
-        
+
         $payments = Payment::where('month', $month)
             ->with(['student', 'course'])
             ->orderBy('paid_at', 'desc')
             ->get();
-            
+
         $csvHeader = ["ID", "Student Name", "Course", "Amount", "Type", "Status", "Date", "Note"];
         $csvData = [];
         $csvData[] = implode(',', $csvHeader);
-        
+
         foreach ($payments as $p) {
             $csvData[] = implode(',', [
                 $p->id,
@@ -539,9 +517,9 @@ class PaymentController extends Controller
                 '"' . $p->note . '"'
             ]);
         }
-        
+
         $csvContent = implode("\n", $csvData);
-        
+
         return response()->json([
             'file_name' => "ems_report_{$month}.csv",
             'content' => $csvContent
@@ -554,7 +532,7 @@ class PaymentController extends Controller
     public function generateMonthlyFees(Request $request) {
         $request->validate([
             'month' => 'required|date_format:Y-m', // e.g. 2026-02
-            'due_date' => 'required|date' 
+            'due_date' => 'required|date'
         ]);
 
         $month = $request->month;
@@ -568,7 +546,7 @@ class PaymentController extends Controller
             ->whereHas('course', function($q) {
                 $q->where('fee_amount', '>', 0);
             })
-            ->with('course')
+            ->with(['course', 'student.parentAccount'])
             ->get();
 
         foreach ($enrollments as $enrollment) {
@@ -579,7 +557,7 @@ class PaymentController extends Controller
                 ->exists();
 
             if (!$exists) {
-                \App\Models\StudentFee::create([
+                $fee = \App\Models\StudentFee::create([
                     'student_id' => $enrollment->user_id,
                     'course_id' => $enrollment->course_id,
                     'month' => $month,
@@ -588,6 +566,26 @@ class PaymentController extends Controller
                     'status' => 'pending'
                 ]);
                 $count++;
+
+                // Notify Student
+                \App\Models\Notification::create([
+                    'user_id' => $enrollment->user_id,
+                    'type' => 'fee_due',
+                    'title' => 'New Fee Details',
+                    'message' => 'Fee for ' . $enrollment->course->name . ' (' . $month . ') is now due.',
+                    'data' => json_encode(['fee_id' => $fee->id])
+                ]);
+
+                // Notify Parent
+                if ($enrollment->student && $enrollment->student->parentAccount) {
+                    \App\Models\Notification::create([
+                        'user_id' => $enrollment->student->parentAccount->id,
+                        'type' => 'fee_due',
+                        'title' => 'Fee Due for ' . $enrollment->student->name,
+                        'message' => 'Fee for ' . $enrollment->course->name . ' (' . $month . ') is now pending.',
+                        'data' => json_encode(['fee_id' => $fee->id, 'student_id' => $enrollment->user_id])
+                    ]);
+                }
             }
         }
 
@@ -603,7 +601,7 @@ class PaymentController extends Controller
         // Fetch Fees (Expectations) with nested relationships
         // fees -> course -> teacher
         $fees = \App\Models\StudentFee::where('month', $month)
-            ->with(['course.teacher']) 
+            ->with(['course.teacher'])
             ->get();
 
         // Group by Teacher ID
@@ -611,11 +609,11 @@ class PaymentController extends Controller
             return $fee->course->teacher_id ?? 'unknown';
         })->map(function($group) {
             $teacher = $group->first()->course->teacher;
-            
+
             $totalExpected = $group->sum('amount');
             $collected = $group->where('status', 'paid')->sum('amount');
             $pendingAmount = $group->where('status', 'pending')->sum('amount');
-            
+
             $totalStudents = $group->count(); // Total fee records (enrollments)
             $paidCount = $group->where('status', 'paid')->count();
             $pendingCount = $group->where('status', 'pending')->count();
@@ -625,7 +623,7 @@ class PaymentController extends Controller
                 'teacher_name' => $teacher->name ?? 'Unknown Teacher',
                 'payment_count' => $paidCount,
                 'pending_count' => $pendingCount,
-                'total_students' => $totalStudents, 
+                'total_students' => $totalStudents,
                 'total_collected' => $collected,
                 'total_pending' => $pendingAmount,
                 'teacher_share' => $collected * 0.8 // Default 80% (Frontend handles custom)
@@ -635,6 +633,78 @@ class PaymentController extends Controller
         return response()->json($settlements);
     }
     /**
+     * Admin: Get Pending Fees for Specific Student (for Cash Payment)
+     */
+    public function getStudentPendingFees(Request $request, $id) {
+        $fees = \App\Models\StudentFee::where('student_id', $id)
+            ->where('status', 'pending')
+            ->whereHas('course')
+            ->with(['course.subject'])
+            ->orderBy('month', 'asc')
+            ->get()
+            ->map(function($fee) {
+                return [
+                    'id' => $fee->id, // fee_id
+                    'course_name' => $fee->course->name,
+                    'amount' => $fee->amount,
+                    'month' => $fee->month,
+                    'month_label' => Carbon::createFromFormat('Y-m', $fee->month)->format('F Y'),
+                    'selected' => true // Default select all
+                ];
+            });
+
+        return response()->json($fees);
+    }
+
+    /**
+     * Admin: Record Cash Payment (Manual)
+     */
+    public function recordCashPayment(Request $request) {
+        $request->validate([
+             'student_id' => 'required|exists:users,id',
+             'amount' => 'required|numeric|min:0',
+             // 'course_id' => 'nullable', // No longer strictly needed if fee_ids present
+             'fee_ids' => 'nullable|array',
+             'note' => 'nullable|string'
+        ]);
+
+        // Logic similar to store() but admin specific context
+        $payment = Payment::create([
+            'user_id' => $request->student_id,
+            'course_id' => $request->course_id, // Can be null for bulk
+            'amount' => $request->amount,
+            'month' => $request->month ?? now()->format('Y-m'),
+            'type' => 'cash',
+            'paid_at' => now(),
+            'status' => 'paid',
+            'note' => $request->note . ' (Admin Record)'
+        ]);
+
+        if ($request->has('fee_ids')) {
+             \App\Models\StudentFee::whereIn('id', $request->fee_ids)
+                ->update(['status' => 'paid', 'paid_at' => now(), 'payment_id' => $payment->id]);
+        }
+        // Backward compatibility if just course_id provided (single month)
+        elseif ($request->course_id && $request->month) {
+             \App\Models\StudentFee::where('student_id', $request->student_id)
+                ->where('course_id', $request->course_id)
+                ->where('month', $request->month)
+                ->update(['status' => 'paid', 'paid_at' => now(), 'payment_id' => $payment->id]);
+        }
+
+        // Notify Student
+        \App\Models\Notification::create([
+            'user_id' => $payment->user_id,
+            'type' => 'payment_success',
+            'title' => 'Cash Payment Recorded',
+            'message' => 'Admin recorded a cash payment of LKR ' . number_format($payment->amount),
+            'data' => json_encode(['payment_id' => $payment->id])
+        ]);
+
+        return response()->json(['message' => 'Payment recorded successfully', 'payment' => $payment]);
+    }
+
+    /**
      * Admin: Get List of Students with Pending Fees
      * Exclude students with >= 4 months of consecutive pending fees (likely dropouts)
      */
@@ -643,16 +713,16 @@ class PaymentController extends Controller
             ->with(['student', 'course'])
             ->orderBy('month', 'desc')
             ->get();
-            
+
         $grouped = $pendingFees->groupBy('student_id');
         $result = [];
-        
+
         foreach ($grouped as $studentId => $fees) {
              // If student has 4 or more pending records, treat as "Dropped Out" and hide from active collection list
              if ($fees->count() >= 4) {
                  continue;
              }
-             
+
              foreach ($fees as $fee) {
                  $result[] = [
                      'id' => $fee->id,
@@ -664,7 +734,7 @@ class PaymentController extends Controller
                  ];
              }
         }
-        
+
         return response()->json($result);
     }
 }

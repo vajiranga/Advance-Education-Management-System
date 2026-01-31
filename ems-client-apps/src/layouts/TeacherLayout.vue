@@ -12,12 +12,12 @@
         <q-space />
 
         <div class="row q-gutter-sm items-center">
-          <q-btn 
-            flat 
-            round 
-            :icon="$q.dark.isActive ? 'light_mode' : 'dark_mode'" 
-            :color="$q.dark.isActive ? 'yellow' : 'grey-7'" 
-            @click="$q.dark.toggle()" 
+          <q-btn
+            flat
+            round
+            :icon="$q.dark.isActive ? 'light_mode' : 'dark_mode'"
+            :color="$q.dark.isActive ? 'yellow' : 'grey-7'"
+            @click="$q.dark.toggle()"
           >
             <q-tooltip>Toggle {{ $q.dark.isActive ? 'Light' : 'Dark' }} Mode</q-tooltip>
           </q-btn>
@@ -27,15 +27,18 @@
             <q-menu :class="$q.dark.isActive ? 'bg-dark text-white' : 'bg-white'">
                <q-list style="min-width: 300px">
                   <q-item-label header :class="$q.dark.isActive ? 'text-grey-5' : 'text-grey-7'">Notifications</q-item-label>
-                  
-                  <q-item v-for="note in notifications" :key="note.id" clickable v-close-popup class="q-py-md">
+
+                  <q-item v-for="note in notifications" :key="note.id" clickable v-close-popup class="q-py-md" @click="handleNotificationClick(note)">
                      <q-item-section avatar>
-                        <q-avatar color="primary" text-color="white" icon="info" font-size="20px" size="md" />
+                        <q-avatar :color="getIconColor(note.type)" text-color="white" :icon="getIcon(note.type)" font-size="20px" size="md" />
                      </q-item-section>
                      <q-item-section>
-                        <q-item-label>{{ note.title }}</q-item-label>
+                        <q-item-label :class="{'text-weight-bold': !note.read_at}">{{ note.title }}</q-item-label>
                         <q-item-label caption :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey-8'">{{ note.message }}</q-item-label>
                         <div class="text-caption text-grey-6 q-mt-xs">{{ note.time }}</div>
+                     </q-item-section>
+                     <q-item-section side v-if="!note.read_at">
+                         <q-badge color="blue" rounded dot />
                      </q-item-section>
                   </q-item>
 
@@ -43,9 +46,15 @@
                       <q-icon name="notifications_off" size="xl" class="q-mb-sm" />
                       <div>No new notifications</div>
                   </div>
+
+                  <q-separator v-if="notifications.length > 0" />
+                  <q-item v-if="notifications.length > 0" clickable class="text-center justify-center text-primary" @click="notificationStore.markAllRead()">
+                      <q-item-label class="text-caption">Mark all as read</q-item-label>
+                  </q-item>
                </q-list>
             </q-menu>
           </q-btn>
+
           <q-avatar size="36px" class="cursor-pointer bg-primary text-white shadow-1">
              <span class="text-weight-bold">{{ authStore.user?.name?.charAt(0) || 'T' }}</span>
              <q-menu :class="$q.dark.isActive ? 'bg-dark text-white' : 'bg-white'">
@@ -58,7 +67,7 @@
                  </q-item>
 
                  <q-separator :class="$q.dark.isActive ? 'bg-grey-8' : ''" />
-                 
+
                  <q-item clickable v-close-popup to="/teacher/dashboard">
                    <q-item-section avatar><q-icon name="dashboard" /></q-item-section>
                    <q-item-section>Dashboard</q-item-section>
@@ -90,20 +99,20 @@
          </div>
          <div class="text-caption q-ml-none" :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey-7'">Teacher Dashboard</div>
       </div>
-      
+
       <q-separator :class="$q.dark.isActive ? 'bg-grey-8' : ''" />
-      
+
       <q-list class="q-mt-md">
         <q-item clickable v-ripple to="/teacher/dashboard" :active-class="$q.dark.isActive ? 'text-teal-2 bg-grey-9 border-l-teal' : 'text-primary bg-blue-1'">
           <q-item-section avatar><q-icon name="dashboard" /></q-item-section>
           <q-item-section>Dashboard</q-item-section>
         </q-item>
-        
+
         <q-item clickable v-ripple to="/teacher/classes" :active-class="$q.dark.isActive ? 'text-teal-2 bg-grey-9 border-l-teal' : 'text-primary bg-blue-1'">
           <q-item-section avatar><q-icon name="class" /></q-item-section>
           <q-item-section>My Classes</q-item-section>
         </q-item>
-        
+
         <q-item clickable v-ripple to="/teacher/attendance" :active-class="$q.dark.isActive ? 'text-teal-2 bg-grey-9 border-l-teal' : 'text-primary bg-blue-1'">
           <q-item-section avatar><q-icon name="fact_check" /></q-item-section>
           <q-item-section>Attendance</q-item-section>
@@ -116,7 +125,6 @@
 
         <q-separator class="q-my-md" :class="$q.dark.isActive ? 'bg-grey-8' : ''" />
 
-        <!-- Sidebar logout removed as requested -->
       </q-list>
     </q-drawer>
 
@@ -127,12 +135,18 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue' // Added onMounted
 import { useAuthStore } from 'stores/auth-store'
+import { useNotificationStore } from 'stores/notification-store' // Added
+import { useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
+import { storeToRefs } from 'pinia'
 
 const leftDrawerOpen = ref(false)
 const authStore = useAuthStore()
+const notificationStore = useNotificationStore() // Added
+const { notifications } = storeToRefs(notificationStore) // Added (removed unreadCount to avoid unused var warning if applicable)
+const router = useRouter()
 const $q = useQuasar()
 
 // Visual fix for ID display (STU -> TCH)
@@ -144,12 +158,46 @@ const displayTeacherId = computed(() => {
     return id
 })
 
-const notifications = ref([
-    { id: 1, title: 'Class Cancelled', message: 'Physics 2026 class postponed.', time: '1 hour ago' }
-])
+onMounted(async () => {
+    // Fetch Notifications
+    await notificationStore.fetchNotifications()
+    setInterval(() => notificationStore.fetchNotifications(), 60000)
+
+    // Auth check if needed
+    if (!authStore.user) {
+         await authStore.fetchUser()
+    }
+})
 
 function toggleLeftDrawer () {
   leftDrawerOpen.value = !leftDrawerOpen.value
+}
+
+// Notification Helpers
+function getIcon(type) {
+    switch(type) {
+        case 'new_student': return 'person_add'
+        case 'class_status_update': return 'verified'
+        default: return 'notifications'
+    }
+}
+
+function getIconColor(type) {
+    switch(type) {
+        case 'new_student': return 'info'
+        case 'class_status_update': return 'positive'
+        default: return 'primary'
+    }
+}
+
+function handleNotificationClick(note) {
+    if (!note.read_at) {
+        notificationStore.markAsRead(note.id)
+    }
+
+    if (note.type === 'new_student' || note.type === 'class_status_update') {
+        router.push('/teacher/classes')
+    }
 }
 </script>
 

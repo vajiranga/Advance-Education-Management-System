@@ -30,7 +30,7 @@ Route::get('/setup-admin', function () {
 });
 
 Route::prefix('v1')->group(function () {
-    
+
     // Landlord / System Admin Routes
     Route::apiResource('tenants', TenantController::class);
 
@@ -39,10 +39,10 @@ Route::prefix('v1')->group(function () {
     Route::get('grades', [App\Http\Controllers\Api\V1\AcademicController::class, 'getGrades']);
     Route::get('grades/{gradeId}/subjects', [App\Http\Controllers\Api\V1\AcademicController::class, 'getSubjects']);
     Route::get('public/courses', [CourseController::class, 'index']);
-    
+
     // Authenticated Routes
     Route::middleware('auth:sanctum')->group(function () {
-        
+
         // --- STUDENT ROUTES (Moved to Shared due to broad access needs) ---
         // Route::middleware('role:student')->group(function () { ... });
 
@@ -53,7 +53,7 @@ Route::prefix('v1')->group(function () {
              Route::post('courses/bulk', [CourseController::class, 'bulkAction']);
              Route::get('courses/{id}/students', [CourseController::class, 'getStudents']);
              Route::put('courses/{id}/status', [CourseController::class, 'updateStatus']);
-             
+
              // Batches & Halls
              Route::apiResource('batches', App\Http\Controllers\Api\V1\BatchController::class); // Assuming teacher creates batches
              // Halls should probably be admin managed, but keeping here for now if simple
@@ -64,16 +64,16 @@ Route::prefix('v1')->group(function () {
              Route::apiResource('exams', App\Http\Controllers\Api\V1\ExamController::class);
              Route::get('exams/{id}/results', [App\Http\Controllers\Api\V1\ExamController::class, 'getResults']);
              Route::post('exams/{id}/results', [App\Http\Controllers\Api\V1\ExamController::class, 'storeResults']);
-             
+
              // Attendance
              Route::get('teacher/students', [CourseController::class, 'getMyStudents']);
              Route::get('attendance/students', [App\Http\Controllers\Api\V1\AttendanceController::class, 'getStudents']);
              Route::post('attendance/bulk', [App\Http\Controllers\Api\V1\AttendanceController::class, 'bulkStore']);
              Route::post('attendance', [App\Http\Controllers\Api\V1\AttendanceController::class, 'store']);
-             
+
              // Payments View
              Route::get('teacher/payments', [App\Http\Controllers\Api\V1\PaymentController::class, 'getTeacherStudentPayments']);
-             
+
              // Notices
              Route::post('notices', [App\Http\Controllers\Api\V1\NoticeController::class, 'store']);
         });
@@ -97,22 +97,23 @@ Route::prefix('v1')->group(function () {
              Route::get('admin/payments/export', [App\Http\Controllers\Api\V1\PaymentController::class, 'exportReport']);
              Route::post('admin/payments/generate', [App\Http\Controllers\Api\V1\PaymentController::class, 'generateMonthlyFees']);
              Route::post('admin/payments/record-cash', [App\Http\Controllers\Api\V1\PaymentController::class, 'recordCashPayment']);
+             Route::get('admin/students/{id}/pending-fees', [App\Http\Controllers\Api\V1\PaymentController::class, 'getStudentPendingFees']);
              Route::get('admin/payments/pending-list', [App\Http\Controllers\Api\V1\PaymentController::class, 'getPendingFeeList']);
              Route::post('payments/{id}/approve', [App\Http\Controllers\Api\V1\PaymentController::class, 'approve']);
              Route::post('payments/{id}/reject', [App\Http\Controllers\Api\V1\PaymentController::class, 'reject']);
              Route::post('subjects', [App\Http\Controllers\Api\V1\AcademicController::class, 'createSubject']);
-             
+
              // User Management
              Route::get('/users', [App\Http\Controllers\Api\UserManagementController::class, 'index']);
              Route::post('/users', [App\Http\Controllers\Api\UserManagementController::class, 'store']);
              Route::put('/users/{id}', [App\Http\Controllers\Api\UserManagementController::class, 'update']);
              Route::delete('/users/{id}', [App\Http\Controllers\Api\UserManagementController::class, 'destroy']);
-             
+
              Route::get('admin/attendance/dashboard', [App\Http\Controllers\Api\V1\AttendanceController::class, 'getAdminDashboard']);
-             
+
              // Admin can likely access almost everything else too
         });
-        
+
         // Shared Reads (Authenticated users can read these)
         Route::apiResource('courses', CourseController::class)->only(['index', 'show']);
 
@@ -132,6 +133,10 @@ Route::prefix('v1')->group(function () {
         Route::get('attendance/my-history', [App\Http\Controllers\Api\V1\AttendanceController::class, 'myAttendance']);
         Route::get('attendance/dashboard', [App\Http\Controllers\Api\V1\AttendanceController::class, 'getStudentDashboard']);
         Route::get('my-exams', [App\Http\Controllers\Api\V1\ExamController::class, 'myExams']);
+        // Notifications
+        Route::get('/notifications', [App\Http\Controllers\Api\V1\NotificationController::class, 'index']);
+        Route::post('/notifications/mark-read', [App\Http\Controllers\Api\V1\NotificationController::class, 'markAllRead']);
+        Route::post('/notifications/{id}/read', [App\Http\Controllers\Api\V1\NotificationController::class, 'markAsRead']);
     });
 });
 

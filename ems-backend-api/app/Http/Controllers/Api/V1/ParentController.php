@@ -18,16 +18,16 @@ class ParentController extends Controller
     public function getChildren(Request $request)
     {
         $user = $request->user();
-        
+
         // Link by email OR parent_id OR parent_phone (Robust linking)
         $children = User::where(function($query) use ($user) {
                 // If the user has an email that isn't auto-generated or is valid
                 if (!empty($user->email)) {
                      $query->where('parent_email', $user->email);
                 }
-                
+
                 $query->orWhere('parent_id', $user->id);
-                
+
                 // Critical for phone-based parent login flow
                 if (!empty($user->phone)) {
                     $query->orWhere('parent_phone', $user->phone);
@@ -35,7 +35,7 @@ class ParentController extends Controller
             })
             ->where('role', 'student')
             ->get(['id', 'name', 'grade', 'avatar', 'school', 'username']); // Included username for UI
-            
+
         return response()->json($children);
     }
 
@@ -45,7 +45,7 @@ class ParentController extends Controller
     public function getChildStats(Request $request, $id)
     {
         $parent = $request->user();
-        
+
         // Verify this child belongs to the parent
         // Verify this child belongs to the parent
         $child = User::where('id', $id)
@@ -61,40 +61,34 @@ class ParentController extends Controller
         $totalDays = Attendance::where('user_id', $child->id)
             ->whereMonth('date', $currentMonth)
             ->count();
-            
+
         $presentDays = Attendance::where('user_id', $child->id)
             ->whereMonth('date', $currentMonth)
             ->where('status', 'present')
             ->count();
-            
+
         $attendancePercentage = $totalDays > 0 ? round(($presentDays / $totalDays) * 100) : 0;
 
-        // 2. Pending Fees
-        $currentMonthName = Carbon::now()->format('F');
-        // Simple check: Count active courses * fees NOT in payments
-        // Re-using logic from PaymentController roughly or just checking simple count
-        $activeCourses = $child->courses()->wherePivot('status', 'active')->get();
-        $dueAmount = 0;
-        foreach($activeCourses as $course) {
-             $isPaid = Payment::where('user_id', $child->id)
-                ->where('course_id', $course->id)
-                ->where('month', $currentMonthName)
-                ->exists();
-             if(!$isPaid) {
-                 $dueAmount += $course->fees ?? 2500; // Default fallback fee
-             }
-        }
+        // 2. Pending Fees (Real Data from StudentFees)
+        $dueAmount = \App\Models\StudentFee::where('student_id', $child->id)
+            ->where('status', 'pending')
+            ->whereHas('course')
+            ->sum('amount');
 
         // 3. Last Exam Grade
         $lastResult = ExamResult::where('student_id', $child->id)
             ->where('is_published', true)
-            ->with('exam')
-            ->latest()
+            ->join('exams', 'exam_results.exam_id', '=', 'exams.id') // Join to sort by exam date
+            ->orderBy('exams.date', 'desc')
+            ->select('exam_results.*') // Select result fields
+            ->with(['exam.course'])
             ->first();
-            
+
         $lastGrade = $lastResult ? $lastResult->grade : '-';
-        
-        // 4. Recent Activity (Mock for now or fetch recent Attendance/Exam events)
+        $lastSubject = $lastResult && $lastResult->exam && $lastResult->exam->course ? $lastResult->exam->course->name : 'N/A';
+        $lastMarks = $lastResult ? $lastResult->marks : '-';
+
+        // 4. Recent Activity
         $recentActivity = Attendance::where('user_id', $child->id)
              ->latest('date')
              ->limit(5)
@@ -109,12 +103,17 @@ class ParentController extends Controller
 
         return response()->json([
             'attendance' => $attendancePercentage,
+            'total_days' => $totalDays,
+            'present_days' => $presentDays,
             'due_fees' => $dueAmount,
-            'rank' => 'N/A', // Complex calculation, skip for MVP
             'last_grade' => $lastGrade,
+            'last_exam_subject' => $lastSubject,
+            'last_exam_marks' => $lastMarks,
             'recent_activity' => $recentActivity
         ]);
     }
+
+
     /**
      * Get Child's Courses and Schedule
      */
@@ -133,10 +132,10 @@ class ParentController extends Controller
             ->wherePivot('status', 'active')
             ->with(['teacher', 'hall', 'subject', 'batch', 'subCourses'])
             ->get();
-            
+
         // Format similar to StudentController logic
         $formatted = $courses->map(function ($course) {
-            
+
             // Sub/Extra classes logic could be here (mock/DB)
             $extraClasses = $course->subCourses->map(function($sub) use ($course) {
                  return [
@@ -199,7 +198,7 @@ class ParentController extends Controller
                     'marks' => $res->marks,
                     'grade' => $res->grade,
                     'date' => $res->exam->date,
-                    'remarks' => $res->remarks ?? 'Good effort',
+                    'remarks' => $res->remarks,
                     // Trend logic would require history comparison, simplified for now
                     'trend' => $res->marks >= 75 ? 'up' : 'down',
                     'diff' => rand(0, 10) // Mock diff

@@ -28,7 +28,7 @@ class ExamController extends Controller
                 $q->where('teacher_id', $request->teacher_id);
             });
         }
-        
+
         $exams = $query->with('course')->orderBy('date', 'desc')->paginate(20);
         return response()->json($exams);
     }
@@ -47,6 +47,21 @@ class ExamController extends Controller
         ]);
 
         $exam = Exam::create($validated);
+
+        // Notify Enrolled Students
+        $course = Course::find($validated['course_id']);
+        if ($course) {
+            $students = $course->students; // BelongsToMany
+            foreach ($students as $student) {
+                \App\Models\Notification::create([
+                    'user_id' => $student->id,
+                    'type' => 'exam_scheduled',
+                    'title' => 'New Exam Scheduled',
+                    'message' => "Upcoming {$course->name} exam: {$exam->title} on {$exam->date}",
+                    'data' => json_encode(['exam_id' => $exam->id])
+                ]);
+            }
+        }
 
         return response()->json(['message' => 'Exam created', 'exam' => $exam], 201);
     }
@@ -86,11 +101,11 @@ class ExamController extends Controller
     {
          try {
             $exam = Exam::with('course')->findOrFail($id);
-            
+
             if (!$exam->course) {
                 return response()->json(['message' => 'Course not found'], 404);
             }
-            
+
             // Get all students in the course
             $students = $exam->course->students()
                 ->with(['examResults' => function($q) use ($id) {
@@ -128,9 +143,9 @@ class ExamController extends Controller
             'is_published' => 'boolean'
         ]);
 
-        $exam = Exam::findOrFail($id);
-        
-        DB::transaction(function() use ($request, $id) {
+        $exam = Exam::with('course')->findOrFail($id);
+
+        DB::transaction(function() use ($request, $id, $exam) {
             foreach($request->results as $res) {
                 ExamResult::updateOrCreate(
                     ['exam_id' => $id, 'student_id' => $res['student_id']],
@@ -141,6 +156,33 @@ class ExamController extends Controller
                         'is_published' => $request->is_published ?? false
                     ]
                 );
+
+                // Notify if published
+                if ($request->is_published) {
+                    $student = User::with('parentAccount')->find($res['student_id']);
+
+                    if ($student) {
+                         // Notify Student
+                        \App\Models\Notification::create([
+                            'user_id' => $student->id,
+                            'type' => 'exam_results',
+                            'title' => 'Exam Results Released',
+                            'message' => "Results for {$exam->title} ({$exam->course->name}) are available.",
+                            'data' => json_encode(['exam_id' => $id])
+                        ]);
+
+                        // Notify Parent
+                        if ($student->parentAccount) {
+                            \App\Models\Notification::create([
+                                'user_id' => $student->parentAccount->id,
+                                'type' => 'exam_results',
+                                'title' => 'Exam Results Released',
+                                'message' => "Results for {$student->name} - {$exam->title} ({$exam->course->name}) are available.",
+                                'data' => json_encode(['exam_id' => $id, 'student_id' => $student->id])
+                            ]);
+                        }
+                    }
+                }
             }
         });
 
@@ -150,10 +192,10 @@ class ExamController extends Controller
     /**
      * Get Student's Exams (Upcoming & Results)
      */
-    public function myExams(Request $request) 
+    public function myExams(Request $request)
     {
         $user = $request->user();
-        
+
         // Results (Past)
         // Check "is_published" if you want to hide unpublished results
         $results = ExamResult::where('student_id', $user->id)
@@ -175,10 +217,10 @@ class ExamController extends Controller
 
         // Upcoming Exams (Future dates, enrolled courses)
         $today = now()->format('Y-m-d');
-        
+
         // Get courses student is enrolled in
         $enrolledCourseIds = $user->courses()->wherePivot('status', 'active')->pluck('courses.id');
-        
+
         $upcoming = Exam::whereIn('course_id', $enrolledCourseIds)
             ->where('date', '>=', $today)
             ->with(['course', 'course.subject'])

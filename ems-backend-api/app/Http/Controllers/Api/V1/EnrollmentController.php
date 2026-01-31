@@ -33,7 +33,7 @@ class EnrollmentController extends Controller
                 $targetUserId = $currentUser->id;
             } else {
                 Log::warning('Enroll Unauthorized', ['user' => $currentUser->id]);
-                return response()->json(['message' => 'Unauthorized to enroll students. Role: ' . $currentUser->role], 403); 
+                return response()->json(['message' => 'Unauthorized to enroll students. Role: ' . $currentUser->role], 403);
             }
         }
 
@@ -66,7 +66,7 @@ class EnrollmentController extends Controller
                     'updated_at' => now(),
                     'enrolled_at' => now()
                 ]);
-            
+
             Log::info('Re-activated user', ['user_id' => $targetUserId]);
             return response()->json(['message' => 'Enrolled successfully (Re-activated)']);
         }
@@ -79,9 +79,9 @@ class EnrollmentController extends Controller
             'created_at' => now(),
             'updated_at' => now(),
         ]);
-        
+
         Log::info('New enrollment created', ['user_id' => $targetUserId]);
-        
+
         // Generate Fee for the current month immediately
         try {
             $course = Course::find($request->course_id);
@@ -101,19 +101,39 @@ class EnrollmentController extends Controller
                         'due_date' => now()->addDays(7), // Due in 7 days for new enrollments
                         'status' => 'pending'
                      ]);
-                     
-                     // Notification logic could go here
+
+                     // Notify Student about Fee
+                     \App\Models\Notification::create([
+                        'user_id' => $targetUserId,
+                        'type' => 'fee_due',
+                        'title' => 'Enrollment Fee Due',
+                        'message' => 'Enrollment fee for ' . $course->name . ' is now due.',
+                        'data' => json_encode(['course_id' => $course->id])
+                     ]);
                  }
             }
+
+            // Notify Teacher
+            $teacherId = $course->teacher_id; // Using ID directly if relation not eager loaded
+            if ($teacherId) {
+                 \App\Models\Notification::create([
+                     'user_id' => $teacherId,
+                     'type' => 'new_student',
+                     'title' => 'New Student Enrolled',
+                     'message' => "A new student (ID: {$targetUserId}) has enrolled in {$course->name}",
+                     'data' => json_encode(['course_id' => $course->id, 'student_id' => $targetUserId])
+                 ]);
+            }
+
         } catch (\Exception $e) {
-            Log::error('Failed to generate enrollment fee', ['error' => $e->getMessage()]);
+            Log::error('Failed to generate enrollment fee or notification', ['error' => $e->getMessage()]);
         }
 
         return response()->json(['message' => 'Enrolled successfully']);
     }
 
     // Get enrolled courses for the logged-in student
-    public function myCourses(Request $request) 
+    public function myCourses(Request $request)
     {
         $user = $request->user();
 
@@ -132,17 +152,17 @@ class EnrollmentController extends Controller
 
         return response()->json(['data' => $courses]);
     }
-    
+
     // Drop a course
     public function drop(Request $request, $courseId)
     {
         $user = $request->user();
-        
+
         DB::table('enrollments')
             ->where('user_id', $user->id)
             ->where('course_id', $courseId)
             ->update(['status' => 'dropped', 'updated_at' => now()]);
-            
+
         return response()->json(['message' => 'Course dropped successfully']);
     }
 }

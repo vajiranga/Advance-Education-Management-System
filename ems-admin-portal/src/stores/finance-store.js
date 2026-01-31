@@ -65,7 +65,7 @@ export const useFinanceStore = defineStore('finance', () => {
         }
     }
 
-    async function downloadReport(month) {
+    async function exportReport(month) {
         try {
             const res = await api.get('/v1/admin/payments/export', { params: { month } })
             // Trigger Download
@@ -123,6 +123,17 @@ export const useFinanceStore = defineStore('finance', () => {
         }
     }
 
+    async function recordBatchPayment(payload) {
+        try {
+            // Re-using the standard payment store endpoint which supports fee_ids array
+            const res = await api.post('/v1/payments', payload)
+            return { success: true, message: 'Payment Recorded', payment: res.data.payment } // Standard response might vary, usually assumes success
+        } catch (e) {
+             console.error(e)
+             return { success: false, error: e.response?.data?.message || e.response?.data?.errors || 'Recording Failed' }
+        }
+    }
+
     return {
         transactions,
         pendingTransactions,
@@ -134,9 +145,10 @@ export const useFinanceStore = defineStore('finance', () => {
         fetchAnalytics,
         fetchSettlements,
         fetchUncollectedFees,
-        downloadReport,
+        exportReport,
         generateFees,
         recordCashPayment,
+        recordBatchPayment,
         approvePayment,
         rejectPayment,
         uncollectedFees
