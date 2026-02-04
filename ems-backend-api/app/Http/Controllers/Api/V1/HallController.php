@@ -56,10 +56,17 @@ class HallController extends Controller
         $reqStartMin = $this->timeToMinutes($start);
         $reqEndMin = $this->timeToMinutes($end);
 
+        $excludeId = $request->input('exclude_course_id');
+
         // Fetch all approved courses with a hall assignment
-        $courses = Course::whereNotNull('hall_id')
-            ->where('status', 'approved')
-            ->get();
+        $query = Course::whereNotNull('hall_id')
+            ->where('status', 'approved');
+
+        if ($excludeId) {
+            $query->where('id', '!=', $excludeId);
+        }
+
+        $courses = $query->get();
 
         $busyHallIds = [];
 

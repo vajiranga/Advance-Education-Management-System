@@ -72,7 +72,13 @@ class ParentController extends Controller
         // 2. Pending Fees (Real Data from StudentFees)
         $dueAmount = \App\Models\StudentFee::where('student_id', $child->id)
             ->where('status', 'pending')
-            ->whereHas('course')
+            // Fix: Only count fees for ENABLED enrollments
+            ->whereHas('course', function ($query) use ($child) {
+                 $query->whereHas('students', function ($q) use ($child) {
+                     $q->where('users.id', $child->id)
+                       ->where('enrollments.status', 'active');
+                 });
+            })
             ->sum('amount');
 
         // 3. Last Exam Grade
@@ -89,7 +95,7 @@ class ParentController extends Controller
         $lastMarks = $lastResult ? $lastResult->marks : '-';
 
         // 4. Recent Activity
-        $recentActivity = Attendance::where('user_id', $child->id)
+        $attendanceActivity = Attendance::where('user_id', $child->id)
              ->latest('date')
              ->limit(5)
              ->get()
@@ -100,6 +106,31 @@ class ParentController extends Controller
                      'date' => $att->date
                  ];
              });
+
+        // 5. Recent Extra Classes Logic
+        $enrolledCourseIds = $child->courses()->pluck('courses.id');
+        $extraClassActivity = \App\Models\Course::whereIn('parent_course_id', $enrolledCourseIds)
+             ->where('type', 'extra')
+             ->where('created_at', '>=', Carbon::now()->subDays(14)) // Last 2 weeks
+             ->orderBy('created_at', 'desc')
+             ->get()
+             ->map(function($course) {
+                 $dateStr = 'Upcoming';
+                 if (is_array($course->schedule) && isset($course->schedule['date'])) {
+                     $dateStr = $course->schedule['date'];
+                 }
+                 return [
+                     'title' => 'Extra Class Added: ' . $course->name,
+                     'status' => 'info', // To be handled by frontend
+                     'date' => $course->created_at->format('Y-m-d') 
+                 ];
+             });
+        
+        // Merge and Sort
+        $recentActivity = collect($attendanceActivity)->merge($extraClassActivity)
+            ->sortByDesc('date')
+            ->values()
+            ->take(5);
 
         return response()->json([
             'attendance' => $attendancePercentage,

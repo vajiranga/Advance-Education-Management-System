@@ -41,7 +41,13 @@ class PaymentController extends Controller
 
         $fees = \App\Models\StudentFee::where('student_id', $user->id)
             ->where('status', 'pending')
-            ->whereHas('course') // ONLY Return fees where course still exists
+             // Ensure Student is actually Enrolled in the course (Active)
+            ->whereHas('course', function ($query) use ($user) {
+                 $query->whereHas('students', function ($q) use ($user) {
+                     $q->where('users.id', $user->id) // Current Student
+                       ->where('enrollments.status', 'active'); // Active Enrollment
+                 });
+            })
             ->with(['course.subject'])
             ->orderBy('month', 'desc')
             ->get()
@@ -288,7 +294,13 @@ class PaymentController extends Controller
 
         $fees = \App\Models\StudentFee::whereIn('student_id', $childrenIds)
             ->where('status', 'pending')
-            ->whereHas('course')
+            // Fix: Check Active Enrollment
+            ->whereHas('course', function ($query) {
+                 $query->whereHas('students', function ($q) {
+                       $q->whereColumn('enrollments.user_id', 'student_fees.student_id')
+                         ->where('enrollments.status', 'active');
+                 });
+            })
             ->with(['student', 'course'])
             ->orderBy('due_date', 'asc')
             ->get()
@@ -326,7 +338,13 @@ class PaymentController extends Controller
         // Same logic as getDueFees but for $id
         $fees = \App\Models\StudentFee::where('student_id', $id)
             ->where('status', 'pending')
-            ->whereHas('course')
+            // Fix: Check Active Enrollment
+            ->whereHas('course', function ($query) use ($id) {
+                 $query->whereHas('students', function ($q) use ($id) {
+                     $q->where('users.id', $id)
+                       ->where('enrollments.status', 'active');
+                 });
+            })
             ->with(['course.subject'])
             ->orderBy('month', 'desc')
             ->get()

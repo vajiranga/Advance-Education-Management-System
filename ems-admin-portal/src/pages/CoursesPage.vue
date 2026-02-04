@@ -119,11 +119,11 @@
                   >
                 </div>
 
-                <div class="text-h6 ellipsis q-pr-xl q-mb-xs" :title="course.name">
+                <div class="text-h6 two-line-clamp q-pr-xl q-mb-xs" :title="course.name">
                   {{ course.name }}
                 </div>
 
-                <div class="text-subtitle2 text-primary ellipsis" :title="`${course.batch?.name || 'Unknown Grade'} - ${course.subject?.name || 'Unknown Subject'}`">
+                <div class="text-subtitle2 text-primary two-line-clamp" :title="`${course.batch?.name || 'Unknown Grade'} - ${course.subject?.name || 'Unknown Subject'}`">
                   {{ course.batch?.name || 'Unknown Grade' }} -
                   {{ course.subject?.name || 'Unknown Subject' }}
                 </div>
@@ -144,9 +144,7 @@
                      {{ course.students_count || 0 }} Students
                    </div>
 
-                   <div class="text-caption text-grey ellipsis" v-if="course.admin_note" :title="course.admin_note">
-                     <q-icon name="note" class="q-mr-xs" /> {{ course.admin_note }}
-                   </div>
+
                 </div>
               </q-card-section>
 
@@ -348,15 +346,39 @@
               </div>
             </div>
 
+            <!-- Schedule (Moved Up) -->
+            <q-separator class="q-my-sm" />
+            <div class="text-subtitle2 text-grey-8 q-mb-sm">Class Schedule (Select to filter halls)</div>
+            <div class="row q-col-gutter-sm q-mb-md">
+              <div class="col-4">
+                <q-select
+                  outlined
+                  v-model="form.day"
+                  :options="[
+                    'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'
+                  ]"
+                  label="Day"
+                />
+              </div>
+              <div class="col-4">
+                <q-input outlined v-model="form.startTime" type="time" label="Start Time" />
+              </div>
+              <div class="col-4">
+                <q-input outlined v-model="form.endTime" type="time" label="End Time" />
+              </div>
+            </div>
+
             <!-- Hall & Fee -->
             <div class="row q-col-gutter-sm">
               <div class="col-6">
                 <q-select
                   outlined
                   v-model="form.hall"
-                  :options="halls"
+                  :options="availableHalls"
+                  :loading="checkingHall"
+                  :disable="checkingHall"
                   option-label="name"
-                  label="Select Hall *"
+                  label="Select Hall (Filtered) *"
                   :rules="[(val) => !!val || 'Required']"
                 >
                   <template v-slot:option="scope">
@@ -411,41 +433,9 @@
               </div>
             </div>
 
-            <q-separator class="q-my-sm" />
-            <div class="text-subtitle2 text-grey-8">Class Schedule</div>
 
-            <div class="row q-col-gutter-sm">
-              <div class="col-4">
-                <q-select
-                  outlined
-                  v-model="form.day"
-                  :options="[
-                    'Monday',
-                    'Tuesday',
-                    'Wednesday',
-                    'Thursday',
-                    'Friday',
-                    'Saturday',
-                    'Sunday',
-                  ]"
-                  label="Day"
-                />
-              </div>
-              <div class="col-4">
-                <q-input outlined v-model="form.startTime" type="time" label="Start Time" />
-              </div>
-              <div class="col-4">
-                <q-input outlined v-model="form.endTime" type="time" label="End Time" />
-              </div>
-            </div>
 
-            <q-input
-              v-model="form.admin_note"
-              outlined
-              type="textarea"
-              label="Admin Note / Remarks"
-              rows="2"
-            />
+
 
             <div class="row justify-end q-mt-md">
               <q-btn label="Cancel" flat color="grey" v-close-popup />
@@ -641,10 +631,62 @@ const form = ref({
   day: 'Monday',
   startTime: '08:00',
   endTime: '10:00',
-  admin_note: '',
+
 })
 
 const viewType = ref('regular')
+
+// Hall Availability Logic
+const checkingHall = ref(false)
+const availableHalls = ref([]) // Initialize empty, sync with watch
+
+async function checkHallAvailability() {
+  // Basic validation
+  if (!form.value.day || !form.value.startTime || !form.value.endTime) {
+      availableHalls.value = halls.value
+      return
+  }
+
+  // If schedule is incomplete string ??
+  if (form.value.startTime.length < 5 || form.value.endTime.length < 5) return
+
+  checkingHall.value = true
+  try {
+    const payload = {
+       day: form.value.day,
+       start_time: form.value.startTime, // HH:mm
+       end_time: form.value.endTime,
+       exclude_course_id: isEditMode.value ? form.value.id : null
+    }
+    const res = await api.post('v1/halls/check', payload)
+
+    // Sort halls by name/number for better UX
+    availableHalls.value = res.data.sort((a,b) => a.name.localeCompare(b.name))
+
+    // Warn if selected hall is not available
+    if (form.value.hall && !availableHalls.value.find(h => h.id === form.value.hall.id)) {
+        // Optional: clear selection or show warning
+        // form.value.hall = null
+        $q.notify({ type: 'warning', message: 'Selected hall is busy at this time!' })
+    }
+
+  } catch (e) {
+    console.error('Check Hall Error', e)
+    availableHalls.value = halls.value
+  } finally {
+    checkingHall.value = false
+  }
+}
+
+watch([() => form.value.day, () => form.value.startTime, () => form.value.endTime], () => {
+   checkHallAvailability()
+})
+
+// Sync initial halls or fallback
+watch(halls, (val) => {
+   if (availableHalls.value.length === 0) availableHalls.value = val
+}, { immediate: true })
+
 
 onMounted(async () => {
   courseStore.fetchCourses({ type: viewType.value, all: true })
@@ -769,7 +811,7 @@ function editCourse(course) {
     day: course.schedule?.day || 'Monday',
     startTime: course.schedule?.start || '08:00',
     endTime: course.schedule?.end || '10:00',
-    admin_note: course.admin_note,
+
   }
   showAddDialog.value = true
 }
@@ -790,7 +832,7 @@ async function saveCourse() {
         end: form.value.endTime,
         type: 'recurring',
       },
-      admin_note: form.value.admin_note,
+
       status: 'approved',
     }
 
@@ -822,8 +864,9 @@ function resetForm() {
     day: 'Monday',
     startTime: '08:00',
     endTime: '10:00',
-    admin_note: '',
   }
+  // Reset halls ensures we start clean, though watcher will trigger momentarily
+  availableHalls.value = halls.value
 }
 
 // Review Functions
@@ -954,5 +997,15 @@ async function addSelectedStudents() {
 }
 .border-light {
   border: 1px solid #e0e0e0;
+}
+.two-line-clamp {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: normal;
+  line-height: 1.2em;
+  height: 2.4em; /* Optional: enforce height */
 }
 </style>

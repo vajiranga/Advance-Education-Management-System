@@ -131,6 +131,44 @@ class CourseController extends Controller
              }
         }
 
+        // Notify Students & Parents if Extra Class
+        if ($course->type === 'extra' && $course->parent_course_id) {
+             $parentCourse = Course::find($course->parent_course_id);
+             if ($parentCourse) {
+                 // Get Enrolled Students
+                 $students = $parentCourse->students; 
+
+                 foreach($students as $student) {
+                     // Notify Student
+                     Notification::create([
+                         'user_id' => $student->id,
+                         'type' => 'extra_class_alert',
+                         'title' => 'New Extra Class Scheduled',
+                         'message' => "An extra class for {$parentCourse->name} has been scheduled on " . ($course->schedule['date'] ?? 'Upcoming'),
+                         'data' => json_encode(['course_id' => $course->id])
+                     ]);
+
+                     // Notify Parent (If linked)
+                     $parentUser = null;
+                     if ($student->parent_id) {
+                         $parentUser = User::find($student->parent_id);
+                     } elseif ($student->parent_phone) {
+                         $parentUser = User::where('role', 'parent')->where('phone', $student->parent_phone)->first();
+                     }
+
+                     if ($parentUser) {
+                          Notification::create([
+                             'user_id' => $parentUser->id,
+                             'type' => 'extra_class_alert',
+                             'title' => 'Extra Class Only for ' . $student->name,
+                             'message' => "Extra class for {$parentCourse->name} scheduled on " . ($course->schedule['date'] ?? 'Upcoming'),
+                             'data' => json_encode(['student_id' => $student->id, 'course_id' => $course->id])
+                         ]);
+                     }
+                 }
+             }
+        }
+
         $course->fresh()->load(['subject', 'batch', 'teacher', 'hall']);
 
         return response()->json([

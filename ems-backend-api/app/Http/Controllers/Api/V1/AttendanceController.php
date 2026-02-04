@@ -175,8 +175,20 @@ class AttendanceController extends Controller
              $user = \App\Models\User::find($request->student_id);
         }
 
-        $courses = $user->courses()->wherePivot('status', 'active')->get();
-        // Handle User without courses relationship loaded potentially? Assuming User model has courses()
+        // Fix: Only show ACTIVE courses that are APPROVED and belong to CURRENT YEAR (or future)
+        // This prevents old courses (e.g. 2025) from generating 'Absent' records in 2026.
+        $courses = $user->courses()
+            ->wherePivot('status', 'active')
+            ->where('courses.status', 'approved')
+            ->with(['batch'])
+            ->get()
+            ->filter(function($course) {
+                // If course has a batch with a year, ensure it is not in the past
+                if ($course->batch && $course->batch->year && $course->batch->year < date('Y')) {
+                    return false;
+                }
+                return true;
+            });
         
         $now = now();
         $upcomingLimit = now()->addHours(24);
