@@ -178,6 +178,8 @@ function getIcon(type) {
     switch(type) {
         case 'new_student': return 'person_add'
         case 'class_status_update': return 'verified'
+        case 'notice': return 'campaign'
+        case 'meeting': return 'groups'
         default: return 'notifications'
     }
 }
@@ -186,6 +188,8 @@ function getIconColor(type) {
     switch(type) {
         case 'new_student': return 'info'
         case 'class_status_update': return 'positive'
+        case 'notice': return 'orange'
+        case 'meeting': return 'teal'
         default: return 'primary'
     }
 }

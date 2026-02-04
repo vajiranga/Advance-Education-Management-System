@@ -80,123 +80,47 @@
     <div class="row q-col-gutter-lg" v-if="selectedChild">
       <!-- Child's Class Schedule -->
       <div class="col-12 col-md-8">
-        <q-card
-          class="full-height"
-          :class="$q.dark.isActive ? 'bg-dark border-dark' : 'bg-white border-light'"
-        >
-          <q-card-section>
-            <div class="text-h6" :class="$q.dark.isActive ? 'text-white' : ''">
-              {{ selectedChild.name }}'s Class Schedule
-            </div>
-            <div class="text-caption" :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey-7'">
-              View upcoming classes and schedule
-            </div>
-          </q-card-section>
-          <q-separator :class="$q.dark.isActive ? 'bg-grey-8' : ''" />
-          <q-card-section>
-            <div class="row q-col-gutter-md">
-              <!-- Calendar -->
-              <div class="col-12 col-md-7">
-                <q-date
-                  v-model="selectedDate"
-                  flat
-                  minimal
-                  class="full-width"
-                  :dark="$q.dark.isActive"
-                  :color="$q.dark.isActive ? 'primary' : ''"
-                  @update:model-value="onDateClick"
-                >
-                  <template v-slot:default="scope">
-                    <div
-                      v-if="scope"
-                      class="fit column items-center justify-center relative-position q-pa-xs rounded-borders cursor-pointer"
-                      :class="getDayClass(scope)"
-                      @click="onDateClick(scope.date)"
+        <!-- Replaced with Student App Style Schedule -->
+        <div class="q-mb-lg">
+           <div class="text-h6 text-weight-bold q-mb-sm" :class="$q.dark.isActive ? 'text-white' : ''">{{ selectedChild?.name }}'s Class Schedule</div>
+           <div class="flex justify-center">
+               <q-date
+                 v-model="selectedDate"
+                 :key="childCourses.length"
+                 minimal
+                 flat
+                 bordered
+                 class="full-width"
+                 style="max-width: 800px"
+                 today-btn
+                 @update:model-value="onDateClick"
+                 :dark="$q.dark.isActive"
+                 :color="$q.dark.isActive ? 'primary' : ''"
+                 :class="$q.dark.isActive ? 'bg-dark border-dark' : 'bg-white'"
+               >
+                 <template v-slot:default="scope">
+                    <div v-if="scope"
+                       class="fit column items-center justify-center relative-position q-pa-xs rounded-borders cursor-pointer"
+                       :class="getDayClass(scope)"
+                       @click="onDateClick(scope.date)"
                     >
-                      <div :class="scope.today ? 'text-bold' : ''">
-                        {{ scope.day }}
-                      </div>
+                         <div :class="scope.today ? 'text-bold' : ''">
+                           {{ scope.day }}
+                        </div>
+                        
+                        <!-- Regular Class Indicator (Tiny Dash) -->
+                        <div v-if="hasRegularClass(scope.date)" class="absolute-bottom full-width flex justify-center" style="bottom: 2px">
+                           <div :class="$q.dark.isActive ? 'bg-white' : 'bg-primary'" style="height: 2px; width: 12px; border-radius: 2px"></div>
+                        </div>
 
-                      <!-- Regular Class Indicator (Tiny Dash) -->
-                      <div
-                        v-if="hasRegularClass(scope.date)"
-                        class="absolute-bottom full-width flex justify-center"
-                        style="bottom: 2px"
-                      >
-                        <div
-                          :class="$q.dark.isActive ? 'bg-white' : 'bg-primary'"
-                          style="height: 2px; width: 12px; border-radius: 2px"
-                        ></div>
-                      </div>
-
-                      <!-- Extra Class Indicator (Green Highlight/Circle) -->
-                      <div
-                        v-if="hasExtraClass(scope.date)"
-                        class="absolute-full flex flex-center"
-                        style="background: rgba(76, 175, 80, 0.2); border-radius: 50%"
-                      ></div>
-                    </div>
-                  </template>
-                </q-date>
-              </div>
-
-              <!-- Schedule Details for Selected Date -->
-              <div class="col-12 col-md-5">
-                <div
-                  class="q-pa-md rounded-borders full-height relative-position"
-                  :class="$q.dark.isActive ? 'bg-grey-9' : 'bg-grey-1'"
-                >
-                  <div
-                    class="text-subtitle1 text-weight-bold q-mb-md"
-                    :class="$q.dark.isActive ? 'text-white' : ''"
-                  >
-                    {{ formatDateHeader(selectedDate) }}
-                  </div>
-
-                  <div
-                    v-if="selectedDateDetails.length === 0"
-                    class="text-center text-grey q-pa-xl absolute-center full-width"
-                  >
-                    <q-icon
-                      name="event_busy"
-                      size="48px"
-                      :color="$q.dark.isActive ? 'grey-7' : 'grey-4'"
-                    />
-                    <div
-                      class="text-subtitle2 q-mt-sm"
-                      :class="$q.dark.isActive ? 'text-grey-5' : ''"
-                    >
-                      No classes scheduled
-                    </div>
-                  </div>
-
-                  <q-list v-else separator class="q-mt-md">
-                    <q-item v-for="cls in selectedDateDetails" :key="cls.id" class="q-px-none">
-                      <q-item-section>
-                        <q-item-label class="text-weight-bold">{{ cls.name }}</q-item-label>
-                        <q-item-label
-                          caption
-                          :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey-7'"
-                        >
-                          {{ cls.teacher?.name }}
-                        </q-item-label>
-                        <q-item-label caption>
-                          <q-icon name="schedule" size="xs" class="q-mr-xs" />
-                          {{ formatSchedule(cls.schedule) }}
-                        </q-item-label>
-                      </q-item-section>
-                      <q-item-section side>
-                        <q-badge :color="cls.type === 'extra' ? 'orange' : 'blue'">
-                          {{ cls.type === 'extra' ? 'Extra' : 'Regular' }}
-                        </q-badge>
-                      </q-item-section>
-                    </q-item>
-                  </q-list>
-                </div>
-              </div>
-            </div>
-          </q-card-section>
-        </q-card>
+                        <!-- Extra Class Indicator (Green Highlight/Circle) -->
+                        <div v-if="hasExtraClass(scope.date)" class="absolute-full flex flex-center" style="background: rgba(76, 175, 80, 0.2); border-radius: 50%">
+                        </div>
+                     </div>
+                 </template>
+               </q-date>
+           </div>
+        </div>
       </div>
 
       <!-- Notifications / Feed -->
@@ -283,6 +207,42 @@
         </div>
       </div>
     </div>
+
+    <!-- Date Details Dialog -->
+    <q-dialog v-model="showDateDialog">
+        <q-card style="min-width: 350px">
+            <q-card-section class="row items-center justify-between text-white" :class="$q.dark.isActive ? 'bg-grey-9' : 'bg-primary'">
+                <div class="text-h6">{{ formatDateHeader(selectedDate) }}</div>
+                <q-btn flat round dense icon="close" v-close-popup />
+            </q-card-section>
+            <q-card-section class="q-pa-md" :class="$q.dark.isActive ? 'bg-dark' : 'bg-white'">
+                <div v-if="selectedDateDetails.length === 0" class="text-grey text-center q-py-md">
+                    No classes scheduled for this date.
+                </div>
+                <q-list separator v-else>
+                     <q-item v-for="cls in selectedDateDetails" :key="cls.id">
+                         <q-item-section>
+                             <q-item-label class="text-weight-bold" :class="$q.dark.isActive ? 'text-white' : ''">{{ cls.name }}</q-item-label>
+                             <q-item-label caption :class="$q.dark.isActive ? 'text-grey-5' : 'text-grey-7'">
+                                 {{ formatSchedule(cls.schedule) }}
+                             </q-item-label>
+                             <q-item-label caption :class="$q.dark.isActive ? 'text-grey-5' : ''">
+                                 {{ cls.teacher?.name }} | {{ cls.hall?.name || 'No Hall' }}
+                             </q-item-label>
+                         </q-item-section>
+                         <q-item-section side>
+                             <q-chip size="sm" 
+                                :color="cls.type === 'extra' ? ($q.dark.isActive ? 'orange-10' : 'orange') : ($q.dark.isActive ? 'blue-10' : 'blue-1')" 
+                                :text-color="cls.type === 'extra' ? 'white' : ($q.dark.isActive ? 'white' : 'blue')"
+                             >
+                                 {{ cls.type === 'extra' ? 'Extra' : 'Regular' }}
+                             </q-chip>
+                         </q-item-section>
+                     </q-item>
+                </q-list>
+            </q-card-section>
+        </q-card>
+    </q-dialog>
   </q-page>
 </template>
 
@@ -366,14 +326,17 @@ const extraCourses = computed(() => (childCourses.value || []).filter((c) => c.t
 function getClassesForDate(dateStr) {
   if (!childCourses.value) return []
 
+  // Safe parse YYYY/MM/DD
   const parts = dateStr.split('/')
   const y = parseInt(parts[0])
   const m = parseInt(parts[1])
   const d = parseInt(parts[2])
   const date = new Date(y, m - 1, d)
 
+  // Manual Day Lookup
   const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
   const dayName = days[date.getDay()]
+  
   const normalizedDate = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`
 
   const regular = regularCourses.value.filter((c) => {
@@ -386,11 +349,17 @@ function getClassesForDate(dateStr) {
       }
     }
     if (!s) return false
-    if (s.day && s.day === dayName) return true
-    if (s.date && s.date === normalizedDate) return true
+
+     // Match Recurring Day
+     if (s.day && s.day === dayName) return true
+     
+     // Match Specific Date (if regular one-off)
+     if (s.date && s.date === normalizedDate) return true
+
     return false
   })
 
+  // Filter Extra Classes
   const extra = extraCourses.value.filter((c) => {
     let s = c.schedule
     if (typeof s === 'string') {
@@ -403,13 +372,20 @@ function getClassesForDate(dateStr) {
     return s?.date === normalizedDate
   })
 
-  return [...regular, ...extra]
+    return [...regular, ...extra].sort((a,b) => {
+         // Sort by time
+         const getStart = (c) => {
+             let s = typeof c.schedule === 'string' ? JSON.parse(c.schedule) : c.schedule
+             return s?.start || ''
+         }
+         return getStart(a).localeCompare(getStart(b))
+    })
 }
 
 function onDateClick(date) {
   selectedDate.value = date
   selectedDateDetails.value = getClassesForDate(date)
-  showDateDialog.value = true // We can use a dialog or just show in the side panel
+  showDateDialog.value = true
 }
 
 function hasRegularClass(date) {

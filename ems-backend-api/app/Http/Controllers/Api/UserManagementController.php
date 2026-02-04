@@ -274,6 +274,19 @@ class UserManagementController extends Controller
                 }
             }
 
+            // --- PARENT UPDATED -> SYNC CHILDREN ---
+            if ($user->role === 'parent') {
+                $children = User::where('parent_id', $user->id)->get();
+                foreach ($children as $child) {
+                    $child->parent_name = $user->name;
+                    $child->parent_phone = $user->phone;
+                    // Only update email if it was previously matching or we want strict sync.
+                    // Usually parent_email column in student table is just a reference, so sync it.
+                    $child->parent_email = $user->email;
+                    $child->save();
+                }
+            }
+
             $user->save();
 
             \Illuminate\Support\Facades\DB::commit();

@@ -130,14 +130,14 @@ class ParentController extends Controller
 
         $courses = $child->courses()
             ->wherePivot('status', 'active')
-            ->with(['teacher', 'hall', 'subject', 'batch', 'subCourses'])
+            ->with(['teacher', 'hall', 'subject', 'batch', 'extraClasses'])
             ->get();
 
         // Format similar to StudentController logic
         $formatted = $courses->map(function ($course) {
 
             // Sub/Extra classes logic could be here (mock/DB)
-            $extraClasses = $course->subCourses->map(function($sub) use ($course) {
+            $extraClasses = $course->extraClasses->map(function($sub) use ($course) {
                  return [
                     'id' => $sub->id,
                     'name' => 'Extra: ' . $course->name,

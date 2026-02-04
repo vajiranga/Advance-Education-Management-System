@@ -14,24 +14,11 @@ class AcademicController extends Controller
      */
     public function getGrades(Request $request)
     {
-        // In real app, we switch DB based on Tenant. 
+        // In real app, we switch DB based on Tenant.
         // For now, assuming current connection is correct context or using central for simulation.
-        
-        $grades = DB::table('grades')->get();
 
-        if ($grades->isEmpty()) {
-            $defaultGrades = [
-                ['name' => 'Grade 6', 'code' => 'G6', 'created_at' => now(), 'updated_at' => now()],
-                ['name' => 'Grade 7', 'code' => 'G7', 'created_at' => now(), 'updated_at' => now()],
-                ['name' => 'Grade 8', 'code' => 'G8', 'created_at' => now(), 'updated_at' => now()],
-                ['name' => 'Grade 9', 'code' => 'G9', 'created_at' => now(), 'updated_at' => now()],
-                ['name' => 'Grade 10', 'code' => 'G10', 'created_at' => now(), 'updated_at' => now()],
-                ['name' => 'Grade 11', 'code' => 'G11', 'created_at' => now(), 'updated_at' => now()],
-            ];
-            
-            DB::table('grades')->insert($defaultGrades);
-            $grades = DB::table('grades')->get();
-        }
+        // Auto-seed removed to support custom grades via seeder
+        $grades = DB::table('grades')->orderBy('id')->get();
 
         return response()->json($grades);
     }
@@ -69,19 +56,9 @@ class AcademicController extends Controller
 
     public function getAllSubjects()
     {
-        $subjects = DB::table('subjects')->get();
-        if ($subjects->isEmpty()) {
-            $defaults = [
-                ['name' => 'Mathematics', 'code' => 'MATH', 'created_at' => now(), 'updated_at' => now()],
-                ['name' => 'Science', 'code' => 'SCI', 'created_at' => now(), 'updated_at' => now()],
-                ['name' => 'English', 'code' => 'ENG', 'created_at' => now(), 'updated_at' => now()],
-                ['name' => 'Sinhala', 'code' => 'SIN', 'created_at' => now(), 'updated_at' => now()],
-                ['name' => 'History', 'code' => 'HIS', 'created_at' => now(), 'updated_at' => now()],
-                ['name' => 'ICT', 'code' => 'ICT', 'created_at' => now(), 'updated_at' => now()]
-            ];
-            DB::table('subjects')->insert($defaults);
-            $subjects = DB::table('subjects')->get();
-        }
+        // Auto-seed removed
+        // Return sorted by ID (creation order) instead of Name to respect seeder order
+        $subjects = DB::table('subjects')->orderBy('id')->get();
         return response()->json($subjects);
     }
 }

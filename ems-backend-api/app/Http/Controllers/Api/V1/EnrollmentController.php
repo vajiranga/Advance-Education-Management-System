@@ -150,7 +150,49 @@ class EnrollmentController extends Controller
               });
         })->with(['teacher', 'subject', 'batch', 'hall', 'parentCourse'])->withCount('students')->orderBy('created_at', 'desc')->get();
 
-        return response()->json(['data' => $courses]);
+        // Filter out expired Extra Classes (Older than Today) AND Attach Payment Status
+        $today = now()->format('Y-m-d');
+        $currentMonth = now()->format('Y-m');
+
+        $filtered = $courses->map(function($course) use ($today, $currentMonth, $user) {
+            // 1. Check Expiry for Extra Classes
+            if ($course->type === 'extra') {
+                $schedule = $course->schedule;
+                if (isset($schedule['date']) && $schedule['date'] < $today) {
+                    return null; // Expired
+                }
+            }
+
+            // 2. Determine Fee Status
+            $feeStatus = 'due'; // Default
+            if ($course->fee_amount <= 0) {
+                $feeStatus = 'free';
+            } else {
+                // Check DB for fee record
+                $fee = \App\Models\StudentFee::where('student_id', $user->id)
+                            ->where('course_id', $course->id)
+                            ->where('month', $currentMonth)
+                            ->first();
+
+                if ($fee) {
+                    if ($fee->status === 'paid') $feeStatus = 'paid';
+                    else if ($fee->status === 'pending') $feeStatus = 'due';
+                    else if ($fee->status === 'overdue') $feeStatus = 'overdue';
+                } else {
+                    // No fee record generated yet? Assume Due if fee > 0
+                    // But if it's an Extra class, maybe fee is handled via Parent?
+                    // Basic rule: If fee_amount > 0, it is 'due' until paid.
+                    $feeStatus = 'due';
+                }
+            }
+
+            // Attach as custom attribute
+            $course->current_month_payment_status = $feeStatus;
+            return $course;
+
+        })->filter(); // Remove nulls
+
+        return response()->json(['data' => $filtered->values()]);
     }
 
     // Drop a course

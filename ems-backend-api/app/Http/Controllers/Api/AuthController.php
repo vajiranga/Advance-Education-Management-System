@@ -191,18 +191,70 @@ class AuthController extends Controller
             return response()->json(['message' => 'Invalid Student ID'], 404);
         }
 
-        if ($student->parent_phone !== $request->phone) {
+        // Check matches (Sanitize inputs for comparison)
+        $phoneMatch = false;
+        $cleanInputPhone = preg_replace('/[^0-9]/', '', $request->phone);
+        $matchedSourcePhone = $request->phone; // To be used for fetching/creating user
+        $foundParentUser = null;
+
+        // 1. Check stored parent_phone on student record
+        $cleanStudentContextPhone = preg_replace('/[^0-9]/', '', $student->parent_phone ?? '');
+        
+        if ($cleanStudentContextPhone === $cleanInputPhone) {
+            $phoneMatch = true;
+            // Prefer the DB version if it exists
+            if (!empty($student->parent_phone)) {
+                $matchedSourcePhone = $student->parent_phone;
+            }
+        }
+
+        // 2. Fallback: Check Linked Parent Account (Real-time check)
+        if (!$phoneMatch && $student->parent_id) {
+             $linkedParent = User::find($student->parent_id);
+             if ($linkedParent) {
+                $cleanLinkedPhone = preg_replace('/[^0-9]/', '', $linkedParent->phone);
+                if ($cleanLinkedPhone === $cleanInputPhone) {
+                    $phoneMatch = true;
+                    $foundParentUser = $linkedParent;
+                    $matchedSourcePhone = $linkedParent->phone;
+                }
+             }
+        }
+
+        if (!$phoneMatch) {
              return response()->json(['message' => 'Phone number does not match registered parent'], 401);
         }
 
-        $parent = User::where('role', 'parent')->where('phone', $request->phone)->first();
+        // If we found the specific parent account explicitly linked, use it.
+        if ($foundParentUser) {
+            $parent = $foundParentUser;
+        } else {
+            // Otherwise, try to find a parent user with the matched source phone or the input phone
+            $parent = User::where('role', 'parent')
+                ->where(function($q) use ($matchedSourcePhone, $request) {
+                    $q->where('phone', $matchedSourcePhone)
+                      ->orWhere('phone', $request->phone);
+                })->first();
+            
+            // If still not found, try to find by normalized phone (slow but necessary if inconsistent)
+            if (!$parent) {
+                 $allParents = User::where('role', 'parent')->get();
+                 foreach($allParents as $p) {
+                     if (preg_replace('/[^0-9]/', '', $p->phone) === $cleanInputPhone) {
+                         $parent = $p;
+                         break;
+                     }
+                 }
+            }
+        }
 
         if (!$parent) {
+             // Create using the matched source phone format to maintain consistency
              $parent = User::create([
                  'name' => $student->parent_name ?? 'Parent',
-                 'phone' => $request->phone,
+                 'phone' => $matchedSourcePhone, 
                  'role' => 'parent',
-                 'email' => $request->phone . '@parent.ems',
+                 'email' => $matchedSourcePhone . '@parent.ems',
                  'password' => Hash::make(Str::random(16)),
                  'plain_password' => 'no_password_login',
                  'username' => 'PAR-' . rand(1000,9999)

@@ -2,7 +2,7 @@
   <q-layout view="lHh Lpr fff">
     <q-page-container>
       <q-page class="login-page window-height window-width flex flex-center relative-position overflow-hidden">
-        
+
         <!-- Animated Background Elements (Fixed: pointer-events-none added) -->
         <div class="stars"></div>
         <div class="glow-spot spot-1"></div>
@@ -10,13 +10,13 @@
         <div class="glow-spot spot-3"></div>
 
         <q-card class="login-card glass-panel shadow-24 q-pa-lg relative-position z-10" style="width: 100%; max-width: 480px;">
-          
+
           <div class="text-center q-mb-lg">
              <!-- Dynamic Logo Icon -->
              <div class="avatar-glow q-mx-auto q-mb-md flex flex-center" :class="`bg-${activeColor}-dim`">
                 <q-icon :name="activeIcon" size="40px" :color="activeColor" />
              </div>
-             
+
              <h2 class="text-h4 text-white text-weight-bolder q-my-none tracking-wide">Welcome Back</h2>
              <div class="text-grey-4 text-subtitle1 q-mt-sm">
                 Login as <span :class="`text-${activeColor} text-weight-bold`">{{ activeRoleLabel }}</span>
@@ -45,40 +45,42 @@
           </div>
 
           <q-tab-panels v-model="tab" animated class="bg-transparent text-white panels-container">
-            
+
             <!-- STUDENT LOGIN -->
             <q-tab-panel name="student" class="q-pa-none">
               <q-form @submit="handleLogin('student')" class="q-gutter-y-lg">
-                <q-input 
-                    dark outlined 
-                    v-model="credentials.student.id" 
-                    label="Student ID" 
+                <q-input
+                    dark outlined
+                    v-model="credentials.student.id"
+                    label="Student ID"
                     color="blue"
                     class="input-glass"
                     placeholder="STU202XXXXX"
+                    autocomplete="username"
                     :rules="[val => !!val || 'Student ID is required']"
                 >
                     <template v-slot:prepend><q-icon name="badge" color="blue-4" /></template>
                 </q-input>
-                
-                <q-input 
-                    dark outlined 
-                    v-model="credentials.student.password" 
-                    type="password" 
-                    label="Password" 
+
+                <q-input
+                    dark outlined
+                    v-model="credentials.student.password"
+                    type="password"
+                    label="Password"
                     color="blue"
                     class="input-glass"
+                    autocomplete="current-password"
                     :rules="[val => !!val || 'Password is required']"
                 >
                     <template v-slot:prepend><q-icon name="lock" color="blue-4" /></template>
                 </q-input>
 
-                <q-btn 
-                    type="submit" 
-                    color="primary" 
-                    class="full-width glow-btn-blue q-py-md text-weight-bold" 
-                    label="Login to Portal" 
-                    rounded 
+                <q-btn
+                    type="submit"
+                    color="primary"
+                    class="full-width glow-btn-blue q-py-md text-weight-bold"
+                    label="Login to Portal"
+                    rounded
                     unelevated
                     :loading="loading"
                     no-caps
@@ -90,15 +92,15 @@
             <!-- PARENT LOGIN -->
             <q-tab-panel name="parent" class="q-pa-none">
               <div class="glass-alert q-mb-md row items-center q-pa-sm rounded-borders text-amber-2">
-                 <q-icon name="info" class="q-mr-sm" size="xs"/> 
+                 <q-icon name="info" class="q-mr-sm" size="xs"/>
                  <div class="text-caption">Use registered phone number</div>
               </div>
 
               <q-form @submit="handleLogin('parent')" class="q-gutter-y-lg">
-                <q-input 
-                    dark outlined 
-                    v-model="credentials.parent.studentId" 
-                    label="Student ID" 
+                <q-input
+                    dark outlined
+                    v-model="credentials.parent.studentId"
+                    label="Student ID"
                     color="amber"
                     class="input-glass"
                     placeholder="STU202XXXXX"
@@ -106,27 +108,28 @@
                 >
                     <template v-slot:prepend><q-icon name="child_care" color="amber-4" /></template>
                 </q-input>
-                
-                <q-input 
-                    dark outlined 
-                    v-model="credentials.parent.phone" 
-                    label="Phone Number" 
+
+                <q-input
+                    dark outlined
+                    v-model="credentials.parent.phone"
+                    label="Phone Number"
                     color="amber"
                     class="input-glass"
                     mask="###-#######"
                     hint="Format: 07X-XXXXXXX"
+                    autocomplete="tel"
                     :rules="[val => !!val || 'Phone is required', val => val.length === 11 || 'Invalid format']"
                 >
                     <template v-slot:prepend><q-icon name="smartphone" color="amber-4" /></template>
                 </q-input>
 
-                <q-btn 
-                    type="submit" 
-                    color="amber-9" 
+                <q-btn
+                    type="submit"
+                    color="amber-9"
                     text-color="dark"
-                    class="full-width glow-btn-gold q-py-md text-weight-bold" 
-                    label="Parent Login" 
-                    rounded 
+                    class="full-width glow-btn-gold q-py-md text-weight-bold"
+                    label="Parent Login"
+                    rounded
                     unelevated
                     :loading="loading"
                     no-caps
@@ -138,36 +141,38 @@
             <!-- TEACHER LOGIN -->
             <q-tab-panel name="teacher" class="q-pa-none">
               <q-form @submit="handleLogin('teacher')" class="q-gutter-y-lg">
-                <q-input 
-                    dark outlined 
-                    v-model="credentials.teacher.id" 
-                    label="Teacher ID" 
+                <q-input
+                    dark outlined
+                    v-model="credentials.teacher.id"
+                    label="Teacher ID"
                     color="purple"
                     class="input-glass"
                     placeholder="TCH202XXXXX"
+                    autocomplete="username"
                     :rules="[val => !!val || 'Teacher ID is required']"
                 >
                     <template v-slot:prepend><q-icon name="school" color="purple-4" /></template>
                 </q-input>
-                
-                <q-input 
-                    dark outlined 
-                    v-model="credentials.teacher.password" 
-                    type="password" 
-                    label="Password" 
+
+                <q-input
+                    dark outlined
+                    v-model="credentials.teacher.password"
+                    type="password"
+                    label="Password"
                     color="purple"
                     class="input-glass"
+                    autocomplete="current-password"
                     :rules="[val => !!val || 'Password is required']"
                 >
                     <template v-slot:prepend><q-icon name="vpn_key" color="purple-4" /></template>
                 </q-input>
 
-                <q-btn 
-                    type="submit" 
-                    color="purple-6" 
-                    class="full-width glow-btn-purple q-py-md text-weight-bold" 
-                    label="Teacher Access" 
-                    rounded 
+                <q-btn
+                    type="submit"
+                    color="purple-6"
+                    class="full-width glow-btn-purple q-py-md text-weight-bold"
+                    label="Teacher Access"
+                    rounded
                     unelevated
                     :loading="loading"
                     no-caps
@@ -181,13 +186,13 @@
           <!-- Footer Links -->
           <div class="text-center q-mt-xl">
              <div class="text-grey-5 q-mb-sm text-caption">New to our institute?</div>
-             <q-btn 
-                to="/register" 
-                outline 
+             <q-btn
+                to="/register"
+                outline
                 rounded
-                color="white" 
-                label="Create Student Account" 
-                no-caps 
+                color="white"
+                label="Create Student Account"
+                no-caps
                 class="full-width hover-glass"
              />
              <div class="q-mt-md">
@@ -248,7 +253,7 @@ const handleLogin = async (role) => {
                 username: credentials.student.id,
                 password: credentials.student.password
             })
-        } 
+        }
         else if (role === 'teacher') {
              result = await authStore.login({
                 username: credentials.teacher.id,
@@ -264,7 +269,7 @@ const handleLogin = async (role) => {
 
         if (result.success) {
             $q.notify({ type: 'positive', message: `Welcome ${role}!` })
-            
+
             // Redirect based on role returned from store or current tab
             if (role === 'parent') router.push('/parent/dashboard')
             else if (result.role === 'teacher') router.push('/teacher/dashboard')
@@ -293,7 +298,7 @@ const handleLogin = async (role) => {
   top: 0; left: 0; right: 0; bottom: 0;
   width: 100%; height: 100%;
   background: #000;
-  background-image: 
+  background-image:
         radial-gradient(1px 1px at 20px 30px, #eee, rgba(0,0,0,0)),
         radial-gradient(1px 1px at 40px 70px, #fff, rgba(0,0,0,0)),
         radial-gradient(1px 1px at 50px 160px, #ddd, rgba(0,0,0,0)),

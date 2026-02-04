@@ -565,7 +565,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import { useQuasar } from 'quasar'
+import { useQuasar, date } from 'quasar'
 import { api } from 'boot/axios'
 import { useCourseStore } from 'stores/course-store'
 import { useUserStore } from 'stores/user-store'
@@ -697,7 +697,18 @@ function getStatusColor(status) {
 
 function formatSchedule(schedule) {
   if (!schedule) return 'Not Set'
-  if (typeof schedule === 'string') return schedule
+  try {
+     if (typeof schedule === 'string') schedule = JSON.parse(schedule)
+  } catch {
+     return schedule
+  }
+
+  if (schedule.date) {
+      const d = new Date(schedule.date)
+      const formattedDate = date.isValid(d) ? date.formatDate(d, 'MMM D, YYYY') : schedule.date
+      return `${formattedDate} (${schedule.start || ''} - ${schedule.end || ''})`
+  }
+
   if (schedule.day) return `${schedule.day} ${schedule.start || ''}-${schedule.end || ''}`
   return JSON.stringify(schedule)
 }

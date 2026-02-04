@@ -370,6 +370,8 @@ function getIcon(type) {
         case 'fee_due': return 'payment'
         case 'exam_scheduled': return 'event'
         case 'exam_results': return 'assignment'
+        case 'notice': return 'campaign'
+        case 'meeting': return 'groups'
         default: return 'notifications'
     }
 }
@@ -381,6 +383,8 @@ function getIconColor(type) {
         case 'fee_due': return 'negative'
         case 'exam_scheduled': return 'info'
         case 'exam_results': return 'primary'
+        case 'notice': return 'orange'
+        case 'meeting': return 'teal'
         default: return 'primary'
     }
 }

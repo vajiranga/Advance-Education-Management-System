@@ -218,6 +218,11 @@
                     <div v-else class="text-grey">-</div>
                   </q-td>
                 </template>
+                <template v-slot:body-cell-phone="props">
+                  <q-td :props="props">
+                    {{ formatPhone(props.row.phone) }}
+                  </q-td>
+                </template>
                 <template v-slot:body-cell-actions="props">
                   <q-td :props="props">
                     <q-btn

@@ -144,7 +144,7 @@ async function loadStudents() {
         name: s.name,
         idNumber: s.username, 
         avatar: 'https://cdn.quasar.dev/img/boy-avatar.png',
-        status: s.attendance_status || 'present' // Default to present
+        status: s.attendance_status || 'absent' // Default to absent
     }))
 
     if (attendanceList.value.length === 0) {

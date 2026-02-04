@@ -148,6 +148,21 @@
             outlined
             :rules="[(val) => !!val || 'Required']"
           />
+
+          <q-select
+            v-model="broadcastForm.target"
+            :options="[
+              { label: 'Everyone (Students, Teachers, Parents)', value: 'all' },
+              { label: 'Students Only', value: 'student' },
+              { label: 'Teachers Only', value: 'teacher' },
+              { label: 'Parents Only', value: 'parent' }
+            ]"
+            label="Target Audience"
+            outlined
+            emit-value
+            map-options
+          />
+
           <q-input
             v-model="broadcastForm.message"
             label="Message"
@@ -157,7 +172,7 @@
           />
 
           <div class="bg-blue-1 text-blue-9 q-pa-sm rounded-borders">
-            <q-icon name="info" /> Sending to <strong>All Active Students & Parents</strong>
+            <q-icon name="info" /> Sending to <strong>{{ targetLabel }}</strong>
           </div>
         </q-card-section>
 
@@ -190,8 +205,19 @@ const courseCount = ref(0)
 const recentEnrollments = ref([])
 const showBroadcastDialog = ref(false)
 const sending = ref(false)
-const broadcastForm = ref({ title: '', message: '' })
+const broadcastForm = ref({ title: '', message: '', target: 'all' })
 const timeRange = ref('Last Month')
+
+// Helper for display text
+const targetLabel = computed(() => {
+  const map = {
+    all: 'All Students, Teachers & Parents',
+    student: 'All Active Students',
+    teacher: 'All Teachers',
+    parent: 'All Parents'
+  }
+  return map[broadcastForm.value.target] || 'Users'
+})
 
 onMounted(async () => {
   await Promise.all([
@@ -224,7 +250,7 @@ async function fetchRecentEnrollments() {
 }
 
 function openBroadcastDialog() {
-  broadcastForm.value = { title: '', message: '' }
+  broadcastForm.value = { title: '', message: '', target: 'all' }
   showBroadcastDialog.value = true
 }
 
@@ -240,7 +266,8 @@ async function sendBroadcast() {
       title: broadcastForm.value.title,
       message: broadcastForm.value.message,
       type: 'notice',
-      course_id: 'all',
+      course_id: 'all', // System wide
+      target_audience: broadcastForm.value.target,
       scheduled_at: new Date().toISOString(),
     })
     $q.notify({ type: 'positive', message: 'Broadcast Sent' })

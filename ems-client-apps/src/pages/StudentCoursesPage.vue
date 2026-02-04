@@ -25,7 +25,7 @@
 
     <q-tab-panels v-model="tab" animated class="bg-transparent">
       <q-tab-panel name="active" class="q-pa-none">
-        
+
         <div v-if="myCourses.length === 0" class="text-center text-grey q-pa-xl">
           <q-icon name="school" size="64px" :color="$q.dark.isActive ? 'grey-7' : 'grey-4'" />
           <div class="text-h6 q-mt-md" :class="$q.dark.isActive ? 'text-grey-4' : ''">No courses enrolled yet</div>
@@ -34,15 +34,28 @@
 
         <div v-else class="row q-col-gutter-lg">
           <div class="col-12 col-md-6 col-lg-4" v-for="course in myCourses" :key="course.id">
-            <q-card class="course-card no-shadow full-height column" :class="$q.dark.isActive ? 'bg-dark border-dark' : 'bg-white border-light'">
+            <q-card
+              class="course-card no-shadow full-height column"
+              :class="[
+                $q.dark.isActive ? 'bg-dark border-dark' : 'bg-white border-light',
+                course.type === 'extra' ? 'border-top-extra' : ''
+              ]"
+            >
               <!-- Reverted to q-img -->
               <q-card-section class="q-pb-sm col-grow relative-position">
-                <div class="absolute-top-right q-pa-sm">
+                <div class="absolute-top-right q-pa-sm row q-gutter-x-xs">
+                   <q-chip
+                      v-if="course.type === 'extra'"
+                      color="orange"
+                      text-color="white"
+                      size="xs"
+                      icon="star"
+                    >EXTRA</q-chip>
                    <q-chip :color="$q.dark.isActive ? 'blue-9' : 'blue-1'" :text-color="$q.dark.isActive ? 'blue-1' : 'primary'" size="xs">Physical</q-chip>
                 </div>
                 <div class="text-h6 text-weight-bold ellipsis q-pr-xl" :class="$q.dark.isActive ? 'text-white' : ''">{{ course.name }}</div>
                 <div class="text-subtitle2 text-primary">{{ course.batch?.name }} - {{ course.subject?.name }}</div>
-                
+
                 <div class="text-subtitle2 row items-center q-mt-sm" :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey-8'">
                   <q-icon name="person" size="xs" class="q-mr-xs" />
                   {{ course.teacher?.name }}
@@ -61,10 +74,35 @@
                   <q-icon name="schedule" size="xs" class="q-mr-xs" />
                   {{ formatSchedule(course.schedule) }}
                 </div>
-                <div class="text-caption text-primary text-weight-bold q-mt-xs">
-                  Fee: LKR {{ course.fee_amount }}
+                <div class="row items-center justify-between q-mt-md">
+                   <div class="text-caption text-weight-bold" :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey-8'">
+                      Fee: LKR {{ course.fee_amount }}
+                   </div>
+
+                   <q-badge
+                      v-if="course.current_month_payment_status === 'paid'"
+                      color="positive"
+                      label="PAID"
+                      class="q-py-xs q-px-sm"
+                   />
+                   <q-badge
+                      v-else-if="course.current_month_payment_status === 'free'"
+                      color="info"
+                      label="FREE"
+                      class="q-py-xs q-px-sm"
+                   />
+                   <q-btn
+                      v-else
+                      dense
+                      unelevated
+                      size="sm"
+                      color="negative"
+                      label="PAY NOW"
+                      class="q-px-sm"
+                      to="/student/payments"
+                   />
                 </div>
-                
+
 
               </q-card-section>
 
@@ -104,15 +142,15 @@
                 <div class="text-caption row items-center q-mt-md" :class="$q.dark.isActive ? 'text-grey-5' : 'text-grey'">
                    <div class="row items-center"><q-icon name="schedule" size="xs" class="q-mr-xs"/> {{ formatSchedule(course.schedule) }}</div>
                 </div>
-                
+
                 <div class="row items-center justify-between q-mt-auto">
                    <div class="text-subtitle1 text-primary text-weight-bold">LKR {{ course.fee_amount }}</div>
-                   <q-btn 
-                     unelevated 
-                     :color="isEnrolled(course.id) ? 'grey' : 'primary'" 
-                     :label="isEnrolled(course.id) ? 'Enrolled' : 'Enroll Now'" 
-                     size="sm" 
-                     @click="confirmEnroll(course)" 
+                   <q-btn
+                     unelevated
+                     :color="isEnrolled(course.id) ? 'grey' : 'primary'"
+                     :label="isEnrolled(course.id) ? 'Enrolled' : 'Enroll Now'"
+                     size="sm"
+                     @click="confirmEnroll(course)"
                      :disable="isEnrolled(course.id)"
                    />
                 </div>
@@ -158,7 +196,7 @@ const dropCourse = async (courseId) => {
         ok: { label: 'Yes, Drop It', color: 'negative' }
     }).onOk(async () => {
         try {
-            await api.post(`/v1/courses/${courseId}/drop`) 
+            await api.post(`/v1/courses/${courseId}/drop`)
             $q.notify({ type: 'info', message: 'Course Dropped' })
             studentStore.fetchMyCourses()
         } catch (err) {
@@ -218,5 +256,8 @@ function formatSchedule(schedule) {
 }
 .bg-gradient-to-top {
   background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 60%, transparent 100%);
+}
+.border-top-extra {
+  border-top: 3px solid #f2c037 !important; /* Quasar Warning Orange */
 }
 </style>

@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Notice extends Model
 {
-    protected $fillable = ['teacher_id', 'course_id', 'title', 'message', 'type', 'scheduled_at'];
+    protected $fillable = ['teacher_id', 'course_id', 'target_audience', 'title', 'message', 'type', 'scheduled_at'];
 
     public function teacher() {
         return $this->belongsTo(User::class, 'teacher_id');
