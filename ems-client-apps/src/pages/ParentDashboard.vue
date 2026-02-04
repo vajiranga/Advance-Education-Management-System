@@ -435,5 +435,3 @@ const formatSchedule = (schedule) => {
   border-radius: 50%;
 }
 </style>
-   
- 
