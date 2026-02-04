@@ -28,9 +28,21 @@ export const useHallStore = defineStore('hall', () => {
         await fetchHalls()
     }
 
-    async function deleteHall(id) {
-        await api.delete(`/v1/halls/${id}`)
-        await fetchHalls()
+    async function deleteHall(id, force = false) {
+        try {
+            const url = force ? `/v1/halls/${id}?force=true` : `/v1/halls/${id}`
+            await api.delete(url)
+            await fetchHalls()
+        } catch (e) {
+            // If backend returns a message (like 409 conflict), pass it up
+            if (e.response && e.response.data) {
+                 // Pass the full data object so UI can check for 'confirmation_needed'
+                const error = new Error(e.response.data.message || 'Deletion Failed')
+                error.data = e.response.data
+                throw error
+            }
+            throw e // Rethrow generic error
+        }
     }
 
     return {

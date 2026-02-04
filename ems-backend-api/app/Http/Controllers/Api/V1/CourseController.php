@@ -68,7 +68,8 @@ class CourseController extends Controller
             return response()->json($query->with(['subject', 'batch', 'teacher', 'hall', 'parentCourse'])->withCount('students')->orderBy('created_at', 'desc')->get());
         }
 
-        return response()->json($query->with(['subject', 'batch', 'teacher', 'hall', 'parentCourse'])->withCount('students')->orderBy('created_at', 'desc')->paginate(20));
+        $perPage = $request->input('per_page', 20);
+        return response()->json($query->with(['subject', 'batch', 'teacher', 'hall', 'parentCourse'])->withCount('students')->orderBy('created_at', 'desc')->paginate($perPage));
     }
 
     /**

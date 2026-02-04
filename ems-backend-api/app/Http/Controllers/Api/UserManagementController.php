@@ -29,7 +29,8 @@ class UserManagementController extends Controller
             });
         }
 
-        $users = $query->orderBy('created_at', 'desc')->paginate(20);
+        $perPage = $request->input('per_page', 20);
+        $users = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
         // If fetching parents, attach their linked children (Student IDs)
         if ($role === 'parent') {

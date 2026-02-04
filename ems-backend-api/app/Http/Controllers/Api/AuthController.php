@@ -72,8 +72,20 @@ class AuthController extends Controller
         if ($request->role === 'student' && $request->parent_name) {
             $parent = User::where('role', 'parent')
                 ->where(function($q) use ($request) {
-                    if ($request->parent_phone) $q->orWhere('phone', $request->parent_phone);
-                    if ($request->parent_email) $q->orWhere('email', $request->parent_email);
+                    $hasCriteria = false;
+                    if ($request->parent_phone) {
+                        $q->orWhere('phone', $request->parent_phone);
+                        $hasCriteria = true;
+                    }
+                    if ($request->parent_email) {
+                        $q->orWhere('email', $request->parent_email);
+                        $hasCriteria = true;
+                    }
+                    // If no phone/email provided, force query to fail matching (so we create a new one)
+                    // unless we allow matching by name? No, name is not unique.
+                    if (!$hasCriteria) {
+                        $q->whereRaw('1 = 0');
+                    }
                 })->first();
 
             if (!$parent) {
@@ -107,6 +119,9 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
+        \Illuminate\Support\Facades\Log::info('---------------- LOGIN ATTEMPT ----------------');
+        \Illuminate\Support\Facades\Log::info('Login Input:', $request->all());
+
         // 1. Validate Input
         $validator = Validator::make($request->all(), [
             'email' => 'required', // Can be email or username
@@ -114,24 +129,36 @@ class AuthController extends Controller
         ]);
 
         if ($validator->fails()) {
+            \Illuminate\Support\Facades\Log::warning('Login Validation Failed', $validator->errors()->toArray());
             return response()->json(['message' => 'Please enter email and password'], 422);
         }
 
         // 2. Determine if logging in via Email or Username
         $loginType = filter_var($request->email, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+        \Illuminate\Support\Facades\Log::info("Login Type: $loginType");
 
         // 3. Find User
         $user = User::where($loginType, $request->email)->first();
 
         // 4. Check Password
-        if (!$user || !Hash::check($request->password, $user->password)) {
+        if (!$user) {
+            \Illuminate\Support\Facades\Log::error("User NOT FOUND for $loginType: " . $request->email);
             return response()->json(['message' => 'Invalid credentials provided.'], 401);
         }
 
+        \Illuminate\Support\Facades\Log::info('User found:', ['id' => $user->id, 'email' => $user->email, 'username' => $user->username]);
+
+        if (!Hash::check($request->password, $user->password)) {
+            \Illuminate\Support\Facades\Log::error('Password HASH CHECK FAILED for user ' . $user->id);
+            return response()->json(['message' => 'Invalid credentials provided.'], 401);
+        }
+
+        \Illuminate\Support\Facades\Log::info('Password check PASSED. Generating token.');
+
         // 5. Generate Token
         // Revoke old tokens if single session preferred (Optional)
-        // $user->tokens()->delete(); 
-        
+        // $user->tokens()->delete();
+
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
@@ -146,7 +173,7 @@ class AuthController extends Controller
     {
         // NOTE: This endpoint expects 'phone' and 'student_id'.
         // If frontend uses Email/Password form, they should hits standard login() above.
-        
+
         $validator = Validator::make($request->all(), [
             'phone' => 'required|string',
             'student_id' => 'required|string',

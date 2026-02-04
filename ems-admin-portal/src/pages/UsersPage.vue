@@ -152,7 +152,7 @@
                   <q-td :props="props">
                     <div v-if="props.row.parent_name">
                       <div class="text-weight-bold">{{ props.row.parent_name }}</div>
-                      <div class="text-caption">{{ props.row.parent_phone }}</div>
+                      <div class="text-caption">{{ formatPhone(props.row.parent_phone) }}</div>
                     </div>
                     <div v-else class="text-grey-5">-</div>
                   </q-td>
@@ -635,6 +635,16 @@ async function saveUser() {
   } finally {
     loading.value = false
   }
+}
+
+
+function formatPhone(phone) {
+  if (!phone) return phone
+  phone = phone.toString().replace(/\D/g, '') // Remove non-digits
+  if (phone.length === 10) {
+    return phone.slice(0, 3) + '-' + phone.slice(3)
+  }
+  return phone
 }
 
 function deleteUser(row) {

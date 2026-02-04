@@ -366,9 +366,38 @@ async function saveHall() {
 
 function deleteHall(hall) {
   $q.dialog({ title: 'Confirm', message: 'Delete this Hall?', cancel: true }).onOk(async () => {
-    await hallStore.deleteHall(hall.id)
-    $q.notify({ type: 'positive', message: 'Hall Deleted' })
-    checkAvailability()
+    try {
+      await hallStore.deleteHall(hall.id)
+      $q.notify({ type: 'positive', message: 'Hall Deleted' })
+      checkAvailability()
+    } catch (e) {
+      // Check if it's a conflict requiring confirmation
+      if (e.data && e.data.confirmation_needed) {
+         $q.dialog({
+            title: 'Assignments Found',
+            message: `${e.message} Do you want to unlink the hall from these courses and delete it anyway?`,
+            cancel: true,
+            persistent: true,
+            ok: { label: 'Yes, Force Delete', color: 'negative' }
+         }).onOk(async () => {
+            try {
+               await hallStore.deleteHall(hall.id, true) // Force Delete
+               $q.notify({ type: 'positive', message: 'Hall Deleted (Unlinked from courses)' })
+               checkAvailability()
+            } catch (err) {
+               console.error(err)
+               $q.notify({ type: 'negative', message: 'Force Delete Failed' })
+            }
+         })
+      } else {
+        console.error(e)
+        $q.notify({
+          type: 'negative',
+          message: e.message || 'Operation Failed',
+          timeout: 5000
+        })
+      }
+    }
   })
 }
 
