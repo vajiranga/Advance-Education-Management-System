@@ -1073,9 +1073,10 @@ const chartSeries = ref([
 const chartYear = ref(new Date().getMonth() < 1 ? new Date().getFullYear() - 1 : new Date().getFullYear())
 const chartMetric = ref('revenue')
 const chartMetricOptions = [
-    { label: 'Collected Fees', value: 'revenue' },
-    { label: 'Uncollected Fees', value: 'pending' },
-    { label: 'New Students', value: 'students' }
+    { label: 'Collected Fees', value: 'revenue', type: 'currency' },
+    { label: 'Uncollected Fees', value: 'pending', type: 'currency' },
+    { label: 'Net Profit', value: 'netProfit', type: 'currency' },
+    { label: 'New Students', value: 'students', type: 'count' }
 ]
 
 async function loadChartData() {
@@ -1088,15 +1089,38 @@ watch(
   ([newVal, metric]) => {
     if (newVal && newVal.chartData) {
       // Academic Year Data
+      const metricOption = chartMetricOptions.find(o => o.value === metric)
+      const isCurrency = metricOption?.type === 'currency'
+
       chartOptions.value = {
         ...chartOptions.value,
         xaxis: {
           categories: newVal.chartData.labels,
         },
+        yaxis: {
+          labels: {
+            formatter: (val) => {
+              if (!val || val === 0) return isCurrency ? 'LKR 0' : '0'
+              if (isCurrency) {
+                // Format currency: show in thousands (k) if >= 1000
+                if (Math.abs(val) >= 1000) {
+                  return 'LKR ' + (val / 1000).toFixed(1) + 'k'
+                }
+                return 'LKR ' + val.toFixed(0)
+              }
+              return val.toFixed(0) // Count format
+            }
+          }
+        },
+        tooltip: {
+          y: {
+            formatter: (val) => isCurrency ? 'LKR ' + val.toLocaleString() : val.toString()
+          }
+        }
       }
       chartSeries.value = [
         {
-            name: chartMetricOptions.find(o => o.value === metric)?.label || 'Value',
+            name: metricOption?.label || 'Value',
             data: newVal.chartData.datasets[metric] || []
         }
       ]
