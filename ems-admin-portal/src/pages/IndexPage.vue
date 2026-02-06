@@ -85,7 +85,7 @@
 
           <q-card-section class="q-pa-none">
              <q-list separator>
-                 <q-item v-if="pendingActions.pending_classes > 0" clickable v-ripple @click="$router.push('/classes?status=pending')">
+                 <q-item v-if="pendingActions.pending_classes > 0" clickable v-ripple @click="$router.push('/courses?status=pending')">
                     <q-item-section avatar>
                         <q-avatar color="orange-1" text-color="orange" icon="class" />
                     </q-item-section>
@@ -94,7 +94,7 @@
                         <q-item-label caption>Teachers are waiting for class approval</q-item-label>
                     </q-item-section>
                     <q-item-section side>
-                        <q-btn label="Review" color="primary" size="sm" unelevated to="/classes?status=pending" />
+                        <q-btn label="Review" color="primary" size="sm" unelevated to="/courses?status=pending" />
                     </q-item-section>
                  </q-item>
 
