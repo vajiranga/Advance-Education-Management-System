@@ -241,7 +241,7 @@
 
           <!-- Enrolled Classes -->
           <div v-if="paymentForm.selectedStudent">
-            <q-label>Select Class to Pay For</q-label>
+            <div class="text-subtitle2 q-mb-sm">Select Class to Pay For</div>
             <q-list bordered separator>
               <q-item v-for="cls in enrolledClasses" :key="cls.id" clickable v-ripple @click="selectClassForPayment(cls)">
                 <q-item-section>
