@@ -30,10 +30,13 @@ class GenerateMonthlyFees extends Command
     {
         // Default to current month if not provided
         $month = $this->option('month') ?? Carbon::now()->format('Y-m');
-        
-        // Due date defaults to 10th of the month
-        $dueDate = Carbon::createFromFormat('Y-m', $month)->startOfMonth()->addDays(9)->format('Y-m-d');
-        
+
+        // Check for custom due date day in settings
+        $startDay = \App\Models\SystemSetting::where('key', 'feeCycleStartDay')->value('value') ?? 10;
+
+        // Due date based on settings
+        $dueDate = Carbon::createFromFormat('Y-m', $month)->startOfMonth()->addDays($startDay - 1)->format('Y-m-d');
+
         $this->info("Generating fees for month: {$month} (Due: {$dueDate})");
 
         $count = 0;
@@ -44,7 +47,7 @@ class GenerateMonthlyFees extends Command
             ->whereHas('course', function($q) {
                 $q->where('fee_amount', '>', 0);
             })
-            ->with('course')
+            ->with(['course', 'student.parentAccount'])
             ->chunk(100, function ($enrollments) use ($month, $dueDate, &$count, &$skipped) {
                 foreach ($enrollments as $enrollment) {
                     // Check if fee already exists
@@ -54,7 +57,7 @@ class GenerateMonthlyFees extends Command
                         ->exists();
 
                     if (!$exists) {
-                        StudentFee::create([
+                        $fee = StudentFee::create([
                             'student_id' => $enrollment->user_id,
                             'course_id' => $enrollment->course_id,
                             'month' => $month,
@@ -63,6 +66,26 @@ class GenerateMonthlyFees extends Command
                             'status' => 'pending'
                         ]);
                         $count++;
+
+                        // Notify Student
+                        \App\Models\Notification::create([
+                            'user_id' => $enrollment->user_id,
+                            'type' => 'fee_due',
+                            'title' => 'New Fee Details',
+                            'message' => 'Fee for ' . $enrollment->course->name . ' (' . $month . ') is now due.',
+                            'data' => json_encode(['fee_id' => $fee->id])
+                        ]);
+
+                        // Notify Parent
+                        if ($enrollment->student && $enrollment->student->parentAccount) {
+                            \App\Models\Notification::create([
+                                'user_id' => $enrollment->student->parentAccount->id,
+                                'type' => 'fee_due',
+                                'title' => 'Fee Due for ' . $enrollment->student->name,
+                                'message' => 'Fee for ' . $enrollment->course->name . ' (' . $month . ') is now pending.',
+                                'data' => json_encode(['fee_id' => $fee->id, 'student_id' => $enrollment->user_id])
+                            ]);
+                        }
                     } else {
                         $skipped++;
                     }
