@@ -527,7 +527,7 @@ class PaymentController extends Controller
             $pendingData[] = $pending;
 
             // C. New Students - Based on User creation date (Role: student)
-            $students = \App\Models\User::role('student')
+            $students = \App\Models\User::where('role', 'student')
                 ->whereBetween('created_at', [$cycleStart, $cycleEnd])
                 ->count();
             $studentData[] = $students;
