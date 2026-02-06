@@ -154,15 +154,17 @@
                     <q-icon name="schedule" color="primary" class="q-mr-xs" />
                     {{ formatSchedule(course.schedule) }}
                   </div>
-                  <div class="col-auto text-caption text-weight-bold text-green" style="white-space: nowrap">
-                    Fee: LKR {{ course.fee_amount }}
-                  </div>
                 </div>
               </q-card-section>
 
               <q-separator />
 
-              <q-card-actions align="right">
+              <q-card-actions class="row items-center justify-between q-px-sm">
+                <!-- Fee on Left -->
+                <div class="text-caption text-weight-bold text-green">
+                    Fee: LKR {{ course.fee_amount }}
+                </div>
+
                 <div v-if="course.status === 'pending'">
                   <q-btn flat color="positive" label="Review" @click="openReviewDialog(course)" />
                 </div>
