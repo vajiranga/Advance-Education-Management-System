@@ -285,7 +285,7 @@ async function fetchCounts() {
     const sRes = await api.get('/v1/users', { params: { role: 'student', per_page: 1 } })
     studentCount.value = sRes.data.total
 
-    const cRes = await api.get('/v1/courses', { params: { per_page: 1, status: 'approved' } })
+    const cRes = await api.get('/v1/courses', { params: { per_page: 1, status: 'approved', type: 'regular' } })
     courseCount.value = cRes.data.total
   } catch (e) {
     console.error(e)
