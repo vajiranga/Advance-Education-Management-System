@@ -476,51 +476,78 @@ class PaymentController extends Controller
      * Admin: Get Analytics Data
      */
     public function getAnalytics(Request $request) {
-        // Date Filter
-        $startDate = $request->start_date ?? Carbon::now()->subMonths(6)->format('Y-m-d');
-        $endDate = $request->end_date ?? Carbon::now()->format('Y-m-d');
+        // 1. Determine Academic Year
+        // If today is Jan 2026, we are in 2025 Academic Year (Feb 2025 - Jan 2026)
+        // If today is Feb 2026, we are in 2026 Academic Year (Feb 2026 - Jan 2027)
+        $currentYear = Carbon::now()->year;
+        if (Carbon::now()->month < 2) {
+            $currentYear--;
+        }
 
-        // 1. Monthly Revenue
-        $monthlyRevenue = Payment::where('status', 'paid')
-            ->whereNotNull('paid_at')
-            ->whereBetween('paid_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
-            ->get()
-            ->groupBy(function($val) {
-                return Carbon::parse($val->paid_at)->format('Y-m');
-            })
-            ->map(function($group, $key) {
-                return ['month' => $key, 'total' => $group->sum('amount')];
-            })
-            ->sortBy('month')
-            ->values();
+        $year = $request->input('year', $currentYear);
+        $startDay = (int) (\App\Models\SystemSetting::where('key', 'feeCycleStartDay')->value('value') ?? 10);
 
-        // 2. Revenue by Course
-        $courseRevenue = Payment::where('status', 'paid')
-            ->whereBetween('paid_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
-            ->with('course')
-            ->get()
-            ->groupBy(fn($p) => $p->course->name ?? 'Other')
-            ->map(fn($group, $name) => [
-                'course_name' => $name,
-                'total' => $group->sum('amount')
-            ])
-            ->sortByDesc('total')
-            ->take(5)
-            ->values();
+        // 2. Prepare Data Structure
+        $labels = [];
+        $revenueData = [];
+        $pendingData = [];
+        $studentData = [];
 
-        // 3. Payment Method Distribution
-        $paymentMethods = Payment::select('type', \Illuminate\Support\Facades\DB::raw('count(*) as count'))
-            ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
-            ->groupBy('type')
-            ->get()
-            ->map(function($row) {
-                 return ['type' => ucfirst(str_replace('_', ' ', $row->type)), 'count' => $row->count];
-            });
+        // Loop 12 months: Feb (2) of $year to Jan (1) of $year+1
+        $currentDate = Carbon::create($year, 2, 1); // Feb 1st
+
+        for ($i = 0; $i < 12; $i++) {
+            // Calculate Cycle Range
+            // Start: Month M, Day S
+            // End: Month M+1, Day S-1
+
+            // We need to handle the specific Cycle Start Day
+            // E.g., for Feb: Start = Feb 15. End = Mar 14.
+
+            $cycleStart = $currentDate->copy()->day($startDay);
+            $cycleEnd = $cycleStart->copy()->addMonth()->subDay()->endOfDay();
+
+            // Label: "Feb" or "Feb '25"
+            $labels[] = $currentDate->format('M Y');
+
+            // 3. Query Metrics
+
+            // A. Revenue (Collected Fees) - Based on Transaction Date (paid_at)
+            $rev = Payment::where('status', 'paid')
+                ->whereBetween('paid_at', [$cycleStart, $cycleEnd])
+                ->sum('amount');
+            $revenueData[] = $rev;
+
+            // B. Uncollected (Pending Fees) - Based on Due Date
+            // Use StudentFee logic where status is pending and due_date falls in this cycle
+            // OR created_at falls in this cycle? Usually Due Date aligns with cycle.
+            $pending = \App\Models\StudentFee::where('status', 'pending')
+                 ->whereBetween('due_date', [$cycleStart, $cycleEnd])
+                 ->sum('amount');
+            $pendingData[] = $pending;
+
+            // C. New Students - Based on User creation date (Role: student)
+            $students = \App\Models\User::role('student')
+                ->whereBetween('created_at', [$cycleStart, $cycleEnd])
+                ->count();
+            $studentData[] = $students;
+
+            // Move to next month
+            $currentDate->addMonth();
+        }
 
         return response()->json([
-            'monthly_revenue' => $monthlyRevenue,
-            'course_revenue' => $courseRevenue,
-            'payment_methods' => $paymentMethods
+            'year' => $year,
+            'labels' => $labels,
+            'datasets' => [
+                'revenue' => $revenueData,
+                'pending' => $pendingData,
+                'students' => $studentData
+            ],
+            // Keep legacy structure if needed for safety (optional)
+            'monthly_revenue' => [], // Deprecated
+            'course_revenue' => [], // Can fetch separate if needed
+            'payment_methods' => [] // Can fetch separate if needed
         ]);
     }
 
