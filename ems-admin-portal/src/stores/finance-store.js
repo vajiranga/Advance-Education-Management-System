@@ -54,9 +54,9 @@ export const useFinanceStore = defineStore('finance', () => {
 
     const analyticsData = ref({ monthly: [], courses: [], methods: [] })
 
-    async function fetchAnalytics() {
+    async function fetchAnalytics(params = {}) {
         try {
-            const res = await api.get('/v1/admin/payments/analytics')
+            const res = await api.get('/v1/admin/payments/analytics', { params })
             analyticsData.value.monthly = res.data.monthly_revenue || []
             analyticsData.value.courses = res.data.course_revenue || []
             analyticsData.value.methods = res.data.payment_methods || []
@@ -65,9 +65,11 @@ export const useFinanceStore = defineStore('finance', () => {
         }
     }
 
-    async function exportReport(month) {
+    async function exportReport(params) {
         try {
-            const res = await api.get('/v1/admin/payments/export', { params: { month } })
+            // Support legacy single string arg or new object
+            const query = typeof params === 'string' ? { month: params } : params
+            const res = await api.get('/v1/admin/payments/export', { params: query })
             // Trigger Download
             const blob = new Blob([res.data.content], { type: 'text/csv' })
             const url = window.URL.createObjectURL(blob)

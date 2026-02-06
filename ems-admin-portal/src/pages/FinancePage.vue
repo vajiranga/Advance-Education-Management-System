@@ -897,6 +897,29 @@ const cycleDateRange = computed(() => {
     return `${start.toLocaleDateString()} - ${end.toLocaleDateString()}`
 })
 
+const apiParams = computed(() => {
+    const y = filterYear.value
+    const m = filterMonth.value
+    const d = feeCycleStartDay.value
+
+    // Start: Y-m-d
+    const start = new Date(y, m - 1, d)
+
+    // End: Next Month Day - 1 (The day BEFORE the next cycle starts)
+    // Date(y, m, d) is Start of next cycle.
+    // Date(y, m, d - 1) is End of current cycle.
+    const end = new Date(y, m, d - 1)
+
+    const formatDate = (date) => {
+        return date.toISOString().slice(0, 10)
+    }
+
+    return {
+        start_date: formatDate(start),
+        end_date: formatDate(end)
+    }
+})
+
 function openVerifyDialog(row) {
   selectedPayment.value = row
   verificationNote.value = ''
@@ -1068,20 +1091,21 @@ watch(
 async function generateReport() {
   reportLoading.value = true
   try {
-    const res = await financeStore.exportReport(reportMonth.value)
-    if (res.success) {
-      // Create Blob and Download
-      const blob = new Blob([res.data], { type: 'text/csv' })
-      const link = document.createElement('a')
-      link.href = URL.createObjectURL(blob)
-      link.download = `ems_report_${reportMonth.value}.csv`
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      $q.notify({ type: 'positive', message: 'Report Downloaded' })
+    const res = await financeStore.exportReport(apiParams.value)
+    if (res) {
+       // Download logic handled in store now usually, but if store returns boolean:
+       // The store logic I updated handles download.
+       $q.notify({ type: 'positive', message: 'Report Downloaded' })
     } else {
-      $q.notify({ type: 'negative', message: 'Export Failed' })
+       // Failure handled in store
     }
+  } catch (e) {
+    console.error(e)
+    $q.notify({ type: 'negative', message: 'Export Error' })
+  } finally {
+    reportLoading.value = false
+  }
+}
   } catch (e) {
     console.error(e)
     $q.notify({ type: 'negative', message: 'Export Error' })
@@ -1261,10 +1285,11 @@ async function fetchSettings() {
 async function refreshAll() {
   refreshing.value = true
   try {
+    const params = apiParams.value
     await Promise.all([
-      financeStore.fetchTransactions(),
-      financeStore.fetchAnalytics(),
-      financeStore.fetchSettlements({ month: settlementMonth.value }),
+      financeStore.fetchTransactions(params),
+      financeStore.fetchAnalytics(params),
+      financeStore.fetchSettlements(params),
       financeStore.fetchUncollectedFees(),
     ])
     $q.notify({ type: 'positive', message: 'Dashboard Updated', timeout: 500, position: 'top' })
@@ -1281,9 +1306,16 @@ onMounted(async () => {
     // Go back to previous month
     today.setMonth(today.getMonth() - 1)
   }
-  settlementMonth.value = today.toISOString().slice(0, 7)
+
+  // Set filters
+  filterYear.value = today.getFullYear()
+  filterMonth.value = today.getMonth() + 1
 
   refreshAll()
+})
+
+watch(apiParams, () => {
+    refreshAll()
 })
 
 const columns = [
