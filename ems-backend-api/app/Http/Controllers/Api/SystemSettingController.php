@@ -21,9 +21,15 @@ class SystemSettingController extends Controller
         $data = $request->except(['_token']); // Get all inputs
 
         foreach ($data as $key => $value) {
+            if (is_array($value)) {
+                $value = json_encode($value);
+            } elseif (is_bool($value)) {
+                $value = $value ? 'true' : 'false';
+            }
+
             SystemSetting::updateOrCreate(
                 ['key' => $key],
-                ['value' => $value] // JSON/Boolean will be cast to string automatically, front-end should handle types
+                ['value' => (string) $value]
             );
         }
 
