@@ -242,6 +242,15 @@
                                          <q-input v-model.number="settings.gracePeriodDays" type="number" dense outlined style="width: 80px" />
                                      </q-item-section>
                                  </q-item>
+                                 <q-item>
+                                     <q-item-section>
+                                         <q-item-label>Fee Cycle Start Day</q-item-label>
+                                         <q-item-label caption>Day of month (1-31) that starts a billing cycle</q-item-label>
+                                     </q-item-section>
+                                     <q-item-section side>
+                                         <q-input v-model.number="settings.feeCycleStartDay" type="number" dense outlined style="width: 80px" min="1" max="31" />
+                                     </q-item-section>
+                                 </q-item>
                                  <q-item tag="label" v-ripple>
                                      <q-item-section>
                                          <q-item-label>Enable Payment Gateway</q-item-label>
@@ -581,6 +590,7 @@ const settings = ref({
 
   lateFeePenalty: 0,
   gracePeriodDays: 5,
+  feeCycleStartDay: 10,
   paymentGateway: false,
   partialPayments: true,
 

@@ -6,13 +6,14 @@
         <div class="text-caption text-grey">Manage revenue and verify payments</div>
       </div>
       <div class="row q-gutter-sm">
-        <q-btn
-          unelevated
-          color="teal"
-          icon="add"
-          label="Generate Fees"
-          @click="showGenerateDialog = true"
-        />
+        <div class="row q-gutter-sm items-center bg-grey-2 q-pa-sm rounded-borders">
+             <q-select v-model="filterYear" :options="yearOptions" label="Year" dense outlined bg-color="white" style="width: 100px" />
+             <q-select v-model="filterMonth" :options="monthFilterOptions" label="Month" dense outlined bg-color="white" style="width: 140px" emit-value map-options />
+             <div class="text-caption text-grey-8 q-px-sm column">
+                <span class="text-weight-bold">Billing Cycle</span>
+                <span style="font-size: 10px">{{ cycleDateRange }}</span>
+             </div>
+        </div>
         <q-btn
           unelevated
           color="purple"
@@ -852,10 +853,49 @@ const collectionRate = computed(() => {
 const tab = ref('pending')
 const filter = ref('')
 const uncollectedFilter = ref('')
+const reportLoading = ref(false)
 const showVerifyDialog = ref(false)
+const processingVerify = ref(false)
 const selectedPayment = ref(null)
 const verificationNote = ref('')
-const processingVerify = ref(false)
+
+// Filter Logic
+const filterYear = ref(new Date().getFullYear())
+const filterMonth = ref(new Date().getMonth() + 1) // 1-12
+const feeCycleStartDay = ref(10) // Default
+
+const yearOptions = computed(() => {
+    const y = new Date().getFullYear()
+    return [y - 1, y, y + 1]
+})
+
+const monthFilterOptions = [
+    { label: 'January', value: 1 },
+    { label: 'February', value: 2 },
+    { label: 'March', value: 3 },
+    { label: 'April', value: 4 },
+    { label: 'May', value: 5 },
+    { label: 'June', value: 6 },
+    { label: 'July', value: 7 },
+    { label: 'August', value: 8 },
+    { label: 'September', value: 9 },
+    { label: 'October', value: 10 },
+    { label: 'November', value: 11 },
+    { label: 'December', value: 12 }
+]
+
+const cycleDateRange = computed(() => {
+    const y = filterYear.value
+    const m = filterMonth.value
+    const d = feeCycleStartDay.value
+
+    // Start Date
+    const start = new Date(y, m - 1, d)
+    // End Date (Next month same day)
+    const end = new Date(y, m, d)
+
+    return `${start.toLocaleDateString()} - ${end.toLocaleDateString()}`
+})
 
 function openVerifyDialog(row) {
   selectedPayment.value = row
@@ -900,7 +940,6 @@ async function processVerification(status) {
   }
 }
 
-const reportLoading = ref(false)
 const reportMonth = ref(new Date().toISOString().slice(0, 7))
 const monthOptions = ['2026-01', '2026-02', '2026-03']
 
@@ -1208,6 +1247,17 @@ const uncollectedColumns = [
 /* Update onMounted */
 const refreshing = ref(false)
 
+async function fetchSettings() {
+    try {
+        const res = await api.get('/v1/admin/settings')
+        if (res.data && res.data.feeCycleStartDay) {
+            feeCycleStartDay.value = parseInt(res.data.feeCycleStartDay)
+        }
+    } catch (e) {
+        console.warn('Failed to fetch settings for fee cycle', e)
+    }
+}
+
 async function refreshAll() {
   refreshing.value = true
   try {
@@ -1223,7 +1273,8 @@ async function refreshAll() {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
+  await fetchSettings()
   // 10th of the month logic
   const today = new Date()
   if (today.getDate() <= 10) {
