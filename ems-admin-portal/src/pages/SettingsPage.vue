@@ -19,7 +19,7 @@
       >
         <q-tab name="general" icon="business" label="General" />
         <q-tab name="controls" icon="tune" label="System Controls" />
-        <q-tab name="academic" icon="school" label="Academic" />
+        <!-- Academic Tab Removed -->
         <q-tab name="security" icon="security" label="Access Control" />
       </q-tabs>
 
@@ -44,6 +44,9 @@
             </div>
             <div class="col-12 col-md-6">
               <q-input v-model="settings.contactEmail" label="Contact Email" outlined />
+            </div>
+            <div class="col-12 col-md-6">
+              <q-input v-model="settings.instituteId" label="Institute ID" outlined />
             </div>
 
             <!-- New General Settings -->
@@ -178,6 +181,28 @@
                                          <q-input v-model.number="settings.maxStudentsPerClass" type="number" dense outlined style="width: 80px" />
                                      </q-item-section>
                                  </q-item>
+
+                                 <q-separator spaced />
+                                 <q-item-label header class="text-weight-bold">ID Generation</q-item-label>
+
+                                 <q-item>
+                                     <q-item-section>
+                                         <q-item-label>Starting Student ID Sequence</q-item-label>
+                                         <q-item-label caption>Next ID will be: {{ settings.studentIdPrefix || 'STU' }}{{ settings.studentIdSequenceStart || '20000' }}</q-item-label>
+                                     </q-item-section>
+                                     <q-item-section side>
+                                         <q-input v-model.number="settings.studentIdSequenceStart" type="number" dense outlined style="width: 100px" label="Ex: 20159" />
+                                     </q-item-section>
+                                 </q-item>
+                                  <q-item>
+                                     <q-item-section>
+                                         <q-item-label>ID Prefix</q-item-label>
+                                     </q-item-section>
+                                     <q-item-section side>
+                                         <q-input v-model="settings.studentIdPrefix" dense outlined style="width: 80px" label="Ex: STU" />
+                                     </q-item-section>
+                                 </q-item>
+                                 <q-separator spaced />
                                  <q-item tag="label" v-ripple>
                                      <q-item-section>
                                          <q-item-label>Allow Self-Registration</q-item-label>
@@ -312,41 +337,7 @@
            </div>
         </q-tab-panel>
 
-        <!-- Academic Tab -->
-        <q-tab-panel name="academic">
-          <div class="text-h6 q-mb-md">Academic Configuration</div>
-           <q-list bordered separator>
-             <q-item tag="label" v-ripple>
-               <q-item-section>
-                 <q-item-label>Enable Online Payments</q-item-label>
-                 <q-item-label caption>Allow students to pay fees via stripe/card</q-item-label>
-               </q-item-section>
-               <q-item-section side >
-                 <q-toggle color="green" v-model="settings.onlinePayments" />
-               </q-item-section>
-             </q-item>
 
-             <q-item tag="label" v-ripple>
-               <q-item-section>
-                 <q-item-label>SMS Notifications</q-item-label>
-                 <q-item-label caption>Send SMS to parents when student is absent</q-item-label>
-               </q-item-section>
-               <q-item-section side >
-                 <q-toggle color="green" v-model="settings.smsAlerts" />
-               </q-item-section>
-             </q-item>
-
-             <q-item tag="label" v-ripple>
-               <q-item-section>
-                 <q-item-label>Guest Access</q-item-label>
-                 <q-item-label caption>Allow unregistered users to view course catalog</q-item-label>
-               </q-item-section>
-               <q-item-section side >
-                 <q-toggle color="green" v-model="settings.guestAccess" />
-               </q-item-section>
-             </q-item>
-           </q-list>
-        </q-tab-panel>
 
         <!-- Access Control / Security Tab -->
         <q-tab-panel name="security">
@@ -583,6 +574,8 @@ const settings = ref({
 
   // System Controls - New
   maxStudentsPerClass: 50,
+  studentIdSequenceStart: 20000,
+  studentIdPrefix: 'STU',
   autoEnrollment: false,
   selfRegistration: true,
 
