@@ -76,6 +76,17 @@
                </q-item-section>
              </q-item>
 
+             <!-- Auto Approve Extra Classes -->
+             <q-item tag="label" v-ripple>
+               <q-item-section>
+                 <q-item-label>Auto-Approve Extra Classes</q-item-label>
+                 <q-item-label caption>Automatically approve extra/revision classes created by teachers.</q-item-label>
+               </q-item-section>
+               <q-item-section side>
+                 <q-toggle color="green" v-model="settings.autoApproveExtraClasses" />
+               </q-item-section>
+             </q-item>
+
              <!-- Parent Login Access -->
              <q-item tag="label" v-ripple>
                <q-item-section>
@@ -227,6 +238,7 @@ const settings = ref({
   // System Controls
   blockTeacherRegistration: false,
   autoApproveClasses: false,
+  autoApproveExtraClasses: false,
   allowParentLogin: true,
   maintenanceMode: false
 })
