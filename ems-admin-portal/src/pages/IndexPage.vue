@@ -228,7 +228,6 @@ const recentEnrollments = ref([])
 const showBroadcastDialog = ref(false)
 const sending = ref(false)
 const broadcastForm = ref({ title: '', message: '', target: 'all' })
-const timeRange = ref('Last Month')
 
 // Today's Classes
 const todayClasses = ref([])
