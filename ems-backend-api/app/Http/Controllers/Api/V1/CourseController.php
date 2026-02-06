@@ -102,12 +102,22 @@ class CourseController extends Controller
         // Determine Status logic
         $status = 'pending';
 
-        // Check System Setting for Auto-Approval
-        $autoApproveVal = SystemSetting::where('key', 'autoApproveClasses')->value('value');
-        $isAutoApprove = ($autoApproveVal === 'true' || $autoApproveVal === '1');
+        // Check System Settings
+        $autoApproveRegular = SystemSetting::where('key', 'autoApproveClasses')->value('value');
+        $autoApproveExtra = SystemSetting::where('key', 'autoApproveExtraClasses')->value('value');
+
+        // Determine if this specific request should be auto-approved
+        $shouldAutoApprove = false;
+
+        if ($request->type === 'extra') {
+             $shouldAutoApprove = ($autoApproveExtra === 'true' || $autoApproveExtra === '1');
+        } else {
+             // Regular classes
+             $shouldAutoApprove = ($autoApproveRegular === 'true' || $autoApproveRegular === '1');
+        }
 
         // Admin/SuperAdmin auto-approves OR System Setting is ON
-        if (($user && ($user->role === 'admin' || $user->role === 'super_admin')) || $isAutoApprove) {
+        if (($user && ($user->role === 'admin' || $user->role === 'super_admin')) || $shouldAutoApprove) {
             $status = 'approved';
         }
 
