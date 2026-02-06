@@ -487,7 +487,7 @@ class PaymentController extends Controller
         $year = $request->input('year', $currentYear);
         $startDay = (int) (\App\Models\SystemSetting::where('key', 'feeCycleStartDay')->value('value') ?? 10);
         $teacherDeduction = (float) (\App\Models\SystemSetting::where('key', 'teacherFeeDeductionPercentage')->value('value') ?? 25);
-        $instituteShare = (100 - $teacherDeduction) / 100; // e.g., if 25% deduction, institute gets 75%
+        $instituteShare = $teacherDeduction / 100; // Institute keeps the deduction percentage
 
         // 2. Prepare Data Structure
         $labels = [];
