@@ -86,29 +86,49 @@
                  <q-toggle color="green" v-model="settings.autoApproveExtraClasses" />
                </q-item-section>
              </q-item>
-
-             <!-- Parent Login Access -->
-             <q-item tag="label" v-ripple>
-               <q-item-section>
-                 <q-item-label>Allow Parent Portal Access</q-item-label>
-                 <q-item-label caption>Enable or disable login access for all parents.</q-item-label>
-               </q-item-section>
-               <q-item-section side>
-                 <q-toggle color="primary" v-model="settings.allowParentLogin" />
-               </q-item-section>
-             </q-item>
-
-             <!-- Maintenance Mode -->
-             <q-item tag="label" v-ripple class="bg-red-1">
-               <q-item-section>
-                 <q-item-label class="text-red">Maintenance Mode</q-item-label>
-                 <q-item-label caption>Take the system offline for non-admin users.</q-item-label>
-               </q-item-section>
-               <q-item-section side>
-                 <q-toggle color="red" icon="build" v-model="settings.maintenanceMode" />
-               </q-item-section>
-             </q-item>
            </q-list>
+
+           <!-- Teacher Financial Settings (New Section Below) -->
+           <div class="q-mt-xl">
+             <div class="text-h6 q-mb-md">Teacher Financial Settings</div>
+             <div class="text-caption text-grey q-mb-md">Configure teacher settlement and fee deduction automation.</div>
+
+             <q-card class="q-pa-md bg-blue-1">
+               <div class="row q-col-gutter-lg">
+                 <!-- Teacher Fee Deduction Percentage -->
+                 <div class="col-12 col-md-6">
+                   <q-input
+                     v-model.number="settings.teacherFeeDeductionPercentage"
+                     label="Teacher Fee Deduction Percentage"
+                     hint="Percentage to deduct from fees for teacher settlement"
+                     outlined
+                     type="number"
+                     min="0"
+                     max="100"
+                     suffix="%"
+                   />
+                 </div>
+
+                 <!-- Automation Settlement Date -->
+                 <div class="col-12 col-md-6">
+                   <q-input
+                     v-model.number="settings.automationSettlementDate"
+                     label="Automatic Settlement Date (Day of Month)"
+                     hint="Day of the month (1-31) when settlements will be processed automatically"
+                     outlined
+                     type="number"
+                     min="1"
+                     max="31"
+                   />
+                 </div>
+               </div>
+
+               <div class="q-mt-md text-caption text-grey-7">
+                 <q-icon name="info" />
+                 On the selected day of each month, the system will automatically process teacher settlements and deduct the specified percentage from fees.
+               </div>
+             </q-card>
+           </div>
         </q-tab-panel>
 
         <!-- Academic Tab -->
@@ -191,18 +211,19 @@
                />
              </div>
 
-             <div class="col-12 q-mt-md row items-center q-gutter-md">
+             <div class="col-12 q-mt-lg row items-center q-gutter-md">
                <q-btn
                   color="primary"
                   label="Update Admin Profile"
+                  icon="save"
                   :loading="loadingProfile"
                   @click="updateAdminProfile"
                />
+               <q-separator vertical />
                <q-btn
                   color="negative"
                   label="Logout"
                   icon="logout"
-                  flat
                   @click="logout"
                />
              </div>
@@ -239,8 +260,9 @@ const settings = ref({
   blockTeacherRegistration: false,
   autoApproveClasses: false,
   autoApproveExtraClasses: false,
-  allowParentLogin: true,
-  maintenanceMode: false
+  // Teacher Financial Settings
+  teacherFeeDeductionPercentage: 10,
+  automationSettlementDate: 10
 })
 
 // Admin Profile State
@@ -341,9 +363,6 @@ const updateAdminProfile = async () => {
         loadingProfile.value = false
     }
 }
-
-
-// ... existing code ...
 
 const logout = async () => {
     $q.dialog({

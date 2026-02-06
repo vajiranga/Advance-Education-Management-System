@@ -18,7 +18,11 @@ class Payment extends Model
         'type',
         'status',
         'note',
-        'slip_image'
+        'slip_image',
+        'teacher_settlement_processed_at',
+        'teacher_deduction_percentage',
+        'teacher_deduction_amount',
+        'teacher_net_amount'
     ];
 
     public function course()

@@ -3,6 +3,8 @@
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
+use App\Models\SystemSetting;
+use Carbon\Carbon;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
@@ -10,3 +12,6 @@ Artisan::command('inspire', function () {
 
 // Schedule Monthly Fee Generation
 Schedule::command('fees:generate')->monthlyOn(1, '01:00');
+
+// Schedule Teacher Settlements - Runs daily but only processes if it matches the configured settlement day
+Schedule::command('settlements:process')->dailyAt('01:00');

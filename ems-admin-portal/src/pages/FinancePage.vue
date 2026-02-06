@@ -1327,10 +1327,17 @@ watch(settlementMonth, (newVal) => {
 })
 
 async function handleGenerate() {
+  // Validate inputs
+  if (!genMonth.value || !genDueDate.value) {
+    $q.notify({ type: 'warning', message: 'Please select month and due date' })
+    return
+  }
+
   generating.value = true
   try {
+    const monthValue = genMonth.value.slice(0, 7) // Extract Y-m format
     const res = await financeStore.generateFees({
-      month: genMonth.value ? genMonth.value.slice(0, 7) : '',
+      month: monthValue,
       due_date: genDueDate.value,
     })
 
@@ -1349,6 +1356,9 @@ async function handleGenerate() {
     } else {
       $q.notify({ type: 'negative', message: 'Error: ' + res.error })
     }
+  } catch (error) {
+    console.error('Generate fees error:', error)
+    $q.notify({ type: 'negative', message: 'Failed to generate fees' })
   } finally {
     generating.value = false
   }

@@ -616,38 +616,58 @@ class PaymentController extends Controller
     public function getTeacherSettlements(Request $request) {
         $month = $request->month ?? Carbon::now()->format('Y-m');
 
-        // Fetch Fees (Expectations) with nested relationships
-        // fees -> course -> teacher
-        $fees = \App\Models\StudentFee::where('month', $month)
-            ->with(['course.teacher'])
+        // Get configured deduction percentage from settings (default 10%)
+        $deductionPercentage = (float) \App\Models\SystemSetting::where('key', 'teacherFeeDeductionPercentage')->value('value') ?? 10;
+
+        // Fetch all fees for the given month (both paid and pending)
+        // This is the source of truth for student-teacher-course relationships
+        $allFees = \App\Models\StudentFee::where('month', $month)
+            ->with(['course.teacher', 'student'])
             ->get();
 
-        // Group by Teacher ID
-        $settlements = $fees->groupBy(function($fee) {
+        if ($allFees->isEmpty()) {
+            return response()->json([]);
+        }
+
+        // Group by Teacher
+        $settlements = $allFees->groupBy(function($fee) {
             return $fee->course && $fee->course->teacher_id ? $fee->course->teacher_id : 'unknown';
-        })->map(function($group) {
-            $firstFee = $group->first();
-            $teacher = $firstFee && $firstFee->course ? $firstFee->course->teacher : null;
+        })->filter(function($group, $key) {
+            return $key !== 'unknown'; // Remove entries without teachers
+        })->map(function($feeGroup) use ($deductionPercentage) {
+            $firstFee = $feeGroup->first();
+            $teacher = $firstFee->course ? $firstFee->course->teacher : null;
 
-            $totalExpected = $group->sum('amount');
-            $collected = $group->where('status', 'paid')->sum('amount');
-            $pendingAmount = $group->where('status', 'pending')->sum('amount');
+            if (!$teacher) {
+                return null;
+            }
 
-            $totalStudents = $group->count(); // Total fee records (enrollments)
-            $paidCount = $group->where('status', 'paid')->count();
-            $pendingCount = $group->where('status', 'pending')->count();
+            // Separate paid and pending
+            $paidFees = $feeGroup->where('status', 'paid');
+            $pendingFees = $feeGroup->where('status', 'pending');
+
+            $totalCollected = $paidFees->sum('amount');
+            $totalStudents = $feeGroup->count();
+            $paidCount = $paidFees->count();
+            $pendingCount = $pendingFees->count();
+
+            // Calculate teacher share based on settings
+            $totalDeduction = ($totalCollected * $deductionPercentage) / 100;
+            $totalTeacherShare = $totalCollected - $totalDeduction;
 
             return [
-                'teacher_id' => $teacher ? $teacher->id : 0,
-                'teacher_name' => $teacher ? $teacher->name : 'Unknown Teacher',
-                'payment_count' => $paidCount,
-                'pending_count' => $pendingCount,
+                'teacher_id' => $teacher->id,
+                'teacher_name' => $teacher->name,
                 'total_students' => $totalStudents,
-                'total_collected' => $collected,
-                'total_pending' => $pendingAmount,
-                'teacher_share' => $collected * 0.8 // Default 80% (Frontend handles custom)
+                'paid' => $paidCount,
+                'pending' => $pendingCount,
+                'collected' => $totalCollected,
+                'default_share' => $totalTeacherShare,
+                'deduction_percentage' => $deductionPercentage,
+                'deduction_amount' => $totalDeduction,
+                'teacher_share' => $totalTeacherShare
             ];
-        })->values();
+        })->filter()->values(); // Remove nulls and reindex
 
         return response()->json($settlements);
     }
