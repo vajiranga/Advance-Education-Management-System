@@ -448,4 +448,57 @@ class CourseController extends Controller
 
         return response()->json($data);
     }
-}
+
+    /**
+     * Get classes for a specific date (default: today)
+     */
+    public function getTodayClasses(Request $request)
+    {
+        $date = $request->input('date', now()->format('Y-m-d'));
+        $dayOfWeek = \Carbon\Carbon::parse($date)->format('l'); // Monday, Tuesday, etc.
+
+        // Get all approved courses (regular and extra)
+        $courses = Course::with(['teacher', 'hall', 'subject', 'batch', 'parentCourse'])
+            ->where('status', 'approved')
+            ->get()
+            ->filter(function ($course) use ($dayOfWeek, $date) {
+                // For regular classes, check schedule day
+                if ($course->type === 'regular' && $course->schedule) {
+                    $schedule = is_string($course->schedule) ? json_decode($course->schedule, true) : $course->schedule;
+                    return isset($schedule['day']) && $schedule['day'] === $dayOfWeek;
+                }
+                
+                // For extra classes, check scheduled_at date
+                if ($course->type === 'extra' && $course->scheduled_at) {
+                    return \Carbon\Carbon::parse($course->scheduled_at)->format('Y-m-d') === $date;
+                }
+                
+                return false;
+            })
+            ->map(function ($course) {
+                $schedule = is_string($course->schedule) ? json_decode($course->schedule, true) : $course->schedule;
+                
+                return [
+                    'id' => $course->id,
+                    'name' => $course->name,
+                    'teacher' => $course->teacher ? $course->teacher->name : 'N/A',
+                    'teacher_id' => $course->teacher_id,
+                    'subject' => $course->subject ? $course->subject->name : 'N/A',
+                    'grade' => $course->batch ? $course->batch->grade : 'N/A',
+                    'hall' => $course->hall ? $course->hall->name : 'Not Assigned',
+                    'hall_id' => $course->hall_id,
+                    'type' => $course->type,
+                    'is_extra' => $course->type === 'extra',
+                    'parent_course' => $course->parentCourse ? $course->parentCourse->name : null,
+                    'start_time' => $schedule['start'] ?? ($course->scheduled_at ? \Carbon\Carbon::parse($course->scheduled_at)->format('H:i') : 'N/A'),
+                    'end_time' => $schedule['end'] ?? 'N/A',
+                    'day' => $schedule['day'] ?? \Carbon\Carbon::parse($course->scheduled_at)->format('l'),
+                    'fee_amount' => $course->fee_amount,
+                    'status' => $course->status
+                ];
+            })
+            ->sortBy('start_time')
+            ->values();
+
+        return response()->json($courses);
+    }

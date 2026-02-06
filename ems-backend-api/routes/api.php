@@ -111,6 +111,7 @@ Route::prefix('v1')->group(function () {
              Route::delete('/users/{id}', [App\Http\Controllers\Api\UserManagementController::class, 'destroy']);
 
              Route::get('admin/attendance/dashboard', [App\Http\Controllers\Api\V1\AttendanceController::class, 'getAdminDashboard']);
+             Route::get('admin/classes/today', [CourseController::class, 'getTodayClasses']);
 
              // Admin can likely access almost everything else too
              Route::get('admin/settings', [App\Http\Controllers\Api\SystemSettingController::class, 'index']);
