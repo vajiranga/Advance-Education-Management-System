@@ -10,8 +10,8 @@ export const useTeacherStore = defineStore('teacher', () => {
     async function createClass(courseData) {
         loading.value = true
         try {
-            await api.post('/v1/courses', courseData)
-            return { success: true }
+            const res = await api.post('/v1/courses', courseData)
+            return { success: true, data: res.data }
         } catch (e) {
             console.error(e)
             return { success: false, error: e.response?.data?.message || 'Error occurred' }

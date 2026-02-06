@@ -19,7 +19,7 @@
                </div>
              </div>
            </div>
-           
+
            <!-- Barcode Section -->
            <div class="col-12 col-md-4 text-center">
               <div class="q-pa-md rounded-borders inline-block" :class="$q.dark.isActive ? 'bg-white' : 'bg-grey-2'">
@@ -80,7 +80,7 @@
                    <q-item-section>
                       <q-item-label class="text-weight-bold text-subtitle1" :class="$q.dark.isActive ? 'text-white' : ''">{{ cls.subject }} - {{ cls.batch }}</q-item-label>
                       <q-item-label caption class="row items-center" :class="$q.dark.isActive ? 'text-grey-4' : ''">
-                          <q-icon name="meeting_room" class="q-mr-xs" /> 
+                          <q-icon name="meeting_room" class="q-mr-xs" />
                           {{ cls.hallName }}
                           <span v-if="cls.hallFloor" class="q-ml-xs" :class="$q.dark.isActive ? 'text-grey-5' : 'text-grey-7'"> (Floor: {{ cls.hallFloor }})</span>
                           <q-icon v-if="cls.hallAC" name="ac_unit" color="blue" size="xs" class="q-ml-sm" />
@@ -98,7 +98,7 @@
                 </q-item>
              </q-list>
           </q-card>
-       
+
        <!-- My Extra Classes -->
        <div v-if="(upcomingExtraCourses || []).length > 0" class="q-mt-lg">
            <div class="text-h6 q-mb-sm" :class="$q.dark.isActive ? 'text-teal-2' : 'text-teal'">Upcoming Extra Classes</div>
@@ -109,7 +109,7 @@
                    </q-item-section>
                    <q-item-section>
                        <q-item-label class="text-weight-bold text-h6" :class="$q.dark.isActive ? 'text-white' : 'text-teal-9'">{{ cls.name }}</q-item-label>
-                       
+
                         <div class="row items-center q-gutter-x-sm q-mt-xs">
                            <q-badge :color="$q.dark.isActive ? 'blue-9' : 'blue-1'" :text-color="$q.dark.isActive ? 'blue-2' : 'blue'">
                                {{ cls.subject?.name || 'Subject' }} - {{ cls.batch?.name || 'Grade' }}
@@ -123,12 +123,12 @@
                        </div>
 
                        <div class="text-caption q-mt-none" :class="$q.dark.isActive ? 'text-grey-5' : 'text-grey'">
-                            <q-icon name="event" class="q-mr-xs" /> 
+                            <q-icon name="event" class="q-mr-xs" />
                             {{ typeof cls.schedule === 'string' ? JSON.parse(cls.schedule).date : cls.schedule.date }}
                             <span class="q-mx-xs">|</span>
                             <q-icon name="schedule" class="q-mr-xs" />
                             {{ typeof cls.schedule === 'string' ? JSON.parse(cls.schedule).start : cls.schedule.start }}
-                             - 
+                             -
                             {{ typeof cls.schedule === 'string' ? JSON.parse(cls.schedule).end : cls.schedule.end }}
                        </div>
 
@@ -224,10 +224,10 @@
                  <div class="text-h6" :class="$q.dark.isActive ? 'text-white' : ''">Call Parent Meeting / Notice</div>
                  <div class="text-caption" :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey'">Notify parents about a meeting or important update.</div>
              </q-card-section>
-             
+
              <q-card-section class="q-gutter-md">
                   <q-input v-model="meetingForm.title" label="Title (e.g. Term End Meeting)" outlined :rules="[val => !!val || 'Required']" :dark="$q.dark.isActive" :bg-color="$q.dark.isActive ? 'grey-9' : 'white'" />
-                  
+
                   <q-input v-model="meetingForm.message" label="Message Details" type="textarea" outlined :rules="[val => !!val || 'Required']" :dark="$q.dark.isActive" :bg-color="$q.dark.isActive ? 'grey-9' : 'white'" />
 
                   <div class="row items-center justify-between q-pa-sm rounded-borders" :class="$q.dark.isActive ? 'bg-grey-9' : 'bg-grey-2'">
@@ -237,7 +237,7 @@
 
                   <q-slide-transition>
                       <div v-if="!meetingForm.sendToAll">
-                           <q-select 
+                           <q-select
                                 v-model="meetingForm.courseId"
                                 :options="activeRegularCourses"
                                 option-label="displayName"
@@ -270,15 +270,15 @@
 
         <q-card-section class="q-gutter-md">
             <!-- Select Parent Course -->
-            <q-select 
-               v-model="newClass.parentCourse" 
-               :options="activeRegularCourses" 
-               option-label="displayName" 
-               option-value="id" 
-               label="Select Existing Class" 
-               outlined 
-               emit-value 
-               map-options 
+            <q-select
+               v-model="newClass.parentCourse"
+               :options="activeRegularCourses"
+               option-label="displayName"
+               option-value="id"
+               label="Select Existing Class"
+               outlined
+               emit-value
+               map-options
                :bg-color="$q.dark.isActive ? 'grey-9' : 'white'"
                :dark="$q.dark.isActive"
                :rules="[val => !!val || 'Required']"
@@ -287,9 +287,9 @@
 
             <!-- Name of Extra Class (Auto-filled or Custom) -->
             <q-input v-model="newClass.name" label="Session Name (e.g. Revision for Exam)" outlined :rules="[val => !!val || 'Required']" :bg-color="$q.dark.isActive ? 'grey-9' : 'white'" :dark="$q.dark.isActive" />
-            
+
             <q-input v-model="newClass.fee_amount" label="Fee (LKR)" type="number" outlined :rules="[val => val !== null && val !== '' || 'Required']" :bg-color="$q.dark.isActive ? 'grey-9' : 'white'" :dark="$q.dark.isActive" />
-            
+
             <!-- Date & Time -->
             <div class="row q-col-gutter-sm">
                 <div class="col-4">
@@ -364,9 +364,9 @@
                                  </q-badge>
 
                                  <!-- Attendance Status -->
-                                 <q-chip 
-                                    size="xs" 
-                                    :color="getAttendanceColor(student)" 
+                                 <q-chip
+                                    size="xs"
+                                    :color="getAttendanceColor(student)"
                                     text-color="white"
                                     clickable
                                     @click="toggleAttendance(student)"
@@ -391,7 +391,7 @@
             </q-card-actions>
         </q-card>
     </q-dialog>
- 
+
     </q-page>
 </template>
 
@@ -402,12 +402,12 @@
  import { useAuthStore } from 'stores/auth-store'
  import { useTeacherStore } from 'stores/teacher-store'
  import { storeToRefs } from 'pinia'
- 
+
  const $q = useQuasar()
  const authStore = useAuthStore()
  const teacherStore = useTeacherStore()
  const { loading, courses } = storeToRefs(teacherStore)
- 
+
  onMounted(() => {
      teacherStore.fetchCourses({ teacher_id: authStore.user?.id })
  })
@@ -433,9 +433,9 @@
  const schedule = computed(() => {
      const today = qDate.formatDate(Date.now(), 'dddd')
      const todayYMD = qDate.formatDate(Date.now(), 'YYYY-MM-DD')
-     
+
      if (!courses.value) return []
-     
+
      return courses.value.filter(c => {
           let s = c.schedule
           if (!s) return false
@@ -446,7 +446,7 @@
      }).map(c => {
           let s = c.schedule
           if (typeof s === 'string') { try { s = JSON.parse(s) } catch { /* ignore */ } }
-          
+
           return {
               id: c.id,
               time: s.start ? `${s.start} - ${s.end}` : 'TBA',
@@ -455,7 +455,7 @@
               hallName: c.hall?.name || 'TBA',
               hallFloor: c.hall?.floor,
               hallAC: c.hall?.has_ac,
-              status: 'upcoming'  
+              status: 'upcoming'
           }
      })
  })
@@ -468,17 +468,17 @@
         .filter(c => c.status === 'approved')
         .reduce((acc, c) => acc + (c.students_count || 0), 0)
  })
- 
+
  const showAddClassDialog = ref(false)
  const availableHalls = ref([])
  const hallCheckPerformed = ref(false)
- 
- const newClass = ref({ 
+
+ const newClass = ref({
      name: '', batchId: null, subjectId: null, fee_amount: 0,
      date: '', startTime: '', endTime: '', hallId: null,
      parentCourse: null
  })
- 
+
  const extraCourses = computed(() => {
      if (!courses.value) return []
      return courses.value.filter(c => c.type === 'extra')
@@ -490,7 +490,7 @@
           let s = c.schedule
           if (!s) return false
           if (typeof s === 'string') { try { s = JSON.parse(s) } catch { return false } }
-          
+
           const d = s.date || ''
           return d >= today
      }).sort((a,b) => {
@@ -499,14 +499,14 @@
          return (da || '').localeCompare(db || '')
      })
  })
- 
+
  const pastExtraCourses = computed(() => {
      const today = new Date().toISOString().slice(0, 10)
      return extraCourses.value.filter(c => {
           let s = c.schedule
           if (!s) return false
           if (typeof s === 'string') { try { s = JSON.parse(s) } catch { return false } }
-          
+
           const d = s.date || ''
           return d < today
      }).sort((a,b) => {
@@ -522,9 +522,9 @@
  function openAddClassDialog() {
     isEditMode.value = false
     editingId.value = null
-    newClass.value = { 
-        name: '', batchId: null, subjectId: null, fee_amount: 0, 
-        date: '', startTime: '', endTime: '', hallId: null, parentCourse: null 
+    newClass.value = {
+        name: '', batchId: null, subjectId: null, fee_amount: 0,
+        date: '', startTime: '', endTime: '', hallId: null, parentCourse: null
     }
     showAddClassDialog.value = true
     hallCheckPerformed.value = false
@@ -540,14 +540,14 @@
          newClass.value.fee_amount = 0
      }
  }
- 
+
  function openEditClassDialog(cls) {
     isEditMode.value = true
     editingId.value = cls.id
-    
+
     let sched = cls.schedule
     if (typeof sched === 'string') { try { sched = JSON.parse(sched) } catch { /* ignore */ } }
-    
+
     newClass.value = {
         name: cls.name,
         batchId: cls.batch_id,
@@ -576,10 +576,10 @@
          $q.notify({ type: 'positive', message: 'Class Deleted' })
      })
  }
- 
+
  async function checkHalls() {
      if (!newClass.value.date || !newClass.value.startTime || !newClass.value.endTime) return
-     
+
      // Call API
      availableHalls.value = await teacherStore.checkHallAvailability({
          date: newClass.value.date,
@@ -588,7 +588,7 @@
      })
      hallCheckPerformed.value = true
  }
- 
+
  async function submitClass() {
     if (!newClass.value.parentCourse || !newClass.value.hallId) {
         $q.notify({ type: 'warning', message: 'Please select a course and hall' })
@@ -620,12 +620,15 @@
     }
 
     if (res.success) {
+        // Refresh courses to get latest status
+        await teacherStore.fetchCourses({ teacher_id: authStore.user?.id })
+
         $q.notify({ type: 'positive', message: isEditMode.value ? 'Extra Class Updated' : 'Extra Class Requested.' })
         showAddClassDialog.value = false
         // Reset
-        newClass.value = { 
-            name: '', batchId: null, subjectId: null, fee_amount: 0, 
-            date: '', startTime: '', endTime: '', hallId: null, parentCourse: null 
+        newClass.value = {
+            name: '', batchId: null, subjectId: null, fee_amount: 0,
+            date: '', startTime: '', endTime: '', hallId: null, parentCourse: null
         }
         hallCheckPerformed.value = false
         isEditMode.value = false
@@ -634,7 +637,7 @@
         $q.notify({ type: 'negative', message: 'Failed: ' + (res.error || 'Unknown Error') })
     }
  }
-    
+
  const showStudentsDialog = ref(false)
  const studentsList = ref([])
  const currentClassId = ref(null)
@@ -650,7 +653,7 @@
          $q.notify({ type: 'negative', message: 'Failed to fetch students' })
      }
  }
- 
+
  function getAttendance(student) {
     if (student.attendances && student.attendances.length > 0) return student.attendances[0]
     return null
@@ -674,7 +677,7 @@
  async function toggleAttendance(student) {
     const att = getAttendance(student)
     const newStatus = (!att || att.status !== 'present') ? 'present' : 'absent'
-    
+
     try {
         await api.post('/v1/attendances', {
             course_id: currentClassId.value,

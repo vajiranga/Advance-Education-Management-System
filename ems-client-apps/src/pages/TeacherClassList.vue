@@ -68,9 +68,9 @@
                             Request sent on {{ new Date(cls.created_at).toLocaleDateString() }}
                          </div>
                      </q-card-section>
-                     
+
                      <q-separator :class="$q.dark.isActive ? 'bg-grey-8' : ''" />
-                     
+
                      <q-card-actions align="right">
                         <q-btn flat color="negative" icon="delete" label="Cancel Request" size="sm" @click="cancelRequest(cls.id)" />
                      </q-card-actions>
@@ -92,25 +92,25 @@
                 <q-select v-model="newCourse.subject_id" :options="subjects" option-label="name" option-value="id" label="Subject" emit-value map-options outlined :rules="[val => !!val || 'Required']" :bg-color="$q.dark.isActive ? 'grey-9' : 'white'" :dark="$q.dark.isActive" />
                 <q-select v-model="newCourse.batch_id" :options="batches" option-label="name" option-value="id" label="Grade" emit-value map-options outlined :rules="[val => !!val || 'Required']" :bg-color="$q.dark.isActive ? 'grey-9' : 'white'" :dark="$q.dark.isActive" />
                 <q-input v-model="newCourse.fee_amount" label="Fee (LKR)" type="number" outlined :rules="[val => !!val || 'Required']" :bg-color="$q.dark.isActive ? 'grey-9' : 'white'" :dark="$q.dark.isActive" />
-                
+
                 <div class="row q-col-gutter-sm">
                     <q-select class="col-4" v-model="newCourse.schedule.day" :options="days" label="Day" outlined :bg-color="$q.dark.isActive ? 'grey-9' : 'white'" :dark="$q.dark.isActive" />
                     <q-input class="col-4" v-model="newCourse.schedule.start" type="time" label="Start" outlined :bg-color="$q.dark.isActive ? 'grey-9' : 'white'" :dark="$q.dark.isActive" />
                     <q-input class="col-4" v-model="newCourse.schedule.end" type="time" label="End" outlined :bg-color="$q.dark.isActive ? 'grey-9' : 'white'" :dark="$q.dark.isActive" />
                 </div>
-                
-                <q-select 
-                    v-model="newCourse.hall_id" 
-                    :options="halls" 
-                    option-label="name" 
-                    option-value="id" 
-                    label="Select Hall (Based on Schedule)" 
-                    emit-value 
-                    map-options 
-                    outlined 
+
+                <q-select
+                    v-model="newCourse.hall_id"
+                    :options="halls"
+                    option-label="name"
+                    option-value="id"
+                    label="Select Hall (Based on Schedule)"
+                    emit-value
+                    map-options
+                    outlined
                     :disable="halls.length === 0"
                     :hint="halls.length === 0 ? 'Set schedule to see available halls' : `${halls.length} halls available`"
-                    :bg-color="$q.dark.isActive ? 'grey-9' : 'white'" 
+                    :bg-color="$q.dark.isActive ? 'grey-9' : 'white'"
                     :dark="$q.dark.isActive"
                 >
                     <template v-slot:option="scope">
@@ -174,8 +174,8 @@ watch(() => newCourse.schedule, async (val) => {
     if (val.day && val.start && val.end) {
         halls.value = await teacherStore.checkHallAvailability({
             day: val.day, // Pass day explicitly
-            start_time: val.start, 
-            end_time: val.end 
+            start_time: val.start,
+            end_time: val.end
         })
     }
 }, { deep: true })
@@ -206,27 +206,32 @@ async function submitCourse() {
         teacher_id: authStore.user?.id,
         fee_amount: newCourse.fee_amount,
         hall_id: newCourse.hall_id,
-        schedule: newCourse.schedule 
+        schedule: newCourse.schedule
     }
 
     const res = await teacherStore.createClass(payload)
     if (res.success) {
         showDialog.value = false // Close the form first
-        
+
+        const createdCourse = res.data.course
+        const isApproved = createdCourse && createdCourse.status === 'approved'
+
         $q.dialog({
-            title: 'Request Sent Successfully',
-            message: 'Your class request has been sent to the Admin. Please wait for approval.\nYou can check the status in the "Pending Requests" tab.',
+            title: isApproved ? 'Class Created & Approved' : 'Request Sent Successfully',
+            message: isApproved
+                ? 'Your new class has been automatically approved and is active.'
+                : 'Your class request has been sent to the Admin. Please wait for approval.\nYou can check the status in the "Pending Requests" tab.',
             ok: { label: 'OK', color: 'primary' },
             persistent: true
         }).onOk(() => {
-            // Optional: Any action after OK. 
+            // Optional: Any action after OK.
             // We already switched tab effectively visually.
         })
-        
+
         loadCourses()
-        
-        // Switch to Pending Tab
-        tab.value = 'pending'
+
+        // Switch to Correct Tab
+        tab.value = isApproved ? 'active' : 'pending'
 
         // Reset
         newCourse.name = ''
