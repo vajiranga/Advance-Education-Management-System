@@ -492,6 +492,7 @@ class PaymentController extends Controller
         $revenueData = [];
         $pendingData = [];
         $studentData = [];
+        $netProfitData = [];
 
         // Loop 12 months: Feb (2) of $year to Jan (1) of $year+1
         $currentDate = Carbon::create($year, 2, 1); // Feb 1st
@@ -532,6 +533,9 @@ class PaymentController extends Controller
                 ->count();
             $studentData[] = $students;
 
+            // D. Net Profit (Revenue - Pending)
+            $netProfitData[] = $rev - $pending;
+
             // Move to next month
             $currentDate->addMonth();
         }
@@ -542,7 +546,8 @@ class PaymentController extends Controller
             'datasets' => [
                 'revenue' => $revenueData,
                 'pending' => $pendingData,
-                'students' => $studentData
+                'students' => $studentData,
+                'netProfit' => $netProfitData
             ],
             // Keep legacy structure if needed for safety (optional)
             'monthly_revenue' => [], // Deprecated
