@@ -13,15 +13,15 @@ class Course extends Model
     protected $casts = [
         'schedule' => 'array'
     ];
-    
+
     public function subject() {
         return $this->belongsTo(Subject::class);
     }
-    
+
     public function batch() {
         return $this->belongsTo(Batch::class);
     }
-    
+
     public function teacher() {
         return $this->belongsTo(User::class, 'teacher_id');
     }
@@ -41,12 +41,17 @@ class Course extends Model
     public function hall() {
         return $this->belongsTo(Hall::class);
     }
-    
+
     public function parentCourse() {
         return $this->belongsTo(Course::class, 'parent_course_id');
     }
 
     public function extraClasses() {
+        return $this->hasMany(Course::class, 'parent_course_id');
+    }
+
+    // Alias for extraClasses, used in ParentController
+    public function subCourses() {
         return $this->hasMany(Course::class, 'parent_course_id');
     }
 }
