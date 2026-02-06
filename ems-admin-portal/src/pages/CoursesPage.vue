@@ -266,15 +266,7 @@
           </q-list>
         </q-card-section>
 
-        <q-card-section>
-          <q-input
-            v-model="reviewNote"
-            outlined
-            type="textarea"
-            label="Admin Note (Optional)"
-            hint="Reason for rejection or approval note"
-          />
-        </q-card-section>
+
 
         <q-card-actions align="right" class="q-pa-md">
           <q-btn flat label="Cancel" v-close-popup />
