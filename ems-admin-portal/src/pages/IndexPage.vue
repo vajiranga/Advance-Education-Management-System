@@ -71,27 +71,49 @@
 
     <!-- Charts & Activity Row -->
     <div class="row q-col-gutter-md">
-      <!-- Main Chart Area -->
+      <!-- Today's Classes Area -->
       <div class="col-12 col-md-8">
         <q-card class="glass-panel no-shadow full-height">
           <q-card-section class="row items-center justify-between">
-            <div class="text-h6 text-grey-9">Revenue Analytics</div>
-            <q-select
-              v-model="timeRange"
-              :options="['Last 7 Days', 'Last Month', 'This Year']"
-              dense
+            <div class="text-h6 text-grey-9">Today's Classes</div>
+            <q-input
+              v-model="selectedDate"
+              type="date"
               outlined
-              options-dense
+              dense
+              label="Select Date"
+              @update:model-value="fetchTodayClasses"
             />
           </q-card-section>
-          <q-card-section>
-            <!-- Using ApexCharts -->
-            <apexchart
-              type="area"
-              height="350"
-              :options="chartOptions"
-              :series="chartSeries"
-            ></apexchart>
+          <q-card-section class="q-pt-none">
+            <q-table
+              :rows="todayClasses"
+              :columns="classColumns"
+              row-key="id"
+              flat
+              :pagination="{ rowsPerPage: 10 }"
+              :loading="loadingClasses"
+            >
+              <template v-slot:body-cell-type="props">
+                <q-td :props="props">
+                  <q-badge
+                    :color="props.row.is_extra ? 'orange' : 'blue'"
+                    :label="props.row.is_extra ? 'Extra' : 'Regular'"
+                  />
+                </q-td>
+              </template>
+              <template v-slot:body-cell-time="props">
+                <q-td :props="props">
+                  {{ props.row.start_time }} - {{ props.row.end_time }}
+                </q-td>
+              </template>
+              <template v-slot:no-data>
+                <div class="text-center text-grey q-pa-md">
+                  <q-icon name="event_busy" size="48px" class="q-mb-sm" />
+                  <div>No classes scheduled for this date</div>
+                </div>
+              </template>
+            </q-table>
           </q-card-section>
         </q-card>
       </div>
@@ -208,6 +230,21 @@ const sending = ref(false)
 const broadcastForm = ref({ title: '', message: '', target: 'all' })
 const timeRange = ref('Last Month')
 
+// Today's Classes
+const todayClasses = ref([])
+const loadingClasses = ref(false)
+const selectedDate = ref(new Date().toISOString().split('T')[0])
+
+const classColumns = [
+  { name: 'name', label: 'Class Name', align: 'left', field: 'name', sortable: true },
+  { name: 'teacher', label: 'Teacher', align: 'left', field: 'teacher', sortable: true },
+  { name: 'subject', label: 'Subject', align: 'left', field: 'subject', sortable: true },
+  { name: 'grade', label: 'Grade', align: 'center', field: 'grade', sortable: true },
+  { name: 'hall', label: 'Hall', align: 'left', field: 'hall', sortable: true },
+  { name: 'time', label: 'Time', align: 'center', field: 'start_time' },
+  { name: 'type', label: 'Type', align: 'center', field: 'type' }
+]
+
 // Helper for display text
 const targetLabel = computed(() => {
   const map = {
@@ -225,8 +262,24 @@ onMounted(async () => {
     financeStore.fetchTransactions(),
     fetchCounts(),
     fetchRecentEnrollments(),
+    fetchTodayClasses()
   ])
 })
+
+async function fetchTodayClasses() {
+  loadingClasses.value = true
+  try {
+    const res = await api.get('/v1/admin/classes/today', {
+      params: { date: selectedDate.value }
+    })
+    todayClasses.value = res.data
+  } catch (e) {
+    console.error('Failed to fetch today classes:', e)
+    $q.notify({ type: 'negative', message: 'Failed to load classes' })
+  } finally {
+    loadingClasses.value = false
+  }
+}
 
 async function fetchCounts() {
   try {
@@ -321,33 +374,6 @@ const stats = computed(() => [
     change: 2.1,
   },
 ])
-
-const chartSeries = computed(() => [
-  {
-    name: 'Revenue',
-    data: financeStore.analyticsData.monthly.map((m) => m.total),
-  },
-])
-
-const chartOptions = computed(() => ({
-  chart: {
-    id: 'revenue-chart',
-    toolbar: { show: false },
-    fontFamily: 'Inter, sans-serif',
-  },
-  colors: ['#10B981'],
-  stroke: { curve: 'smooth', width: 3 },
-  dataLabels: { enabled: false },
-  xaxis: {
-    categories: financeStore.analyticsData.monthly.map((m) => m.month),
-  },
-  yaxis: {
-    labels: { formatter: (val) => (val / 1000).toFixed(0) + 'k' },
-  },
-  grid: {
-    borderColor: '#f1f1f1',
-  },
-}))
 </script>
 
 <style lang="scss" scoped>

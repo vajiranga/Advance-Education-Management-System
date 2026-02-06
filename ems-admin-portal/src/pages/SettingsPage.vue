@@ -45,6 +45,42 @@
             <div class="col-12 col-md-6">
               <q-input v-model="settings.contactEmail" label="Contact Email" outlined />
             </div>
+
+            <!-- New General Settings -->
+            <div class="col-12"><q-separator class="q-my-md" /></div>
+            <div class="col-12 text-subtitle2">Official Details</div>
+
+            <div class="col-12 col-md-4">
+              <q-input v-model="settings.websiteUrl" label="Website URL" outlined />
+            </div>
+            <div class="col-12 col-md-4">
+              <q-input v-model="settings.taxNumber" label="Tax / VAT Number" outlined />
+            </div>
+            <div class="col-12 col-md-4">
+              <q-input v-model="settings.establishedYear" label="Established Year" outlined type="number" />
+            </div>
+
+            <div class="col-12 col-md-6">
+              <q-select v-model="settings.currency" :options="['LKR', 'USD', 'EUR', 'GBP']" label="Default Currency" outlined />
+            </div>
+            <div class="col-12 col-md-6">
+              <q-select v-model="settings.timeZone" :options="['Asia/Colombo', 'UTC', 'America/New_York']" label="Time Zone" outlined />
+            </div>
+
+            <div class="col-12 text-subtitle2 q-mt-md">Academic Calendar & Working Hours</div>
+            <div class="col-12 col-md-6">
+               <q-input v-model="settings.academicYearStart" type="date" label="Academic Year Start" outlined stack-label />
+            </div>
+            <div class="col-12 col-md-6">
+               <q-input v-model="settings.academicYearEnd" type="date" label="Academic Year End" outlined stack-label />
+            </div>
+
+            <div class="col-12 col-md-6">
+               <q-input v-model="settings.workingHoursStart" type="time" label="Work Start Time" outlined stack-label />
+            </div>
+            <div class="col-12 col-md-6">
+               <q-input v-model="settings.workingHoursEnd" type="time" label="Work End Time" outlined stack-label />
+            </div>
           </div>
         </q-tab-panel>
 
@@ -122,12 +158,157 @@
                    />
                  </div>
                </div>
-
-               <div class="q-mt-md text-caption text-grey-7">
-                 <q-icon name="info" />
-                 On the selected day of each month, the system will automatically process teacher settlements and deduct the specified percentage from fees.
-               </div>
              </q-card>
+           </div>
+
+           <!-- NEW SECTIONS -->
+           <div class="row q-col-gutter-lg q-mt-md">
+                <!-- Enrollment Controls -->
+                <div class="col-12 col-md-6">
+                    <q-card class="full-height">
+                        <q-card-section>
+                            <div class="text-subtitle1 text-weight-bold">Student Enrollment</div>
+                             <q-list dense>
+                                 <q-item>
+                                     <q-item-section>
+                                         <q-item-label>Max Students Per Class</q-item-label>
+                                         <q-item-label caption>Limit class size</q-item-label>
+                                     </q-item-section>
+                                     <q-item-section side>
+                                         <q-input v-model.number="settings.maxStudentsPerClass" type="number" dense outlined style="width: 80px" />
+                                     </q-item-section>
+                                 </q-item>
+                                 <q-item tag="label" v-ripple>
+                                     <q-item-section>
+                                         <q-item-label>Allow Self-Registration</q-item-label>
+                                     </q-item-section>
+                                     <q-item-section side><q-toggle v-model="settings.selfRegistration" /></q-item-section>
+                                 </q-item>
+                                 <q-item tag="label" v-ripple>
+                                     <q-item-section>
+                                         <q-item-label>Auto-Approve Enrollment</q-item-label>
+                                     </q-item-section>
+                                     <q-item-section side><q-toggle v-model="settings.autoEnrollment" /></q-item-section>
+                                 </q-item>
+                             </q-list>
+                        </q-card-section>
+                    </q-card>
+                </div>
+
+                <!-- Payment Controls -->
+                <div class="col-12 col-md-6">
+                    <q-card class="full-height">
+                        <q-card-section>
+                            <div class="text-subtitle1 text-weight-bold">Payment Settings</div>
+                             <q-list dense>
+                                 <q-item>
+                                     <q-item-section>
+                                         <q-item-label>Late Fee Penalty (Amount)</q-item-label>
+                                     </q-item-section>
+                                     <q-item-section side>
+                                         <q-input v-model.number="settings.lateFeePenalty" type="number" dense outlined style="width: 80px" />
+                                     </q-item-section>
+                                 </q-item>
+                                 <q-item>
+                                     <q-item-section>
+                                         <q-item-label>Grace Period (Days)</q-item-label>
+                                     </q-item-section>
+                                     <q-item-section side>
+                                         <q-input v-model.number="settings.gracePeriodDays" type="number" dense outlined style="width: 80px" />
+                                     </q-item-section>
+                                 </q-item>
+                                 <q-item tag="label" v-ripple>
+                                     <q-item-section>
+                                         <q-item-label>Enable Payment Gateway</q-item-label>
+                                     </q-item-section>
+                                     <q-item-section side><q-toggle v-model="settings.paymentGateway" /></q-item-section>
+                                 </q-item>
+                                 <q-item tag="label" v-ripple>
+                                     <q-item-section>
+                                         <q-item-label>Accept Partial Payments</q-item-label>
+                                     </q-item-section>
+                                     <q-item-section side><q-toggle v-model="settings.partialPayments" /></q-item-section>
+                                 </q-item>
+                             </q-list>
+                        </q-card-section>
+                    </q-card>
+                </div>
+
+                <!-- Notification Controls -->
+                <div class="col-12 col-md-6">
+                    <q-card class="full-height">
+                        <q-card-section>
+                            <div class="text-subtitle1 text-weight-bold">Notifications</div>
+                             <q-list dense>
+                                 <q-item tag="label" v-ripple class="bg-grey-2">
+                                     <q-item-section>
+                                         <q-item-label class="text-weight-bold">Mobile App Notifications</q-item-label>
+                                         <q-item-label caption>Master toggle for Student, Teacher & Parent Apps</q-item-label>
+                                     </q-item-section>
+                                     <q-item-section side><q-toggle color="purple" v-model="settings.appNotifications" /></q-item-section>
+                                 </q-item>
+                                 <q-separator spaced />
+                                 <q-item tag="label" v-ripple>
+                                     <q-item-section><q-item-label>Email Notifications</q-item-label></q-item-section>
+                                     <q-item-section side><q-toggle v-model="settings.emailNotifications" /></q-item-section>
+                                 </q-item>
+                                 <q-item tag="label" v-ripple>
+                                     <q-item-section><q-item-label>WhatsApp Notifications</q-item-label></q-item-section>
+                                     <q-item-section side><q-toggle v-model="settings.whatsappNotifications" /></q-item-section>
+                                 </q-item>
+                             </q-list>
+                        </q-card-section>
+                    </q-card>
+                </div>
+
+                <!-- Attendance Controls -->
+                <div class="col-12 col-md-6">
+                    <q-card class="full-height">
+                        <q-card-section>
+                            <div class="text-subtitle1 text-weight-bold">Attendance</div>
+                             <q-list dense>
+                                 <q-item tag="label" v-ripple class="bg-red-1">
+                                     <q-item-section>
+                                         <q-item-label class="text-red">Disable Teacher Attendance Marking</q-item-label>
+                                         <q-item-label caption>Prevent teachers from saving attendance</q-item-label>
+                                     </q-item-section>
+                                     <q-item-section side><q-toggle color="red" v-model="settings.disableTeacherAttendance" /></q-item-section>
+                                 </q-item>
+                                 <q-separator spaced />
+                                 <q-item>
+                                     <q-item-section>
+                                         <q-item-label>Min Attendance %</q-item-label>
+                                     </q-item-section>
+                                     <q-item-section side>
+                                         <q-input v-model.number="settings.minAttendancePercent" type="number" dense outlined style="width: 80px" suffix="%" />
+                                     </q-item-section>
+                                 </q-item>
+                                 <q-item>
+                                     <q-item-section>
+                                         <q-item-label>Auto-mark Absent (Minutes Late)</q-item-label>
+                                     </q-item-section>
+                                     <q-item-section side>
+                                         <q-input v-model.number="settings.autoMarkAbsentMinutes" type="number" dense outlined style="width: 80px" />
+                                     </q-item-section>
+                                 </q-item>
+                             </q-list>
+                        </q-card-section>
+                    </q-card>
+                </div>
+
+                <!-- Maintenance -->
+                <div class="col-12">
+                    <q-card>
+                        <q-card-section class="row items-center">
+                             <div class="text-subtitle1 text-weight-bold q-mr-md">System Maintenance</div>
+                             <div class="q-gutter-md row">
+                                 <q-select v-model="settings.backupFrequency" :options="['daily', 'weekly', 'monthly']" label="Backup" dense outlined style="min-width: 150px" />
+                                 <q-input v-model.number="settings.dataRetentionMonths" label="Data Retention (Months)" type="number" dense outlined style="width: 150px" />
+                                 <q-toggle label="Maintenance Mode" color="red" v-model="settings.maintenanceMode" />
+                             </div>
+                        </q-card-section>
+                    </q-card>
+                </div>
            </div>
         </q-tab-panel>
 
@@ -167,9 +348,132 @@
            </q-list>
         </q-tab-panel>
 
-        <!-- Admin Profile Tab (Security) -->
+        <!-- Access Control / Security Tab -->
         <q-tab-panel name="security">
-          <div class="text-h6 q-mb-md">Access Control</div>
+          <div class="text-h6 q-mb-md">System Security & Policies</div>
+
+          <div class="row q-col-gutter-lg q-mb-xl">
+               <!-- Password & Login Policy -->
+               <div class="col-12 col-md-6">
+                   <q-card bordered flat class="full-height">
+                       <q-card-section>
+                           <div class="text-subtitle2">Login Security</div>
+                           <q-list dense>
+                               <q-item>
+                                   <q-item-section>
+                                       <q-item-label>Min Password Length</q-item-label>
+                                   </q-item-section>
+                                   <q-item-section side>
+                                       <q-input v-model.number="settings.passwordMinLength" type="number" dense outlined style="width: 80px" />
+                                   </q-item-section>
+                               </q-item>
+                               <q-item tag="label" v-ripple>
+                                   <q-item-section>
+                                       <q-item-label>Require Strong Passwords</q-item-label>
+                                       <q-item-label caption>Mixed case, numbers, symbols</q-item-label>
+                                   </q-item-section>
+                                   <q-item-section side><q-toggle v-model="settings.requireStrongPasswords" /></q-item-section>
+                               </q-item>
+                               <q-item>
+                                   <q-item-section>
+                                       <q-item-label>Max Login Attempts</q-item-label>
+                                   </q-item-section>
+                                   <q-item-section side>
+                                       <q-input v-model.number="settings.maxLoginAttempts" type="number" dense outlined style="width: 80px" />
+                                   </q-item-section>
+                               </q-item>
+                           </q-list>
+                       </q-card-section>
+                   </q-card>
+               </div>
+
+               <!-- Session Timeouts -->
+               <div class="col-12 col-md-6">
+                   <q-card bordered flat class="full-height">
+                       <q-card-section>
+                           <div class="text-subtitle2">Session Timeout (Minutes)</div>
+                           <div class="text-caption text-grey q-mb-sm">0 = No Timeout</div>
+                           <div class="row q-col-gutter-sm">
+                               <div class="col-6">
+                                   <q-input v-model.number="settings.sessionTimeoutAdmin" label="Admin" type="number" dense outlined />
+                               </div>
+                               <div class="col-6">
+                                   <q-input v-model.number="settings.sessionTimeoutTeacher" label="Teacher" type="number" dense outlined />
+                               </div>
+                               <div class="col-6">
+                                   <q-input v-model.number="settings.sessionTimeoutParent" label="Parent" type="number" dense outlined />
+                               </div>
+                               <div class="col-6">
+                                   <q-input v-model.number="settings.sessionTimeoutStudent" label="Student" type="number" dense outlined />
+                               </div>
+                           </div>
+                       </q-card-section>
+                   </q-card>
+               </div>
+
+               <!-- Role Permissions -->
+               <div class="col-12 col-md-6">
+                   <q-card bordered flat class="full-height">
+                       <q-card-section>
+                           <div class="text-subtitle2">Role Permissions</div>
+                           <q-list dense>
+                               <q-item tag="label" v-ripple>
+                                   <q-item-section><q-item-label>Admin Full Access</q-item-label></q-item-section>
+                                   <q-item-section side><q-checkbox v-model="settings.permAdminFull" /></q-item-section>
+                               </q-item>
+                               <q-item tag="label" v-ripple>
+                                   <q-item-section><q-item-label>Teacher Edit Access</q-item-label></q-item-section>
+                                   <q-item-section side><q-checkbox v-model="settings.permTeacherEdit" /></q-item-section>
+                               </q-item>
+                               <q-item tag="label" v-ripple>
+                                   <q-item-section><q-item-label>Parent View Access</q-item-label></q-item-section>
+                                   <q-item-section side><q-checkbox v-model="settings.permParentView" /></q-item-section>
+                               </q-item>
+                               <q-item tag="label" v-ripple>
+                                   <q-item-section><q-item-label>Student View Access</q-item-label></q-item-section>
+                                   <q-item-section side><q-checkbox v-model="settings.permStudentView" /></q-item-section>
+                               </q-item>
+                           </q-list>
+                       </q-card-section>
+                   </q-card>
+               </div>
+
+               <!-- Data Privacy -->
+               <div class="col-12 col-md-6">
+                   <q-card bordered flat class="full-height bg-grey-1">
+                       <q-card-section>
+                           <div class="text-subtitle2">Data Privacy & Export</div>
+                           <q-list dense>
+                               <q-item tag="label" v-ripple>
+                                   <q-item-section>
+                                       <q-item-label>Allow Data Export</q-item-label>
+                                   </q-item-section>
+                                   <q-item-section side><q-toggle v-model="settings.allowDataExport" /></q-item-section>
+                               </q-item>
+                               <q-item tag="label" v-ripple class="text-red">
+                                   <q-item-section>
+                                       <q-item-label class="text-weight-bold">Disable Report Export</q-item-label>
+                                       <q-item-label caption>Block users from downloading reports</q-item-label>
+                                   </q-item-section>
+                                   <q-item-section side><q-toggle color="red" v-model="settings.disableReportExport" /></q-item-section>
+                               </q-item>
+                               <q-item tag="label" v-ripple>
+                                   <q-item-section><q-item-label>GDPR Compliance Mode</q-item-label></q-item-section>
+                                   <q-item-section side><q-toggle v-model="settings.gdprMode" /></q-item-section>
+                               </q-item>
+                               <q-item tag="label" v-ripple>
+                                   <q-item-section><q-item-label>Require User Consent</q-item-label></q-item-section>
+                                   <q-item-section side><q-toggle v-model="settings.userConsent" /></q-item-section>
+                               </q-item>
+                           </q-list>
+                       </q-card-section>
+                   </q-card>
+               </div>
+          </div>
+
+          <q-separator />
+
+          <div class="text-h6 q-my-md">My Admin Profile</div>
           <div class="text-caption q-mb-md text-grey">Update your login credentials here.</div>
 
           <div class="row q-col-gutter-md">
@@ -262,7 +566,64 @@ const settings = ref({
   autoApproveExtraClasses: false,
   // Teacher Financial Settings
   teacherFeeDeductionPercentage: 10,
-  automationSettlementDate: 10
+  automationSettlementDate: 10,
+
+  // General - New
+  instituteLogo: null,
+  websiteUrl: '',
+  establishedYear: '',
+  taxNumber: '',
+  currency: 'LKR',
+  timeZone: 'Asia/Colombo',
+  academicYearStart: '',
+  academicYearEnd: '',
+  workingDays: [],
+  workingHoursStart: '08:00',
+  workingHoursEnd: '17:00',
+
+  // System Controls - New
+  maxStudentsPerClass: 50,
+  autoEnrollment: false,
+  selfRegistration: true,
+
+  lateFeePenalty: 0,
+  gracePeriodDays: 5,
+  paymentGateway: false,
+  partialPayments: true,
+
+  emailNotifications: true,
+  whatsappNotifications: false,
+  notificationFrequency: 'immediate',
+  appNotifications: true, // Master toggle
+
+  minAttendancePercent: 80,
+  autoMarkAbsentMinutes: 30,
+  attendanceReminderTime: '09:00',
+  disableTeacherAttendance: false, // Feature limitation
+
+  backupFrequency: 'daily',
+  dataRetentionMonths: 12,
+
+  // Access Control - New
+  passwordMinLength: 8,
+  requireStrongPasswords: false,
+  maxLoginAttempts: 5,
+
+  sessionTimeoutAdmin: 0,
+  sessionTimeoutTeacher: 0,
+  sessionTimeoutStudent: 0,
+  sessionTimeoutParent: 0,
+
+  permAdminFull: true,
+  permTeacherEdit: true,
+  permParentView: true,
+  permStudentView: true,
+
+  allowDataExport: true,
+  gdprMode: false,
+  dataAnonymization: false,
+  userConsent: true,
+  disableReportExport: false
 })
 
 // Admin Profile State
