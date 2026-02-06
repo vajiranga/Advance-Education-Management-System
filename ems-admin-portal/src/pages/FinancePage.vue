@@ -1106,13 +1106,7 @@ async function generateReport() {
     reportLoading.value = false
   }
 }
-  } catch (e) {
-    console.error(e)
-    $q.notify({ type: 'negative', message: 'Export Error' })
-  } finally {
-    reportLoading.value = false
-  }
-}
+
 
 // Watch student selection to fetch PENDING FEES
 watch(cashStudent, async (newVal) => {
