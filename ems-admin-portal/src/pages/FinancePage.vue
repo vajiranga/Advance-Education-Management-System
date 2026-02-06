@@ -88,16 +88,31 @@
     <div class="row q-col-gutter-md q-mb-lg">
       <div class="col-12 col-md-6">
         <q-card class="full-height">
-          <q-card-section class="row justify-between">
-            <div class="text-h6">Revenue Analytics</div>
+          <q-card-section class="row justify-between items-center">
+            <div class="text-h6">Academic Year Performance</div>
             <div class="row q-gutter-sm">
               <q-select
                 outlined
                 dense
-                v-model="reportMonth"
-                :options="monthOptions"
-                label="Month"
-                style="min-width: 120px"
+                v-model="chartMetric"
+                :options="chartMetricOptions"
+                label="Metric"
+                style="min-width: 150px"
+                emit-value
+                map-options
+                bg-color="white"
+              />
+              <q-select
+                outlined
+                dense
+                v-model="chartYear"
+                :options="yearOptions"
+                label="Year"
+                style="min-width: 100px"
+                bg-color="white"
+              />
+              <q-btn flat round icon="refresh" @click="loadChartData" size="sm" />
+            </div>
               />
               <q-btn
                 flat
@@ -1057,36 +1072,48 @@ const chartSeries = ref([
 ])
 
 // Watch for analytics data to update chart
+const chartYear = ref(new Date().getMonth() < 1 ? new Date().getFullYear() - 1 : new Date().getFullYear())
+const chartMetric = ref('revenue')
+const chartMetricOptions = [
+    { label: 'Collected Fees', value: 'revenue' },
+    { label: 'Uncollected Fees', value: 'pending' },
+    { label: 'New Students', value: 'students' }
+]
+
+async function loadChartData() {
+    await financeStore.fetchAnalytics({ year: chartYear.value })
+}
+
+// Watch for analytics data to update chart
 watch(
-  () => analyticsData.value,
-  (newVal) => {
-    // Fix: Use 'monthly' instead of 'monthly_revenue' as defined in analyticsData structure
-    if (newVal && newVal.monthly) {
+  [() => analyticsData.value, chartMetric],
+  ([newVal, metric]) => {
+    if (newVal && newVal.chartData) {
+      // Academic Year Data
       chartOptions.value = {
         ...chartOptions.value,
         xaxis: {
-          categories: newVal.monthly.map((item) => item.month),
+          categories: newVal.chartData.labels,
         },
       }
       chartSeries.value = [
         {
-          name: 'Revenue',
-          data: newVal.monthly.map((item) => item.total),
-        },
+            name: chartMetricOptions.find(o => o.value === metric)?.label || 'Value',
+            data: newVal.chartData.datasets[metric] || []
+        }
       ]
-    }
-
-    // Pie Chart
-    if (newVal && newVal.methods) {
-      pieOptions.value = {
-        ...pieOptions.value,
-        labels: newVal.methods.map((m) => m.type),
-      }
-      pieSeries.value = newVal.methods.map((m) => m.count)
+    } else if (newVal && newVal.monthly) {
+       // Legacy Fallback (Should not happen with new backend)
+      chartOptions.value = { ...chartOptions.value, xaxis: { categories: newVal.monthly.map(i => i.month) } }
+      chartSeries.value = [{ name: 'Revenue', data: newVal.monthly.map(i => i.total) }]
     }
   },
   { deep: true },
 )
+
+watch(chartYear, () => {
+    loadChartData()
+})
 
 async function generateReport() {
   reportLoading.value = true
@@ -1282,9 +1309,9 @@ async function refreshAll() {
     const params = apiParams.value
     await Promise.all([
       financeStore.fetchTransactions(params),
-      financeStore.fetchAnalytics(params),
       financeStore.fetchSettlements(params),
       financeStore.fetchUncollectedFees(),
+      loadChartData() // Load chart independently
     ])
     $q.notify({ type: 'positive', message: 'Dashboard Updated', timeout: 500, position: 'top' })
   } finally {

@@ -52,11 +52,19 @@ export const useFinanceStore = defineStore('finance', () => {
         await fetchTransactions()
     }
 
-    const analyticsData = ref({ monthly: [], courses: [], methods: [] })
+    const analyticsData = ref({ monthly: [], courses: [], methods: [], chartData: { labels: [], datasets: {} } })
 
     async function fetchAnalytics(params = {}) {
         try {
             const res = await api.get('/v1/admin/payments/analytics', { params })
+            // New structure
+            if (res.data.datasets) {
+                 analyticsData.value.chartData = {
+                     labels: res.data.labels,
+                     datasets: res.data.datasets
+                 }
+            }
+            // Legacy/Other support if needed (though backend sends empty arrays now)
             analyticsData.value.monthly = res.data.monthly_revenue || []
             analyticsData.value.courses = res.data.course_revenue || []
             analyticsData.value.methods = res.data.payment_methods || []
