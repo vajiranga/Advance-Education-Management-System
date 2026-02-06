@@ -112,8 +112,7 @@
                 bg-color="white"
               />
               <q-btn flat round icon="refresh" @click="loadChartData" size="sm" />
-            </div>
-              />
+
               <q-btn
                 flat
                 round
@@ -978,8 +977,7 @@ async function processVerification(status) {
   }
 }
 
-const reportMonth = ref(new Date().toISOString().slice(0, 7))
-const monthOptions = ['2026-01', '2026-02', '2026-03']
+
 
 const showGenerateDialog = ref(false)
 const genMonth = ref(new Date().toISOString().slice(0, 10))
