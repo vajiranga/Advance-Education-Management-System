@@ -486,6 +486,8 @@ class PaymentController extends Controller
 
         $year = $request->input('year', $currentYear);
         $startDay = (int) (\App\Models\SystemSetting::where('key', 'feeCycleStartDay')->value('value') ?? 10);
+        $teacherDeduction = (float) (\App\Models\SystemSetting::where('key', 'teacherFeeDeductionPercentage')->value('value') ?? 25);
+        $instituteShare = (100 - $teacherDeduction) / 100; // e.g., if 25% deduction, institute gets 75%
 
         // 2. Prepare Data Structure
         $labels = [];
@@ -533,8 +535,9 @@ class PaymentController extends Controller
                 ->count();
             $studentData[] = $students;
 
-            // D. Net Profit (Revenue - Pending)
-            $netProfitData[] = $rev - $pending;
+            // D. Net Profit (Revenue × Institute Share %)
+            // Institute Share = 100% - Teacher Fee Deduction %
+            $netProfitData[] = $rev * $instituteShare;
 
             // Move to next month
             $currentDate->addMonth();
