@@ -1129,6 +1129,15 @@ watch(
       chartOptions.value = { ...chartOptions.value, xaxis: { categories: newVal.monthly.map(i => i.month) } }
       chartSeries.value = [{ name: 'Revenue', data: newVal.monthly.map(i => i.total) }]
     }
+
+    // Update Pie Chart for Payment Methods
+    if (newVal && newVal.methods) {
+      pieOptions.value = {
+        ...pieOptions.value,
+        labels: newVal.methods.map((m) => m.type),
+      }
+      pieSeries.value = newVal.methods.map((m) => m.count)
+    }
   },
   { deep: true },
 )
