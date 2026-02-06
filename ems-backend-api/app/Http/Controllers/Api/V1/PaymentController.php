@@ -543,6 +543,19 @@ class PaymentController extends Controller
             $currentDate->addMonth();
         }
 
+        // Calculate Payment Methods Distribution for the entire academic year
+        $firstCycleStart = Carbon::create($year, 2, $startDay);
+        $lastCycleEnd = Carbon::create($year + 1, 2, $startDay - 1)->endOfDay();
+
+        $paymentMethods = Payment::select('type', \Illuminate\Support\Facades\DB::raw('count(*) as count'))
+            ->where('status', 'paid')
+            ->whereBetween('paid_at', [$firstCycleStart, $lastCycleEnd])
+            ->groupBy('type')
+            ->get()
+            ->map(function($row) {
+                return ['type' => ucfirst(str_replace('_', ' ', $row->type)), 'count' => $row->count];
+            });
+
         return response()->json([
             'year' => $year,
             'labels' => $labels,
@@ -555,7 +568,7 @@ class PaymentController extends Controller
             // Keep legacy structure if needed for safety (optional)
             'monthly_revenue' => [], // Deprecated
             'course_revenue' => [], // Can fetch separate if needed
-            'payment_methods' => [] // Can fetch separate if needed
+            'payment_methods' => $paymentMethods
         ]);
     }
 
