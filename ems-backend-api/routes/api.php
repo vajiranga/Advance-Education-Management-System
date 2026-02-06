@@ -39,6 +39,7 @@ Route::prefix('v1')->group(function () {
     Route::get('grades', [App\Http\Controllers\Api\V1\AcademicController::class, 'getGrades']);
     Route::get('grades/{gradeId}/subjects', [App\Http\Controllers\Api\V1\AcademicController::class, 'getSubjects']);
     Route::get('public/courses', [CourseController::class, 'index']);
+    Route::get('settings/config', [App\Http\Controllers\Api\SystemSettingController::class, 'publicSettings']);
 
     // Authenticated Routes
     Route::middleware('auth:sanctum')->group(function () {
@@ -112,6 +113,8 @@ Route::prefix('v1')->group(function () {
              Route::get('admin/attendance/dashboard', [App\Http\Controllers\Api\V1\AttendanceController::class, 'getAdminDashboard']);
 
              // Admin can likely access almost everything else too
+             Route::get('admin/settings', [App\Http\Controllers\Api\SystemSettingController::class, 'index']);
+             Route::post('admin/settings', [App\Http\Controllers\Api\SystemSettingController::class, 'update']);
         });
 
         // Shared Reads (Authenticated users can read these)

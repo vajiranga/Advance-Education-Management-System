@@ -10,9 +10,7 @@
         </q-toolbar-title>
 
         <div class="row q-gutter-sm items-center">
-          <q-avatar size="32px" class="cursor-pointer">
-            <img src="https://cdn.quasar.dev/img/boy-avatar.png" />
-          </q-avatar>
+          <q-btn flat round icon="account_circle" size="md" />
         </div>
       </q-toolbar>
     </q-header>

@@ -1,6 +1,6 @@
 <template>
   <q-page class="register-page flex flex-center relative-position">
-    
+
     <!-- Background Elements (CSS Based - Matches Login) -->
     <div class="stars"></div>
     <div class="glow-spot spot-1"></div>
@@ -11,7 +11,7 @@
       <q-card-section class="text-center q-pt-xl q-pb-md">
          <!-- Home Button -->
          <q-btn flat round icon="arrow_back" color="white" class="absolute-top-left q-ma-md hover-scale" to="/" title="Back to Home" />
-         
+
          <!-- Icon -->
          <div class="avatar-glow q-mx-auto q-mb-md flex flex-center" :class="role === 'student' ? 'bg-blue-dim' : 'bg-purple-dim'">
             <q-icon :name="role === 'student' ? 'person_add' : 'cast_for_education'" size="40px" :color="role === 'student' ? 'blue' : 'purple'" />
@@ -24,7 +24,7 @@
       <!-- Role Tabs -->
       <div class="q-px-lg q-mb-md">
         <div class="glass-tabs row no-wrap p-1">
-             <div 
+             <div
                 class="col tab-item text-center q-py-sm cursor-pointer relative-position"
                 :class="{ 'active': role === 'student' }"
                 @click="role = 'student'"
@@ -33,10 +33,10 @@
                 <span class="text-weight-medium">Student</span>
                 <div v-if="role === 'student'" class="absolute-full bg-white-10 rounded-borders transition-bg"></div>
              </div>
-             <div 
+             <div
                 class="col tab-item text-center q-py-sm cursor-pointer relative-position"
                 :class="{ 'active': role === 'teacher' }"
-                @click="role = 'teacher'"
+                @click="selectTeacher"
              >
                 <q-icon name="psychology" size="20px" class="q-mr-xs" />
                 <span class="text-weight-medium">Teacher</span>
@@ -49,7 +49,7 @@
         <!-- STUDENT REGISTRATION FORM -->
         <q-tab-panel name="student" class="q-pa-lg">
           <q-form @submit="onSubmit" class="q-gutter-y-lg">
-            
+
             <!-- Personal Info Section -->
             <div>
               <div class="text-caption text-weight-bold text-blue-4 text-uppercase q-mb-sm letter-spacing-1">Personal Information</div>
@@ -125,10 +125,10 @@
             <div>
                <div class="text-caption text-weight-bold text-amber-4 text-uppercase q-mb-sm letter-spacing-1">Parent / Guardian Details</div>
                <div class="glass-alert row items-center q-pa-sm rounded-borders text-amber-2 q-mb-md">
-                   <q-icon name="info" class="q-mr-sm" size="xs"/> 
+                   <q-icon name="info" class="q-mr-sm" size="xs"/>
                    <div class="text-caption">Parent account will be created automatically using this number.</div>
                </div>
-               
+
                <div class="row q-col-gutter-md">
                   <div class="col-12">
                      <q-input dark outlined class="input-glass" v-model="form.parent_name" label="Parent Name" color="amber" :rules="[val => !!val || 'Parent Name is required']">
@@ -145,7 +145,7 @@
                   </div>
                </div>
             </div>
-            
+
             <q-btn unelevated rounded color="primary" size="lg" class="full-width q-mt-lg glow-btn-blue text-weight-bold" label="Register Student" type="submit" :loading="loading" />
           </q-form>
         </q-tab-panel>
@@ -153,7 +153,7 @@
         <!-- TEACHER REGISTRATION FORM -->
         <q-tab-panel name="teacher" class="q-pa-lg">
           <q-form @submit="onSubmit" class="q-gutter-y-lg">
-            
+
             <!-- Personal Info -->
             <div>
               <div class="text-caption text-weight-bold text-purple-3 text-uppercase q-mb-sm letter-spacing-1">Personal Information</div>
@@ -200,7 +200,7 @@
             <!-- Professional Info -->
             <div>
                 <div class="text-caption text-weight-bold text-purple-3 text-uppercase q-mb-sm letter-spacing-1">Professional Qualifications</div>
-                
+
                 <div class="q-mb-md">
                   <div class="text-grey-4 q-mb-xs">Educational Level</div>
                   <div class="row q-gutter-sm bg-white-5 q-pa-sm rounded-borders">
@@ -213,13 +213,13 @@
 
                 <div class="row q-col-gutter-md">
                     <div class="col-12">
-                        <q-select 
+                        <q-select
                             dark outlined class="input-glass"
-                            v-model="form.subjects" 
-                            multiple 
-                            use-chips 
-                            :options="['Mathematics', 'Science', 'English', 'Sinhala', 'History', 'ICT', 'Commerce', 'Art']" 
-                            label="Expertise Subjects" 
+                            v-model="form.subjects"
+                            multiple
+                            use-chips
+                            :options="['Mathematics', 'Science', 'English', 'Sinhala', 'History', 'ICT', 'Commerce', 'Art']"
+                            label="Expertise Subjects"
                             color="purple"
                         >
                            <template v-slot:prepend><q-icon name="menu_book" color="purple-4" /></template>
@@ -233,7 +233,7 @@
         </q-tab-panel>
 
       </q-tab-panels>
-      
+
       <div class="text-center q-pb-lg">
         <router-link to="/login" class="text-grey-5 hover-text-white transition-colors" style="text-decoration: none">Already have an account? Login</router-link>
       </div>
@@ -258,11 +258,32 @@
       </q-card>
     </q-dialog>
 
+
+    <!-- TEACHER REGISTRATION BLOCKED DIALOG -->
+    <q-dialog v-model="blockedDialog">
+      <q-card style="min-width: 350px" class="glass-panel text-white">
+        <q-card-section>
+          <div class="text-h6 text-amber-4">Registration Restricted</div>
+        </q-card-section>
+
+        <q-card-section class="q-pt-none text-center">
+          <q-icon name="lock" size="60px" color="grey-5" class="q-mb-md" />
+          <p>Teacher registration is currently closed or restricted by the administrator.</p>
+          <p class="text-caption text-grey-4">Please contact the admin if you believe this is a mistake.</p>
+        </q-card-section>
+
+        <q-card-actions align="center" class="column q-gutter-y-sm q-pb-lg">
+          <q-btn unelevated rounded color="purple" label="Login as Teacher" to="/login" class="full-width" />
+          <q-btn outline rounded color="white" label="Student Registration" v-close-popup class="full-width" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
   </q-page>
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted, watch } from 'vue'
 import { api } from 'boot/axios'
 import { useQuasar } from 'quasar'
 import { useRouter } from 'vue-router'
@@ -276,6 +297,42 @@ const role = ref('student')
 const loading = ref(false)
 const showSuccessDialog = ref(false)
 const generatedIndexNumber = ref('')
+
+// System Config
+const config = ref({
+    blockTeacherRegistration: false
+})
+const blockedDialog = ref(false)
+
+onMounted(async () => {
+    try {
+        const res = await api.get('/v1/settings/config')
+        if (res.data) {
+             config.value = { ...config.value, ...res.data }
+             // Ensure boolean type
+             config.value.blockTeacherRegistration = String(config.value.blockTeacherRegistration) === '1' || String(config.value.blockTeacherRegistration) === 'true'
+        }
+    } catch (e) {
+        console.error('Failed to load config', e)
+    }
+})
+
+// Watch for late config load
+watch(() => config.value.blockTeacherRegistration, (isBlocked) => {
+    if (isBlocked && role.value === 'teacher') {
+        role.value = 'student' // Immediate reset
+        blockedDialog.value = true
+    }
+})
+
+// Role Selection Logic
+const selectTeacher = () => {
+    if (config.value.blockTeacherRegistration) {
+        blockedDialog.value = true
+    } else {
+        role.value = 'teacher'
+    }
+}
 
 const form = reactive({
   name: '',
@@ -338,7 +395,7 @@ const onSubmit = async () => {
     if (role.value === 'student' && response.data.index_number) {
         generatedIndexNumber.value = response.data.index_number
         showSuccessDialog.value = true
-        
+
         // Auto-login logic
         if (response.data.user && response.data.token && authStore) {
            authStore.addAccount({ user: response.data.user, token: response.data.token })
@@ -355,7 +412,7 @@ const onSubmit = async () => {
   } catch (error) {
     console.error(error)
     let msg = error.response?.data?.message || 'Registration failed. Check your inputs.'
-    
+
     if (error.response?.status === 422 && error.response.data.errors) {
         const e = error.response.data.errors
         if (e.email || e.username || e.phone || e.nic) {
@@ -390,7 +447,7 @@ const goToStudentDashboard = () => {
   top: 0; left: 0; right: 0; bottom: 0;
   width: 100%; height: 100%;
   background: #000;
-  background-image: 
+  background-image:
         radial-gradient(1px 1px at 20px 30px, #eee, rgba(0,0,0,0)),
         radial-gradient(1px 1px at 40px 70px, #fff, rgba(0,0,0,0)),
         radial-gradient(1px 1px at 50px 160px, #ddd, rgba(0,0,0,0)),

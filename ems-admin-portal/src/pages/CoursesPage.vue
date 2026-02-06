@@ -797,9 +797,18 @@ function editCourse(course) {
   const t = teachers.value.find((u) => u.name === course.teacher_name || u.id === course.teacher_id)
   const b = batches.value.find((x) => x.id === course.batch_id || x.name === course.batch?.name)
   const s = subjects.value.find(
-    (x) => x.id === course.subject_id || x.name === course.subject?.name,
+    (x) => x.id === course.subject_id || x.name === course.subject?.name
   )
   const h = halls.value.find((x) => x.id === course.hall_id)
+
+  let sched = course.schedule
+  if (typeof sched === 'string') {
+      try {
+        sched = JSON.parse(sched)
+      } catch (e) {
+        console.debug('Schedule parse error (expected if not JSON)', e)
+      }
+  }
 
   form.value = {
     id: course.id,
@@ -808,10 +817,9 @@ function editCourse(course) {
     subject: s || null,
     hall: h || null,
     fee: course.fee_amount,
-    day: course.schedule?.day || 'Monday',
-    startTime: course.schedule?.start || '08:00',
-    endTime: course.schedule?.end || '10:00',
-
+    day: sched?.day || 'Monday',
+    startTime: sched?.start || '08:00',
+    endTime: sched?.end || '10:00',
   }
   showAddDialog.value = true
 }

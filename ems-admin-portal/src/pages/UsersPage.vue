@@ -325,21 +325,15 @@
             </q-input>
 
             <div class="row q-col-gutter-sm">
-              <div class="col-6">
+              <div class="col-12">
                 <q-input
                   outlined
                   v-model="form.phone"
-                  label="Phone Number"
+                  @update:model-value="val => form.whatsapp = val"
+                  label="Phone / Whatsapp Number"
                   mask="###-#######"
                   hint="Format: 07x-xxxxxxx"
-                />
-              </div>
-              <div class="col-6">
-                <q-input
-                  outlined
-                  v-model="form.whatsapp"
-                  label="WhatsApp Number"
-                  mask="###-#######"
+                  :rules="[(val) => !!val || 'Required']"
                 />
               </div>
             </div>
@@ -426,8 +420,26 @@
             <!-- Teacher Specific Fields -->
             <div v-if="selectedRole === 'teacher'">
               <q-separator class="q-my-sm" />
-              <q-input outlined v-model="form.nic" label="NIC Number" />
-              <q-input outlined v-model="form.experience" label="Teaching Experience" />
+              <q-input outlined v-model="form.nic" label="NIC Number" :rules="[val => !!val || 'Required']" />
+
+              <div class="q-my-sm">
+                  <div class="text-caption text-grey-7 q-mb-xs">Educational Level</div>
+                  <div class="row q-gutter-sm">
+                      <q-checkbox v-model="form.qualifications" val="Degree" label="Degree" />
+                      <q-checkbox v-model="form.qualifications" val="Masters" label="Masters" />
+                      <q-checkbox v-model="form.qualifications" val="PhD" label="PhD" />
+                      <q-checkbox v-model="form.qualifications" val="Other" label="Other" />
+                  </div>
+              </div>
+
+               <q-select
+                  outlined
+                  v-model="form.subjects"
+                  multiple
+                  use-chips
+                  :options="['Mathematics', 'Science', 'English', 'Sinhala', 'History', 'ICT', 'Commerce', 'Art']"
+                  label="Expertise Subjects"
+              />
             </div>
 
             <div class="row justify-end q-mt-md">
@@ -515,10 +527,13 @@ const commonCols = [
 const teacherCols = [
   { name: 'username', label: 'Teacher ID', align: 'left', field: 'username', sortable: true },
   ...commonCols,
+  { name: 'gender', label: 'Gender', align: 'left', field: 'gender' },
+  { name: 'dob', label: 'Birthday', align: 'left', field: 'dob' },
   { name: 'email', label: 'Email', align: 'left', field: 'email' },
   { name: 'phone', label: 'Phone', align: 'left', field: 'phone' },
   { name: 'nic', label: 'NIC', align: 'left', field: 'nic' },
-  { name: 'experience', label: 'Experience', align: 'left', field: 'experience' },
+  { name: 'qualifications', label: 'Qualifications', align: 'left', field: 'qualifications', format: val => Array.isArray(val) ? val.join(', ') : val },
+  { name: 'subjects', label: 'Subjects', align: 'left', field: 'subjects', format: val => Array.isArray(val) ? val.join(', ') : val },
   { name: 'actions', label: 'Actions', align: 'right' },
 ]
 
@@ -576,6 +591,8 @@ const form = ref({
   parent_email: '',
   nic: '',
   experience: '',
+  qualifications: [],
+  subjects: []
 })
 
 function resetForm() {
@@ -594,6 +611,8 @@ function resetForm() {
     parent_email: '',
     nic: '',
     experience: '',
+    qualifications: [],
+    subjects: []
   }
 }
 
@@ -636,7 +655,13 @@ async function saveUser() {
     await userStore.fetchParents()
   } catch (error) {
     console.error(error)
-    $q.notify({ type: 'negative', message: error.response?.data?.message || 'Operation failed' })
+    let msg = 'Operation failed'
+    if (error.response?.data?.errors) {
+        msg = Object.values(error.response.data.errors).flat().join(', ')
+    } else if (error.response?.data?.message) {
+        msg = error.response.data.message
+    }
+    $q.notify({ type: 'negative', message: msg, multiLine: true, timeout: 5000 })
   } finally {
     loading.value = false
   }

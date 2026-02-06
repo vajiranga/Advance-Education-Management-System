@@ -199,7 +199,7 @@ class AuthController extends Controller
 
         // 1. Check stored parent_phone on student record
         $cleanStudentContextPhone = preg_replace('/[^0-9]/', '', $student->parent_phone ?? '');
-        
+
         if ($cleanStudentContextPhone === $cleanInputPhone) {
             $phoneMatch = true;
             // Prefer the DB version if it exists
@@ -235,7 +235,7 @@ class AuthController extends Controller
                     $q->where('phone', $matchedSourcePhone)
                       ->orWhere('phone', $request->phone);
                 })->first();
-            
+
             // If still not found, try to find by normalized phone (slow but necessary if inconsistent)
             if (!$parent) {
                  $allParents = User::where('role', 'parent')->get();
@@ -252,7 +252,7 @@ class AuthController extends Controller
              // Create using the matched source phone format to maintain consistency
              $parent = User::create([
                  'name' => $student->parent_name ?? 'Parent',
-                 'phone' => $matchedSourcePhone, 
+                 'phone' => $matchedSourcePhone,
                  'role' => 'parent',
                  'email' => $matchedSourcePhone . '@parent.ems',
                  'password' => Hash::make(Str::random(16)),
@@ -298,9 +298,19 @@ class AuthController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'nullable|email|unique:users,email,'.$user->id,
             'password' => 'nullable|string|min:8|confirmed',
+            'current_password' => $request->password ? 'required|string' : 'nullable|string'
         ]);
 
         if ($validator->fails()) return response()->json(['errors' => $validator->errors()], 422);
+
+        // Security Check: Verify current password if provided or required
+        if ($request->filled('current_password')) {
+            if (!Hash::check($request->current_password, $user->password)) {
+                 return response()->json([
+                     'errors' => ['current_password' => ['Current password is incorrect']]
+                 ], 422);
+            }
+        }
 
         $user->name = $request->name;
         if ($request->email) $user->email = $request->email;
@@ -309,6 +319,6 @@ class AuthController extends Controller
             $user->plain_password = $request->password;
         }
         $user->save();
-        return response()->json(['message' => 'Updated', 'user' => $user]);
+        return response()->json(['message' => 'Profile Updated Successfully', 'user' => $user]);
     }
 }

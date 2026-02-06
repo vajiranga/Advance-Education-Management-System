@@ -302,6 +302,22 @@ class UserManagementController extends Controller
     public function destroy($id)
     {
         $user = User::findOrFail($id);
+
+        // If deleting a student, check if we need to clean up the parent
+        if ($user->role === 'student' && $user->parent_id) {
+            $parentId = $user->parent_id;
+
+            // Check if this parent has any OTHER children
+            $siblingCount = User::where('parent_id', $parentId)
+                                ->where('id', '!=', $id)
+                                ->count();
+
+            // If no siblings left, this is the last child -> Delete Parent
+            if ($siblingCount === 0) {
+                User::where('id', $parentId)->delete();
+            }
+        }
+
         $user->delete();
         return response()->json(['message' => 'User deleted successfully']);
     }
