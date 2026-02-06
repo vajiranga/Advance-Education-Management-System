@@ -69,6 +69,53 @@
       </div>
     </div>
 
+    <!-- Pending Actions Widget -->
+    <div class="row q-col-gutter-md q-mb-lg" v-if="pendingActions.total_pending > 0">
+      <div class="col-12">
+        <q-card class="bg-red-1" flat bordered>
+          <q-card-section class="row items-center justify-between">
+            <div class="row items-center q-gutter-sm">
+               <q-icon name="warning" color="negative" size="md" />
+               <div class="text-h6 text-negative">Action Required</div>
+            </div>
+            <!-- <q-btn label="View All" flat color="negative" /> -->
+          </q-card-section>
+
+          <q-separator />
+
+          <q-card-section class="q-pa-none">
+             <q-list separator>
+                 <q-item v-if="pendingActions.pending_classes > 0" clickable v-ripple @click="$router.push('/classes?status=pending')">
+                    <q-item-section avatar>
+                        <q-avatar color="orange-1" text-color="orange" icon="class" />
+                    </q-item-section>
+                    <q-item-section>
+                        <q-item-label class="text-weight-bold">{{ pendingActions.pending_classes }} Class Approvals Pending</q-item-label>
+                        <q-item-label caption>Teachers are waiting for class approval</q-item-label>
+                    </q-item-section>
+                    <q-item-section side>
+                        <q-btn label="Review" color="primary" size="sm" unelevated to="/classes?status=pending" />
+                    </q-item-section>
+                 </q-item>
+
+                 <q-item v-if="pendingActions.pending_payments > 0" clickable v-ripple @click="$router.push('/admin/payments?status=pending')">
+                    <q-item-section avatar>
+                        <q-avatar color="green-1" text-color="green" icon="payments" />
+                    </q-item-section>
+                    <q-item-section>
+                        <q-item-label class="text-weight-bold">{{ pendingActions.pending_payments }} Payment Verifications Pending</q-item-label>
+                        <q-item-label caption>Bank slips uploaded by students</q-item-label>
+                    </q-item-section>
+                    <q-item-section side>
+                        <q-btn label="Verify" color="primary" size="sm" unelevated to="/admin/payments?status=pending" />
+                    </q-item-section>
+                 </q-item>
+             </q-list>
+          </q-card-section>
+        </q-card>
+      </div>
+    </div>
+
     <!-- Charts & Activity Row -->
     <div class="row q-col-gutter-md">
       <!-- Today's Classes Area -->
@@ -228,6 +275,7 @@ const recentEnrollments = ref([])
 const showBroadcastDialog = ref(false)
 const sending = ref(false)
 const broadcastForm = ref({ title: '', message: '', target: 'all' })
+const pendingActions = ref({ pending_classes: 0, pending_payments: 0, total_pending: 0 })
 
 // Today's Classes
 const todayClasses = ref([])
@@ -260,10 +308,20 @@ onMounted(async () => {
     financeStore.fetchAnalytics(),
     financeStore.fetchTransactions(),
     fetchCounts(),
+    fetchPendingActions(),
     fetchRecentEnrollments(),
     fetchTodayClasses()
   ])
 })
+
+async function fetchPendingActions() {
+    try {
+        const res = await api.get('/v1/admin/dashboard/pending')
+        pendingActions.value = res.data
+    } catch (e) {
+        console.error('Failed to fetch pending actions', e)
+    }
+}
 
 async function fetchTodayClasses() {
   loadingClasses.value = true
