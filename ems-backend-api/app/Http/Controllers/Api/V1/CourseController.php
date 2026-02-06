@@ -17,60 +17,65 @@ class CourseController extends Controller
      */
     public function index(Request $request)
     {
-        $user = $request->user();
-        $query = Course::query();
+        try {
+            $user = $request->user();
+            $query = Course::query();
 
-        if ($request->has('batch_id')) {
-            $query->where('batch_id', $request->query('batch_id'));
-        }
+            if ($request->has('batch_id')) {
+                $query->where('batch_id', $request->query('batch_id'));
+            }
 
-        if ($request->has('teacher_id')) {
-            $query->where('teacher_id', $request->query('teacher_id'));
-        }
+            if ($request->has('teacher_id')) {
+                $query->where('teacher_id', $request->query('teacher_id'));
+            }
 
-        if ($request->has('status')) {
-            if ($request->query('status') === 'deleted') {
-                $query->onlyTrashed();
+            if ($request->has('status')) {
+                if ($request->query('status') === 'deleted') {
+                    $query->onlyTrashed();
+                } else {
+                    $query->where('status', $request->query('status'));
+                }
+            }
+
+            if ($request->has('type')) {
+                $query->where('type', $request->query('type'));
             } else {
-                $query->where('status', $request->query('status'));
+                // Default to regular for general lists
+                if (!$request->has('teacher_id') && (!$user || $user->role === 'student')) {
+                    $query->where('type', 'regular');
+                }
             }
-        }
 
-        if ($request->has('type')) {
-            $query->where('type', $request->query('type'));
-        } else {
-            // Default to regular for general lists
-            if (!$request->has('teacher_id') && (!$user || $user->role === 'student')) {
-                $query->where('type', 'regular');
+            // Parent Course Filter (for fetching extras of a course)
+            if ($request->has('parent_course_id')) {
+                 $query->where('parent_course_id', $request->query('parent_course_id'));
             }
-        }
 
-        // Parent Course Filter (for fetching extras of a course)
-        if ($request->has('parent_course_id')) {
-             $query->where('parent_course_id', $request->query('parent_course_id'));
-        }
+            // Featured Filter
+            if ($request->has('featured')) {
+                 $query->where('is_featured', true);
+            }
 
-        // Featured Filter
-        if ($request->has('featured')) {
-             $query->where('is_featured', true);
-        }
+            // Visibility Logic by Role
+            if ($user && $user->role === 'student') {
+                $query->where('status', 'approved');
+            }
 
-        // Visibility Logic by Role
-        if ($user && $user->role === 'student') {
-            $query->where('status', 'approved');
-        }
+            // Public Access (No User) - Only Approved
+            if (!$user) {
+                $query->where('status', 'approved');
+            }
 
-        // Public Access (No User) - Only Approved
-        if (!$user) {
-            $query->where('status', 'approved');
-        }
+            if ($request->has('all')) {
+                return response()->json($query->with(['subject', 'batch', 'teacher', 'hall', 'parentCourse'])->withCount('students')->orderBy('created_at', 'desc')->get());
+            }
 
-        if ($request->has('all')) {
-            return response()->json($query->with(['subject', 'batch', 'teacher', 'hall', 'parentCourse'])->withCount('students')->orderBy('created_at', 'desc')->get());
+            $perPage = $request->input('per_page', 20);
+            return response()->json($query->with(['subject', 'batch', 'teacher', 'hall', 'parentCourse'])->withCount('students')->orderBy('created_at', 'desc')->paginate($perPage));
+        } catch (\Exception $e) {
+            Log::error('Course Index Error: ' . $e->getMessage());
+            return response()->json(['message' => 'Failed to load courses', 'error' => $e->getMessage()], 500);
         }
-
-        $perPage = $request->input('per_page', 20);
-        return response()->json($query->with(['subject', 'batch', 'teacher', 'hall', 'parentCourse'])->withCount('students')->orderBy('created_at', 'desc')->paginate($perPage));
     }
 
     /**
@@ -467,17 +472,18 @@ class CourseController extends Controller
                     $schedule = is_string($course->schedule) ? json_decode($course->schedule, true) : $course->schedule;
                     return isset($schedule['day']) && $schedule['day'] === $dayOfWeek;
                 }
-                
-                // For extra classes, check scheduled_at date
-                if ($course->type === 'extra' && $course->scheduled_at) {
-                    return \Carbon\Carbon::parse($course->scheduled_at)->format('Y-m-d') === $date;
+
+                // For extra classes, check schedule['date']
+                if ($course->type === 'extra') {
+                    $schedule = is_string($course->schedule) ? json_decode($course->schedule, true) : $course->schedule;
+                    return isset($schedule['date']) && $schedule['date'] === $date;
                 }
-                
+
                 return false;
             })
             ->map(function ($course) {
-                $schedule = is_string($course->schedule) ? json_decode($course->schedule, true) : $course->schedule;
-                
+                $schedule = is_string($course->schedule) ? json_decode($course->schedule, true) : ($course->schedule ?? []);
+
                 return [
                     'id' => $course->id,
                     'name' => $course->name,
@@ -490,9 +496,9 @@ class CourseController extends Controller
                     'type' => $course->type,
                     'is_extra' => $course->type === 'extra',
                     'parent_course' => $course->parentCourse ? $course->parentCourse->name : null,
-                    'start_time' => $schedule['start'] ?? ($course->scheduled_at ? \Carbon\Carbon::parse($course->scheduled_at)->format('H:i') : 'N/A'),
+                    'start_time' => $schedule['start'] ?? 'N/A',
                     'end_time' => $schedule['end'] ?? 'N/A',
-                    'day' => $schedule['day'] ?? \Carbon\Carbon::parse($course->scheduled_at)->format('l'),
+                    'day' => $schedule['day'] ?? 'N/A',
                     'fee_amount' => $course->fee_amount,
                     'status' => $course->status
                 ];
@@ -502,3 +508,4 @@ class CourseController extends Controller
 
         return response()->json($courses);
     }
+}
