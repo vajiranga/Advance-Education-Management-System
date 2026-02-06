@@ -437,11 +437,22 @@ class PaymentController extends Controller
              });
          }
 
+         // Date Range Filter
+         if ($request->has('start_date') && $request->has('end_date')) {
+             $start = $request->start_date . ' 00:00:00';
+             $end = $request->end_date . ' 23:59:59';
+             $query->whereBetween('created_at', [$start, $end]);
+         }
+
          // Calculate Global Stats
-         $totalRevenue = Payment::where('status', 'paid')->sum('amount');
-         $totalPendingCount = Payment::where('status', 'pending')->count();
-         // Uncollected comes from Fee table (pending bills)
-         $uncollectedAmount = \App\Models\StudentFee::where('status', 'pending')->sum('amount');
+         $statsQuery = Payment::query();
+         if ($request->has('start_date') && $request->has('end_date')) {
+             $statsQuery->whereBetween('created_at', [$request->start_date . ' 00:00:00', $request->end_date . ' 23:59:59']);
+         }
+
+         $totalRevenue = (clone $statsQuery)->where('status', 'paid')->sum('amount');
+         $totalPendingCount = (clone $statsQuery)->where('status', 'pending')->count();
+         $uncollectedAmount = \App\Models\StudentFee::where('status', 'pending')->sum('amount'); // This is total outstanding, arguably shouldn't filter by transaction date.
 
          // Default sort
          $query->orderBy('created_at', 'desc');
@@ -465,10 +476,14 @@ class PaymentController extends Controller
      * Admin: Get Analytics Data
      */
     public function getAnalytics(Request $request) {
-        // 1. Monthly Revenue (Last 6 Months) - Collection Fallback
+        // Date Filter
+        $startDate = $request->start_date ?? Carbon::now()->subMonths(6)->format('Y-m-d');
+        $endDate = $request->end_date ?? Carbon::now()->format('Y-m-d');
+
+        // 1. Monthly Revenue
         $monthlyRevenue = Payment::where('status', 'paid')
             ->whereNotNull('paid_at')
-            ->where('paid_at', '>=', Carbon::now()->subMonths(6))
+            ->whereBetween('paid_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
             ->get()
             ->groupBy(function($val) {
                 return Carbon::parse($val->paid_at)->format('Y-m');
@@ -479,8 +494,9 @@ class PaymentController extends Controller
             ->sortBy('month')
             ->values();
 
-        // 2. Revenue by Course (Top 5) - PHP Collection Fallback
+        // 2. Revenue by Course
         $courseRevenue = Payment::where('status', 'paid')
+            ->whereBetween('paid_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
             ->with('course')
             ->get()
             ->groupBy(fn($p) => $p->course->name ?? 'Other')
@@ -494,6 +510,7 @@ class PaymentController extends Controller
 
         // 3. Payment Method Distribution
         $paymentMethods = Payment::select('type', \Illuminate\Support\Facades\DB::raw('count(*) as count'))
+            ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
             ->groupBy('type')
             ->get()
             ->map(function($row) {
@@ -514,10 +531,15 @@ class PaymentController extends Controller
         // ... (existing code) ...
         $month = $request->month ?? Carbon::now()->format('Y-m');
 
-        $payments = Payment::where('month', $month)
-            ->with(['student', 'course'])
-            ->orderBy('paid_at', 'desc')
-            ->get();
+        $query = Payment::query()->with(['student', 'course']);
+
+        if ($request->has('start_date') && $request->has('end_date')) {
+            $query->whereBetween('paid_at', [$request->start_date . ' 00:00:00', $request->end_date . ' 23:59:59']);
+        } else {
+            $query->where('month', $month);
+        }
+
+        $payments = $query->orderBy('paid_at', 'desc')->get();
 
         $csvHeader = ["ID", "Student Name", "Course", "Amount", "Type", "Status", "Date", "Note"];
         $csvData = [];
@@ -619,11 +641,20 @@ class PaymentController extends Controller
         // Get configured deduction percentage from settings (default 10%)
         $deductionPercentage = (float) \App\Models\SystemSetting::where('key', 'teacherFeeDeductionPercentage')->value('value') ?? 10;
 
-        // Fetch all fees for the given month (both paid and pending)
-        // This is the source of truth for student-teacher-course relationships
-        $allFees = \App\Models\StudentFee::where('month', $month)
-            ->with(['course.teacher', 'student'])
-            ->get();
+        $allFees = collect();
+
+        if ($request->has('start_date') && $request->has('end_date')) {
+             // Collection Based Report
+             $allFees = \App\Models\StudentFee::where('status', 'paid')
+                ->whereBetween('paid_at', [$request->start_date . ' 00:00:00', $request->end_date . ' 23:59:59'])
+                ->with(['course.teacher', 'student'])
+                ->get();
+        } else {
+             // Month Based Report (Default)
+             $allFees = \App\Models\StudentFee::where('month', $month)
+                ->with(['course.teacher', 'student'])
+                ->get();
+        }
 
         if ($allFees->isEmpty()) {
             return response()->json([]);
