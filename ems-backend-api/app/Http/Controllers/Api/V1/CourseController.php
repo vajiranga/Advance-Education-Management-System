@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\Course;
 use App\Models\Notification; // Ensure this Model is created
+use App\Models\SystemSetting;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -100,8 +101,13 @@ class CourseController extends Controller
 
         // Determine Status logic
         $status = 'pending';
-        // Admin/SuperAdmin auto-approves
-        if ($user && ($user->role === 'admin' || $user->role === 'super_admin')) {
+
+        // Check System Setting for Auto-Approval
+        $autoApproveVal = SystemSetting::where('key', 'autoApproveClasses')->value('value');
+        $isAutoApprove = ($autoApproveVal === 'true' || $autoApproveVal === '1');
+
+        // Admin/SuperAdmin auto-approves OR System Setting is ON
+        if (($user && ($user->role === 'admin' || $user->role === 'super_admin')) || $isAutoApprove) {
             $status = 'approved';
         }
 
@@ -136,7 +142,7 @@ class CourseController extends Controller
              $parentCourse = Course::find($course->parent_course_id);
              if ($parentCourse) {
                  // Get Enrolled Students
-                 $students = $parentCourse->students; 
+                 $students = $parentCourse->students;
 
                  foreach($students as $student) {
                      // Notify Student
@@ -169,7 +175,7 @@ class CourseController extends Controller
              }
         }
 
-        $course->fresh()->load(['subject', 'batch', 'teacher', 'hall']);
+        $course = $course->fresh()->load(['subject', 'batch', 'teacher', 'hall']);
 
         return response()->json([
             'message' => 'Course created successfully',
