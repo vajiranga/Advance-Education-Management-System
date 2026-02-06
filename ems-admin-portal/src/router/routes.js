@@ -11,6 +11,7 @@ const routes = [
       { path: 'courses', component: () => import('pages/CoursesPage.vue') },
       { path: 'finance', component: () => import('pages/FinancePage.vue') },
       { path: 'attendance', component: () => import('pages/AttendanceMarkingPage.vue') },
+      { path: 'cashpayment', component: () => import('pages/CashPaymentPage.vue') },
       { path: 'settings', component: () => import('pages/SettingsPage.vue') }
     ]
   },

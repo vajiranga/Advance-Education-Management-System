@@ -61,6 +61,7 @@ const navigationLinks = [
   { title: 'Users', icon: 'people', path: '/users' },
   { title: 'Classes', icon: 'library_books', path: '/courses' },
   { title: 'Attendance', icon: 'fact_check', path: '/attendance' },
+  { title: 'Cash Payment', icon: 'point_of_sale', path: '/cashpayment' },
   { title: 'Finance', icon: 'payments', path: '/finance' },
   { title: 'Settings', icon: 'settings', path: '/settings' },
 ]
