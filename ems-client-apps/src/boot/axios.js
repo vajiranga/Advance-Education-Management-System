@@ -52,16 +52,35 @@ export default boot(({ app, store, router }) => {
       if(typeof authStore.init === 'function') authStore.init()
   }
 
-  // Response Interceptor: Handle 401 Logout
+  // Response Interceptor: Handle 401 Logout & 503 Maintenance
   api.interceptors.response.use(
     response => response,
     error => {
+      // Handle 401 Unauthorized
       if (error.response && error.response.status === 401) {
         if(authStore) authStore.logout()
         if(router.currentRoute.value.path !== '/login') {
             router.push('/login')
         }
       }
+
+      // Handle 503 Maintenance Mode
+      if (error.response && error.response.status === 503) {
+        const maintenanceMode = error.response.data?.maintenance_mode
+
+        if (maintenanceMode) {
+          // Force logout
+          if(authStore) authStore.logout()
+          localStorage.removeItem('token')
+          localStorage.removeItem('user')
+          localStorage.removeItem('auth_accounts')
+          localStorage.removeItem('auth_active_index')
+
+          // Redirect to maintenance page
+          router.push('/maintenance')
+        }
+      }
+
       return Promise.reject(error)
     }
   )

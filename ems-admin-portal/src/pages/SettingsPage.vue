@@ -582,6 +582,7 @@ const settings = ref({
 
   backupFrequency: 'daily',
   dataRetentionMonths: 12,
+  maintenanceMode: false,
 
   // Access Control - New
   passwordMinLength: 8,

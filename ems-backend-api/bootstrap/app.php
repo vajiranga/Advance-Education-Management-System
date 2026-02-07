@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => \App\Http\Middleware\RoleMiddleware::class,
             'cache.response' => \App\Http\Middleware\CacheResponse::class,
             'api.rate.limit' => \App\Http\Middleware\ApiRateLimiter::class,
+            'maintenance' => \App\Http\Middleware\CheckMaintenanceMode::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

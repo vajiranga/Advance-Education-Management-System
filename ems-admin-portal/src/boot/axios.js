@@ -25,10 +25,27 @@ export default boot(({ app, store, router }) => {
     api.interceptors.response.use(
         response => response,
         error => {
+            // Handle 401 Unauthorized
             if (error.response && error.response.status === 401) {
                 authStore.logout()
                 router.push('/login')
             }
+
+            // Handle 503 Maintenance Mode
+            if (error.response && error.response.status === 503) {
+                const maintenanceMode = error.response.data?.maintenance_mode
+
+                if (maintenanceMode) {
+                    // Force logout
+                    authStore.logout()
+                    localStorage.removeItem('token')
+                    localStorage.removeItem('user')
+
+                    // Redirect to maintenance page
+                    router.push('/maintenance')
+                }
+            }
+
             return Promise.reject(error)
         }
     )

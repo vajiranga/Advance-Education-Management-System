@@ -18,6 +18,10 @@ const routes = [
     component: () => import('layouts/LoginLayout.vue')
   },
   {
+    path: '/maintenance',
+    component: () => import('pages/MaintenancePage.vue')
+  },
+  {
     path: '/student',
     component: () => import('layouts/MainLayout.vue'),
     meta: { role: 'student' },

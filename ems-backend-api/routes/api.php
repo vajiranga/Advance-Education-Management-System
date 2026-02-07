@@ -42,7 +42,7 @@ Route::prefix('v1')->group(function () {
     Route::get('settings/config', [App\Http\Controllers\Api\SystemSettingController::class, 'publicSettings']);
 
     // Authenticated Routes
-    Route::middleware('auth:sanctum')->group(function () {
+    Route::middleware(['auth:sanctum', 'maintenance'])->group(function () {
 
         // --- STUDENT ROUTES (Moved to Shared due to broad access needs) ---
         // Route::middleware('role:student')->group(function () { ... });

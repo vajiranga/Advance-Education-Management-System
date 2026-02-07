@@ -20,6 +20,10 @@ const routes = [
     component: () => import('layouts/LoginLayout.vue')
   },
   {
+    path: '/maintenance',
+    component: () => import('pages/MaintenancePage.vue')
+  },
+  {
     path: '/:catchAll(.*)*',
     component: () => import('pages/ErrorNotFound.vue')
   }

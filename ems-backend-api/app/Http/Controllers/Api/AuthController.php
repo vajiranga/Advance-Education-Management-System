@@ -14,6 +14,16 @@ class AuthController extends Controller
 {
     public function register(Request $request)
     {
+        // --- MAINTENANCE MODE CHECK ---
+        $maintenanceSetting = \App\Models\SystemSetting::where('key', 'maintenanceMode')->first();
+        if ($maintenanceSetting && ($maintenanceSetting->value === 'true' || $maintenanceSetting->value === '1' || $maintenanceSetting->value === 1 || $maintenanceSetting->value === true)) {
+             return response()->json([
+                 'message' => 'System is currently under maintenance. Please try again later.',
+                 'maintenance_mode' => true
+             ], 503);
+        }
+        // ------------------------------
+
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => $request->role === 'teacher' ? 'required|string|email|max:255|unique:users' : 'nullable|string|email|max:255|unique:users',
@@ -146,6 +156,18 @@ class AuthController extends Controller
             return response()->json(['message' => 'Invalid credentials provided.'], 401);
         }
 
+        // --- MAINTENANCE MODE CHECK ---
+        $maintenanceSetting = \App\Models\SystemSetting::where('key', 'maintenanceMode')->first();
+        $isMaintenanceMode = $maintenanceSetting && ($maintenanceSetting->value === 'true' || $maintenanceSetting->value === '1' || $maintenanceSetting->value === 1 || $maintenanceSetting->value === true);
+
+        if ($isMaintenanceMode && $user->role !== 'admin') {
+            return response()->json([
+                'message' => 'System is currently under maintenance. Please try again later.',
+                'maintenance_mode' => true
+            ], 503);
+        }
+        // ------------------------------
+
         \Illuminate\Support\Facades\Log::info('User found:', ['id' => $user->id, 'email' => $user->email, 'username' => $user->username]);
 
         if (!Hash::check($request->password, $user->password)) {
@@ -171,6 +193,16 @@ class AuthController extends Controller
 
     public function parentLogin(Request $request)
     {
+        // --- MAINTENANCE MODE CHECK ---
+        $maintenanceSetting = \App\Models\SystemSetting::where('key', 'maintenanceMode')->first();
+        if ($maintenanceSetting && ($maintenanceSetting->value === 'true' || $maintenanceSetting->value === '1' || $maintenanceSetting->value === 1 || $maintenanceSetting->value === true)) {
+             return response()->json([
+                 'message' => 'System is currently under maintenance. Please try again later.',
+                 'maintenance_mode' => true
+             ], 503);
+        }
+        // ------------------------------
+
         // NOTE: This endpoint expects 'phone' and 'student_id'.
         // If frontend uses Email/Password form, they should hits standard login() above.
 
