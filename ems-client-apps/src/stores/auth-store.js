@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { api } from 'boot/axios'
+import { api } from 'src/services/api'
 
 export const useAuthStore = defineStore('auth', {
     state: () => {
@@ -12,7 +12,7 @@ export const useAuthStore = defineStore('auth', {
             console.warn('Failed to parse auth_accounts, resetting...', e);
             localStorage.removeItem('auth_accounts');
         }
-        
+
         // SAFETY: Filter out bad data from local storage to prevent finding 'null' users later
         if (!Array.isArray(accounts)) accounts = [];
         accounts = accounts.filter(a => a && a.user && a.token);
@@ -65,7 +65,7 @@ export const useAuthStore = defineStore('auth', {
         // --- COMPATIBILITY METHODS ---
         // These bridge the gap between simple login calls and your multi-account system
         setToken(token) {
-            // We need a user object to add an account properly. 
+            // We need a user object to add an account properly.
             // If called in isolation, we might only check if current account needs update
             if (this.accounts[this.activeAccountIndex]) {
                 this.accounts[this.activeAccountIndex].token = token;
@@ -73,7 +73,7 @@ export const useAuthStore = defineStore('auth', {
                 this.setAxiosHeader();
             }
         },
-        
+
         setUser(user) {
              if (this.accounts[this.activeAccountIndex]) {
                 this.accounts[this.activeAccountIndex].user = user;
@@ -114,7 +114,7 @@ export const useAuthStore = defineStore('auth', {
 
             // FIX: Safely check existing accounts (check a.user exists)
             const existing = this.accounts.findIndex(a => a.user && a.user.id === user.id)
-            
+
             if (existing !== -1) {
                 this.accounts[existing] = { token, user }
                 this.activeAccountIndex = existing

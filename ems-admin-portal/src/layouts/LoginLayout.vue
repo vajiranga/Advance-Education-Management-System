@@ -8,7 +8,7 @@
         <div class="col-11 col-sm-8 col-md-6 col-lg-4">
           <q-card class="glass-panel q-pa-lg">
             <q-card-section class="text-center">
-              <div class="text-h4 text-primary text-weight-bold q-mb-xs">EMS Admin</div>
+              <div class="text-h4 text-primary text-weight-bold q-mb-xs">{{ settings.instituteName }}</div>
               <div class="text-caption text-grey-8">Secure Access Portal</div>
             </q-card-section>
 
@@ -64,6 +64,7 @@ import * as THREE from 'three'
 import NET from 'vanta/dist/vanta.net.min'
 
 import { useAuthStore } from 'stores/auth-store'
+import { useSettingsStore } from 'stores/settings-store'
 import { useQuasar } from 'quasar'
 
 const vantaRef = ref(null)
@@ -74,6 +75,7 @@ const password = ref('')
 const rememberMe = ref(false)
 const router = useRouter()
 const authStore = useAuthStore()
+const settings = useSettingsStore()
 const $q = useQuasar()
 
 onMounted(() => {

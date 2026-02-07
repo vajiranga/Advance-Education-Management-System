@@ -45,6 +45,8 @@ class SystemSettingController extends Controller
             'maintenanceMode',
             'allowParentLogin',
             'appName',
+            'instituteName',
+            'instituteLogo',
             'supportPhone'
         ];
 

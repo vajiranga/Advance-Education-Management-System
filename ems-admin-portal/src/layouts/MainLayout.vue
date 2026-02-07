@@ -6,7 +6,7 @@
 
         <q-toolbar-title class="text-weight-bold">
           <q-icon name="school" class="q-mr-sm" size="md" />
-          EMS Admin Portal
+          {{ settings.instituteName }}
         </q-toolbar-title>
 
         <div class="row q-gutter-sm items-center">
@@ -50,10 +50,13 @@
 
 <script setup>
 import { ref } from 'vue'
+import { useSettingsStore } from 'stores/settings-store'
 
 defineOptions({
   name: 'MainLayout',
 })
+
+const settings = useSettingsStore()
 
 const navigationLinks = [
   { title: 'Dashboard', icon: 'dashboard', path: '/dashboard' },

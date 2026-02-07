@@ -1,6 +1,6 @@
 <template>
   <q-page class="landing-page bg-dark text-white overflow-hidden">
-    
+
     <!-- Hero Section -->
     <section class="hero relative-position flex flex-center overflow-hidden">
       <!-- Three.js Background -->
@@ -10,43 +10,43 @@
         <q-chip color="primary" text-color="white" class="glass-chip q-mb-lg shine-effect" icon="verified">
            Since 1979 - The First & The Best
         </q-chip>
-        
+
         <h1 class="hero-title text-weight-bolder q-mb-md leading-tight">
           අනාගතය ගොඩදාගන්න <br>
           <span class="text-gradient">සුපිරිම තැන</span>
         </h1>
-        
+
         <div class="q-mb-xl relative-position inline-block">
            <h2 class="text-h2 text-weight-bolder q-my-none highlight-text leading-tight" style="font-size: 4rem;">
-              ගිරිඋල්ල <br class="lt-md"> <span class="text-gradient-gold bounce-text">විද්‍යානන්ද විද්‍යාපීඨය</span>
+              ගිරිඋල්ල <br class="lt-md"> <span class="text-gradient-gold bounce-text">{{ settingsStore.instituteName }}</span>
            </h2>
         </div>
 
         <p class="hero-subtitle text-grey-4 q-mb-xl q-mx-auto">
           ඔයාගේ අධ්‍යාපනය ඊළඟ මට්ටමට ගෙනියන්න අපි සූදානම්. <br> අදම අපත් සමඟ එකතු වන්න!
         </p>
-        
+
         <div class="row justify-center q-gutter-md">
-          <q-btn 
-            to="/register" 
+          <q-btn
+            to="/register"
             unelevated
             rounded
-            color="primary" 
-            size="lg" 
-            label="Register Now" 
-            no-caps 
+            color="primary"
+            size="lg"
+            label="Register Now"
+            no-caps
             icon-right="arrow_forward"
-            class="cta-btn shadow-20 glow-btn-pulse" 
+            class="cta-btn shadow-20 glow-btn-pulse"
           />
-          <q-btn 
+          <q-btn
             to="/login"
             outline
             rounded
-            color="white" 
-            size="lg" 
-            label="Login" 
-            no-caps 
-            class="cta-btn border-white-50 hover-glass" 
+            color="white"
+            size="lg"
+            label="Login"
+            no-caps
+            class="cta-btn border-white-50 hover-glass"
           />
         </div>
 
@@ -57,8 +57,8 @@
 
            <!-- Main Image Container -->
            <div class="hero-graphic relative-position z-10 floating-container">
-              <q-img 
-                 src="/images/dashboard-ui.png" 
+              <q-img
+                 src="/images/dashboard-ui.png"
                  class="rounded-borders shadow-24 border-glass"
                  style="max-width: 900px; width: 100%; border-radius: 24px;"
               >
@@ -66,7 +66,7 @@
                   <div class="absolute-top-left q-ma-md">
                      <div class="glass-chip row items-center q-pa-sm rounded-borders bg-dark text-white shadow-10" style="backdrop-filter: blur(10px);">
                         <q-icon name="verified" color="blue-4" size="sm" class="q-mr-sm" />
-                        <div class="text-weight-bold letter-spacing-1">VIDYANANDA PORTAL</div>
+                        <div class="text-weight-bold letter-spacing-1">{{ settingsStore.instituteName.toUpperCase() }} PORTAL</div>
                      </div>
                   </div>
 
@@ -103,7 +103,7 @@
              <h2 class="text-h3 text-weight-bold q-mb-md">ඇයි අපිව තෝරාගන්නේ?</h2>
              <p class="text-grey-5 font-size-18">ක්ලාස් එකට ගිහින් නිකන් ඉන්න නෙමෙයි, වැඩක් කරලා ගොඩ යන්න වරෙන්.</p>
           </div>
-          
+
           <div class="row q-col-gutter-lg">
              <div class="col-12 col-md-4" v-for="(feature, i) in features" :key="i">
                 <q-card class="feature-card glass-panel-light full-height text-center hover-lift">
@@ -134,16 +134,16 @@
               <div class="col-12 col-md-4 col-lg-3" v-for="subject in subjects" :key="subject.id">
                  <q-card class="subject-card glass-panel hover-border-gold transition-all duration-300 relative-position" style="min-height: 320px; display: flex; flex-direction: column;">
                     <div class="absolute-full bg-gradient-blue-vertical opacity-10"></div>
-                    
+
                     <!-- Header -->
                     <div class="q-py-lg full-width text-center relative-position z-10" style="border-bottom: 1px solid rgba(255, 255, 255, 0.05); background: rgba(0,0,0,0.2);">
                         <div class="text-h4 text-weight-bolder text-gradient-gold letter-spacing-wide">{{ subject.name }}</div>
                     </div>
-                    
+
                     <!-- Content -->
                     <q-card-section class="q-pa-lg relative-position z-10 full-width flex flex-center column col-grow">
                        <div class="text-subtitle1 text-grey-4 full-width row justify-center">
-                          <div class="column q-gutter-y-md text-left" style="min-width: 160px;"> 
+                          <div class="column q-gutter-y-md text-left" style="min-width: 160px;">
                               <div v-for="teacher in subject.teachers" :key="teacher" class="row items-center no-wrap teacher-row q-py-xs">
                                  <q-icon name="stars" size="18px" class="q-mr-md text-grey-7 transition-colors" />
                                  <span class="text-weight-medium text-body1">{{ teacher }}</span>
@@ -197,14 +197,14 @@
        </div>
     </section>
 
-    
+
     <!-- CTA Final -->
     <section class="q-py-xl">
        <div class="container">
           <div class="banner-cta rounded-xl q-pa-xl text-center relative-position overflow-hidden shadow-20">
              <!-- 3D Canvas Background -->
              <canvas ref="ctaCanvas" class="absolute-full full-width full-height bg-black" style="pointer-events: none;"></canvas>
-             
+
              <!-- Gradient Overlay -->
              <div class="absolute-full bg-gradient-overlay" style="z-index: 1; pointer-events: none;"></div>
 
@@ -216,16 +216,16 @@
                    <span class="text-primary text-weight-bold">හිත හිත ඉන්නෙ නැතුව</span>, අදම වැඩ පටන් ගන්න. <br>
                    <span class="text-gradient-gold text-weight-bold">The First & The Best.</span>
                 </p>
-                <q-btn 
-                   to="/register" 
-                   color="primary" 
-                   text-color="white" 
-                   size="xl" 
-                   rounded 
-                   label="Join Now" 
-                   no-caps 
+                <q-btn
+                   to="/register"
+                   color="primary"
+                   text-color="white"
+                   size="xl"
+                   rounded
+                   label="Join Now"
+                   no-caps
                    icon-right="rocket_launch"
-                   class="shadow-20 hover-lift glow-btn-pulse" 
+                   class="shadow-20 hover-lift glow-btn-pulse"
                    style="padding: 12px 48px; font-weight: 800; letter-spacing: 1px;"
                 />
              </div>
@@ -238,11 +238,13 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
+import { useSettingsStore } from 'stores/settings-store'
 import * as THREE from 'three'
 
 const slide = ref(1)
 const ctaCanvas = ref(null)
 const heroContainer = ref(null)
+const settingsStore = useSettingsStore()
 let animationId = null
 let heroAnimationId = null
 let renderer, scene, camera, particlesMesh
@@ -259,7 +261,7 @@ function onDocumentMouseMove(event) {
 // Hero 3D Animation (Three.js)
 function initHero3D() {
    if (!heroContainer.value) return
-   
+
    // Scene Setup
    scene = new THREE.Scene()
    // Fog for depth fading
@@ -277,17 +279,17 @@ function initHero3D() {
    const geometry = new THREE.BufferGeometry()
    const vertices = []
    const colors = []
-   
+
    const color1 = new THREE.Color(0x2563EB) // Blue
    const color2 = new THREE.Color(0xFFD700) // Gold
-   
+
    for (let i = 0; i < 2000; i++) {
         // Random Position
       const x = (Math.random() - 0.5) * 800
       const y = (Math.random() - 0.5) * 800
       const z = (Math.random() - 0.5) * 800
       vertices.push(x, y, z)
-      
+
       // Random Color (Mix Blue & Gold)
       const mixedColor = Math.random() > 0.5 ? color1 : color2
       colors.push(mixedColor.r, mixedColor.g, mixedColor.b)
@@ -296,8 +298,8 @@ function initHero3D() {
    geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3))
    geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3))
 
-   const material = new THREE.PointsMaterial({ 
-       size: 3, 
+   const material = new THREE.PointsMaterial({
+       size: 3,
        vertexColors: true,
        opacity: 0.8,
        transparent: true
@@ -312,21 +314,21 @@ function initHero3D() {
    // Animate
    const animateHero = () => {
       heroAnimationId = requestAnimationFrame(animateHero)
-      
+
       particlesMesh.rotation.x += 0.0005
       particlesMesh.rotation.y += 0.001
-      
+
       // Gentle Parallax
       camera.position.x += (mouseX * 0.1 - camera.position.x) * 0.05
       camera.position.y += (-mouseY * 0.1 - camera.position.y) * 0.05
-      
+
       camera.lookAt(scene.position)
 
       renderer.render(scene, camera)
    }
-   
+
    animateHero()
-   
+
    // Resize Handle
    window.addEventListener('resize', onWindowResize)
 }
@@ -343,11 +345,11 @@ function onWindowResize() {
 function init3DAnimation() {
   const canvas = ctaCanvas.value
   if (!canvas) return
-  
+
   const ctx = canvas.getContext('2d')
   let width = canvas.width = canvas.offsetWidth
   let height = canvas.height = canvas.offsetHeight
-  
+
   // Resize handler
   const resizeObserver = new ResizeObserver(() => {
      width = canvas.width = canvas.offsetWidth
@@ -368,7 +370,7 @@ function init3DAnimation() {
           this.vy = (Math.random() - 0.5) * 0.5
           this.size = Math.random() * 2 + 1
           // Randomly gold or blue
-          this.color = Math.random() > 0.5 ? 'rgba(37, 99, 235, ' : 'rgba(255, 215, 0, ' 
+          this.color = Math.random() > 0.5 ? 'rgba(37, 99, 235, ' : 'rgba(255, 215, 0, '
       }
 
       update() {
@@ -395,7 +397,7 @@ function init3DAnimation() {
 
   function animate() {
      ctx.clearRect(0, 0, width, height)
-     
+
      // Update and Draw Particles
      particles.forEach(p => {
          p.update()
@@ -420,10 +422,10 @@ function init3DAnimation() {
              }
          }
      }
-     
+
      animationId = requestAnimationFrame(animate)
   }
-  
+
   animate()
 }
 
@@ -441,86 +443,86 @@ onUnmounted(() => {
 
 
 const subjects = [
-   { 
-      id: 1, 
-      name: 'Mathematics', 
+   {
+      id: 1,
+      name: 'Mathematics',
       teachers: [
-         'රංජිත් ලන්සකාර', 
-         'දිනාල් වීරසිංහ', 
-         'සංජය සේනානායක', 
+         'රංජිත් ලන්සකාර',
+         'දිනාල් වීරසිංහ',
+         'සංජය සේනානායක',
          'සංජීව සඳරුවන්'
-      ], 
-      color: 'blue' 
+      ],
+      color: 'blue'
    },
-   { 
-      id: 2, 
-      name: 'Science', 
+   {
+      id: 2,
+      name: 'Science',
       teachers: [
-         'වර්ධන වීරසිංහ', 
-         'සෙනරත් ලංකාතිලක', 
+         'වර්ධන වීරසිංහ',
+         'සෙනරත් ලංකාතිලක',
          'ප්‍රභා තුෂාරි'
-      ], 
-      color: 'green' 
+      ],
+      color: 'green'
    },
-   { 
-      id: 3, 
-      name: 'English', 
+   {
+      id: 3,
+      name: 'English',
       teachers: [
-         'සඳරු විජේසිංහ', 
-         'ජගත් සී. ජයසිංහ', 
+         'සඳරු විජේසිංහ',
+         'ජගත් සී. ජයසිංහ',
          'දීපා හේමමාලි',
          'චමිලා ඉලංකෝන්'
-      ], 
-      color: 'purple' 
+      ],
+      color: 'purple'
    },
-   { 
-      id: 4, 
-      name: 'Commerce', 
-      teachers: ['ජනක ප්‍රියදර්ශන'], 
-      color: 'orange' 
+   {
+      id: 4,
+      name: 'Commerce',
+      teachers: ['ජනක ප්‍රියදර්ශන'],
+      color: 'orange'
    },
-   { 
-      id: 5, 
-      name: 'Sinhala', 
-      teachers: ['ජගත් රත්නසිරි'], 
-      color: 'red' 
+   {
+      id: 5,
+      name: 'Sinhala',
+      teachers: ['ජගත් රත්නසිරි'],
+      color: 'red'
    },
-   { 
-      id: 6, 
-      name: 'History', 
-      teachers: ['සඳුන් ශ්‍රී අධිකාරි'], 
-      color: 'brown' 
+   {
+      id: 6,
+      name: 'History',
+      teachers: ['සඳුන් ශ්‍රී අධිකාරි'],
+      color: 'brown'
    },
-   { 
-      id: 7, 
-      name: 'Tamil', 
-      teachers: ['නිරෝෂණී බණ්ඩාර'], 
-      color: 'teal' 
+   {
+      id: 7,
+      name: 'Tamil',
+      teachers: ['නිරෝෂණී බණ්ඩාර'],
+      color: 'teal'
    },
-   { 
-      id: 8, 
-      name: 'Music', 
-      teachers: ['ඩිලානි අයේෂා'], 
-      color: 'pink' 
+   {
+      id: 8,
+      name: 'Music',
+      teachers: ['ඩිලානි අයේෂා'],
+      color: 'pink'
    }
 ]
 
 const features = [
-  { 
-     title: 'Expert Teachers', 
-     copy: 'ගණිතය, විද්‍යාව, ඉංග්‍රීසි... විෂයන් ඕන එකකට හොඳම ගුරුවරුන් සමඟ.', 
+  {
+     title: 'Expert Teachers',
+     copy: 'ගණිතය, විද්‍යාව, ඉංග්‍රීසි... විෂයන් ඕන එකකට හොඳම ගුරුවරුන් සමඟ.',
      icon: 'school',
      color: 'blue'
   },
-  { 
-     title: 'Modern Facilities', 
-     copy: 'වායු සමීකරණය කරන ලද පන්ති කාමර (AC), සුව පහසු ආසන සමඟ හොඳම තැන.', 
+  {
+     title: 'Modern Facilities',
+     copy: 'වායු සමීකරණය කරන ලද පන්ති කාමර (AC), සුව පහසු ආසන සමඟ හොඳම තැන.',
      icon: 'chair',
      color: 'purple'
   },
-  { 
-     title: 'Smart Student Portal', 
-     copy: 'පැමිණීම, පන්ති ගාස්තු සහ විභාග ලකුණු දෙමාපියන්ට ගෙදර ඉඳන්ම බලාගන්න පුළුවන් System එකක් සමඟ තවත් පහසුකම් රැසක්.', 
+  {
+     title: 'Smart Student Portal',
+     copy: 'පැමිණීම, පන්ති ගාස්තු සහ විභාග ලකුණු දෙමාපියන්ට ගෙදර ඉඳන්ම බලාගන්න පුළුවන් System එකක් සමඟ තවත් පහසුකම් රැසක්.',
      icon: 'smartphone',
      color: 'green'
   }

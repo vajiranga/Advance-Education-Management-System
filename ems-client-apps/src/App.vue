@@ -7,10 +7,14 @@ import { useAuthStore } from 'stores/auth-store'
 import { useQuasar } from 'quasar'
 import { onMounted, watch } from 'vue'
 
+import { useSettingsStore } from 'stores/settings-store'
+
 const authStore = useAuthStore()
+const settingsStore = useSettingsStore()
 const $q = useQuasar()
 
 authStore.init()
+settingsStore.fetchPublicSettings()
 
 // Theme Persistence Logic
 onMounted(() => {

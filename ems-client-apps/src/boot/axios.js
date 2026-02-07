@@ -1,16 +1,7 @@
 import { boot } from 'quasar/wrappers'
 import axios from 'axios'
 import { useAuthStore } from 'stores/auth-store'
-
-// NOTE: Changed baseURL to /api because Auth routes are at root /api, not inside v1
-const api = axios.create({
-  baseURL: 'http://localhost:8000/api',
-  headers: {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json'
-  },
-  withCredentials: true
-})
+import { api } from 'src/services/api'
 
 // Request Interceptor: Attach Token & Handle Versioning
 api.interceptors.request.use((config) => {

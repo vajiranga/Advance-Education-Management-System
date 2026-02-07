@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { api } from 'boot/axios'
+import { api } from 'src/services/api'
 import { date } from 'quasar'
 
 export const useNotificationStore = defineStore('notification', () => {

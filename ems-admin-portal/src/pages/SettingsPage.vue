@@ -25,7 +25,13 @@
 
       <q-separator />
 
-      <q-tab-panels v-model="activeTab" animated>
+      <!-- Loading State -->
+      <div v-if="loadingSettings" class="q-pa-xl text-center">
+        <q-spinner-dots size="50px" color="primary" />
+        <div class="q-mt-md text-grey-7">Loading settings...</div>
+      </div>
+
+      <q-tab-panels v-else v-model="activeTab" animated>
         <!-- General Tab -->
         <q-tab-panel name="general">
           <div class="text-h6 q-mb-md">Institute Profile</div>
@@ -544,29 +550,32 @@ import { ref, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
 import { api } from 'boot/axios'
 import { useRouter } from 'vue-router'
+import { useSettingsStore } from 'stores/settings-store'
 
 const $q = useQuasar()
 const router = useRouter()
+const settingsStore = useSettingsStore()
 const activeTab = ref('general')
 const loadingProfile = ref(false)
+const loadingSettings = ref(true) // Add loading state for settings
 
-// Institute Settings (Mock Data / To be connected to backend later if needed)
+// Institute Settings - Initialize with empty values, will be loaded from API
 const settings = ref({
-  instituteName: 'Royal College of Education',
-  registrationNo: 'REG-2026-001',
-  address: 'No 123, Main Street, Colombo',
-  contactPhone: '+94 11 234 5678',
-  contactEmail: 'admin@royalcollege.lk',
-  onlinePayments: true,
+  instituteName: '',
+  registrationNo: '',
+  address: '',
+  contactPhone: '',
+  contactEmail: '',
+  onlinePayments: false,
   smsAlerts: false,
-  guestAccess: true,
+  guestAccess: false,
   // System Controls
   blockTeacherRegistration: false,
   autoApproveClasses: false,
   autoApproveExtraClasses: false,
   // Teacher Financial Settings
-  teacherFeeDeductionPercentage: 10,
-  automationSettlementDate: 10,
+  teacherFeeDeductionPercentage: 0,
+  automationSettlementDate: 0,
 
   // General - New
   instituteLogo: null,
@@ -669,6 +678,8 @@ onMounted(async () => {
         }
     } catch (e) {
         console.error('Failed to fetch settings', e)
+    } finally {
+        loadingSettings.value = false // Always set loading to false after attempt
     }
 })
 
@@ -677,6 +688,21 @@ const saveSettings = async () => {
   $q.loading.show({ message: 'Saving Settings...' })
   try {
       await api.post('/v1/admin/settings', settings.value)
+
+      // Update the settings store to reflect changes immediately
+      if (settings.value.instituteName) {
+          settingsStore.instituteName = settings.value.instituteName
+          localStorage.setItem('instituteName', settings.value.instituteName)
+      }
+      if (settings.value.appName) {
+          settingsStore.appName = settings.value.appName
+          localStorage.setItem('appName', settings.value.appName)
+      }
+      if (settings.value.instituteLogo) {
+          settingsStore.instituteLogo = settings.value.instituteLogo
+          localStorage.setItem('instituteLogo', settings.value.instituteLogo)
+      }
+
       $q.notify({ type: 'positive', message: 'Settings saved successfully!' })
   } catch (e) {
       console.error(e)

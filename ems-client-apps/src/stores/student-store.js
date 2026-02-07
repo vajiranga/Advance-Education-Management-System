@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { api } from 'boot/axios'
+import { api } from 'src/services/api'
 
 export const useStudentStore = defineStore('student', () => {
     const myCourses = ref([])

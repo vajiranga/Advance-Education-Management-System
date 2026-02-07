@@ -9,7 +9,7 @@
 
         <q-toolbar-title class="text-weight-bold row items-center">
           <q-icon name="family_restroom" size="md" class="q-mr-sm" />
-          <span>EMS</span>
+          <span>{{ settingsStore.instituteName }}</span>
           <span
             class="q-ml-sm text-subtitle2"
             :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey-7'"
@@ -157,7 +157,7 @@
             class="text-h6 text-weight-bold"
             :class="$q.dark.isActive ? 'text-white' : 'text-primary'"
           >
-            EMS Portal
+            {{ settingsStore.instituteName }}
           </div>
         </div>
         <div
@@ -304,6 +304,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useAuthStore } from 'stores/auth-store'
 import { useNotificationStore } from 'stores/notification-store'
+import { useSettingsStore } from 'stores/settings-store'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { storeToRefs } from 'pinia'
@@ -312,6 +313,7 @@ const leftDrawerOpen = ref(false)
 const $q = useQuasar()
 const authStore = useAuthStore()
 const notificationStore = useNotificationStore()
+const settingsStore = useSettingsStore()
 const { notifications } = storeToRefs(notificationStore)
 const route = useRoute()
 const router = useRouter()

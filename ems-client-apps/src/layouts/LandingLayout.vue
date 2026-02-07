@@ -8,8 +8,8 @@
              <q-icon name="public" size="40px" color="primary" />
           </q-avatar>
           <div class="column items-start">
-             <div class="text-h6 text-weight-bolder leading-none text-uppercase tracking-wide" style="font-size: 1.25rem;">විද්‍යානන්ද</div>
-             <div class="text-caption text-primary text-weight-bold" style="font-size: 0.8rem; letter-spacing: 1px;">විද්‍යාපීඨය</div>
+             <div class="text-h6 text-weight-bolder leading-none text-uppercase tracking-wide" style="font-size: 1.25rem;">{{ settingsStore.instituteName }}</div>
+             <div class="text-caption text-primary text-weight-bold" style="font-size: 0.8rem; letter-spacing: 1px;">Home</div>
           </div>
         </q-btn>
 
@@ -53,7 +53,7 @@
              <div class="col-12 col-md-4">
                 <div class="row items-center q-mb-md">
                    <q-icon name="public" size="md" class="q-mr-sm text-primary" />
-                   <div class="text-h5 text-weight-bolder">විද්‍යානන්ද විද්‍යාපීඨය</div>
+                   <div class="text-h5 text-weight-bolder">{{ settingsStore.instituteName }}</div>
                 </div>
                 <p class="text-grey-5 leading-relaxed">
                    The First & The Best. <br>
@@ -66,7 +66,7 @@
                    <q-btn round color="light-blue" icon="telegram" size="sm" />
                 </div>
              </div>
-             
+
              <div class="col-6 col-md-2">
                 <div class="text-subtitle1 text-weight-bold q-mb-md text-primary">Links</div>
                 <div class="column q-gutter-sm text-grey-5">
@@ -76,7 +76,7 @@
                    <a href="/login" class="no-decoration text-grey-5 hover-text-primary">Student Login</a>
                 </div>
              </div>
-             
+
              <div class="col-6 col-md-2">
                 <div class="text-subtitle1 text-weight-bold q-mb-md text-primary">Subjects</div>
                 <div class="column q-gutter-sm text-grey-5">
@@ -106,11 +106,11 @@
                 </div>
              </div>
           </div>
-          
+
           <q-separator dark class="q-my-xl bg-grey-9" />
-          
+
           <div class="text-center text-grey-7 text-caption">
-             &copy; 2026 විද්‍යානන්ද විද්‍යාපීඨය. සියලු හිමිකම් ඇවිරිණි. <br>
+             &copy; 2026 {{ settingsStore.instituteName }}. All Rights Reserved. <br>
              අධ්‍යාපනයේ උන්නතිය වෙනුවෙන් නිර්මාණය කරන ලදී. ❤️
           </div>
        </div>
@@ -120,8 +120,10 @@
 
 <script setup>
 import { ref } from 'vue'
+import { useSettingsStore } from 'stores/settings-store'
 
 const leftDrawerOpen = ref(false)
+const settingsStore = useSettingsStore()
 
 function toggleLeftDrawer() {
   leftDrawerOpen.value = !leftDrawerOpen.value
