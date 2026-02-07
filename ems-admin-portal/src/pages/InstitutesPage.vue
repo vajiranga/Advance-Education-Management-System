@@ -226,12 +226,26 @@ import { date, useQuasar } from 'quasar'
 import { useCourseStore } from 'stores/course-store'
 import { useHallStore } from 'stores/hall-store'
 import { storeToRefs } from 'pinia'
+import { api } from 'src/services/api'
 
 const $q = useQuasar()
 const courseStore = useCourseStore()
 const hallStore = useHallStore()
 const { halls } = storeToRefs(hallStore)
 const { courses } = storeToRefs(courseStore)
+
+const systemSettings = ref({})
+
+const fetchSettings = async () => {
+  try {
+    const response = await api.get('/v1/admin/settings')
+    systemSettings.value = response.data
+    console.log('✅ Settings loaded:', systemSettings.value)
+    console.log('📊 maxStudentsPerClass:', systemSettings.value.maxStudentsPerClass)
+  } catch (error) {
+    console.error('❌ Failed to fetch settings:', error)
+  }
+}
 
 const showScheduleDialog = ref(false)
 const selectedHall = ref(null)
@@ -334,7 +348,11 @@ const form = ref({
 
 function openAddDialog() {
   isEditMode.value = false
-  form.value = { name: '', hall_number: '', floor: '', capacity: 50, has_ac: false }
+  const defaultCapacity = systemSettings.value.maxStudentsPerClass ? parseInt(systemSettings.value.maxStudentsPerClass) : 50
+  console.log('🏛️ Opening Add Hall Dialog')
+  console.log('📦 systemSettings.value:', systemSettings.value)
+  console.log('🔢 defaultCapacity calculated:', defaultCapacity)
+  form.value = { name: '', hall_number: '', floor: '', capacity: defaultCapacity, has_ac: false }
   showAddDialog.value = true
 }
 
@@ -405,7 +423,8 @@ function deleteHall(hall) {
 onMounted(async () => {
   await Promise.all([
     hallStore.fetchHalls(),
-    courseStore.fetchCourses(), // Need courses to check occupancy
+    courseStore.fetchCourses(),
+    fetchSettings()
   ])
   checkAvailability() // Run initial check
 })

@@ -90,6 +90,7 @@
             <div class="col-12 col-md-6">
                <q-input v-model="settings.workingHoursEnd" type="time" label="Work End Time" outlined stack-label />
             </div>
+
           </div>
         </q-tab-panel>
 
@@ -120,7 +121,16 @@
                  <q-toggle color="green" v-model="settings.autoApproveClasses" />
                </q-item-section>
              </q-item>
-
+              <!-- Mobile App Notifications -->
+              <q-item tag="label" v-ripple>
+                <q-item-section>
+                  <q-item-label>Mobile App Notifications</q-item-label>
+                  <q-item-label caption>Master toggle for Student, Teacher & Parent Apps. Turn ON to ENABLE notifications.</q-item-label>
+                </q-item-section>
+                <q-item-section side>
+                  <q-toggle color="purple" v-model="settings.enableAppNotifications" />
+                </q-item-section>
+              </q-item>
              <!-- Auto Approve Extra Classes -->
              <q-item tag="label" v-ripple>
                <q-item-section>
@@ -208,19 +218,6 @@
                                          <q-input v-model="settings.studentIdPrefix" dense outlined style="width: 80px" label="Ex: STU" />
                                      </q-item-section>
                                  </q-item>
-                                 <q-separator spaced />
-                                 <q-item tag="label" v-ripple>
-                                     <q-item-section>
-                                         <q-item-label>Allow Self-Registration</q-item-label>
-                                     </q-item-section>
-                                     <q-item-section side><q-toggle v-model="settings.selfRegistration" /></q-item-section>
-                                 </q-item>
-                                 <q-item tag="label" v-ripple>
-                                     <q-item-section>
-                                         <q-item-label>Auto-Approve Enrollment</q-item-label>
-                                     </q-item-section>
-                                     <q-item-section side><q-toggle v-model="settings.autoEnrollment" /></q-item-section>
-                                 </q-item>
                              </q-list>
                         </q-card-section>
                     </q-card>
@@ -268,33 +265,6 @@
                                          <q-item-label>Accept Partial Payments</q-item-label>
                                      </q-item-section>
                                      <q-item-section side><q-toggle v-model="settings.partialPayments" /></q-item-section>
-                                 </q-item>
-                             </q-list>
-                        </q-card-section>
-                    </q-card>
-                </div>
-
-                <!-- Notification Controls -->
-                <div class="col-12 col-md-6">
-                    <q-card class="full-height">
-                        <q-card-section>
-                            <div class="text-subtitle1 text-weight-bold">Notifications</div>
-                             <q-list dense>
-                                 <q-item tag="label" v-ripple class="bg-grey-2">
-                                     <q-item-section>
-                                         <q-item-label class="text-weight-bold">Mobile App Notifications</q-item-label>
-                                         <q-item-label caption>Master toggle for Student, Teacher & Parent Apps</q-item-label>
-                                     </q-item-section>
-                                     <q-item-section side><q-toggle color="purple" v-model="settings.appNotifications" /></q-item-section>
-                                 </q-item>
-                                 <q-separator spaced />
-                                 <q-item tag="label" v-ripple>
-                                     <q-item-section><q-item-label>Email Notifications</q-item-label></q-item-section>
-                                     <q-item-section side><q-toggle v-model="settings.emailNotifications" /></q-item-section>
-                                 </q-item>
-                                 <q-item tag="label" v-ripple>
-                                     <q-item-section><q-item-label>WhatsApp Notifications</q-item-label></q-item-section>
-                                     <q-item-section side><q-toggle v-model="settings.whatsappNotifications" /></q-item-section>
                                  </q-item>
                              </q-list>
                         </q-card-section>
@@ -603,10 +573,7 @@ const settings = ref({
   paymentGateway: false,
   partialPayments: true,
 
-  emailNotifications: true,
-  whatsappNotifications: false,
-  notificationFrequency: 'immediate',
-  appNotifications: true, // Master toggle
+
 
   minAttendancePercent: 80,
   autoMarkAbsentMinutes: 30,
