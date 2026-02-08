@@ -6,6 +6,7 @@ export const useSettingsStore = defineStore('settings', {
     instituteName: localStorage.getItem('instituteName') || '',
     appName: localStorage.getItem('appName') || '',
     instituteLogo: localStorage.getItem('instituteLogo') || null,
+    logoUrl: localStorage.getItem('logoUrl') || '',
     loading: false
   }),
 
@@ -26,6 +27,10 @@ export const useSettingsStore = defineStore('settings', {
           if (response.data.instituteLogo) {
             this.instituteLogo = response.data.instituteLogo
             localStorage.setItem('instituteLogo', this.instituteLogo)
+          }
+          if (response.data.logoUrl) {
+            this.logoUrl = response.data.logoUrl
+            localStorage.setItem('logoUrl', this.logoUrl)
           }
         }
       } catch (error) {

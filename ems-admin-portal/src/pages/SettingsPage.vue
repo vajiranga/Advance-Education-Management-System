@@ -35,6 +35,65 @@
         <!-- General Tab -->
         <q-tab-panel name="general">
           <div class="text-h6 q-mb-md">Institute Profile</div>
+
+          <!-- Logo Upload Section -->
+          <div class="row q-col-gutter-md q-mb-lg">
+            <div class="col-12">
+              <q-card flat bordered>
+                <q-card-section>
+                  <div class="text-subtitle2 q-mb-md">Institute Logo</div>
+                  <div class="row items-center q-col-gutter-md">
+                    <!-- Logo Preview -->
+                    <div class="col-12 col-md-3 text-center">
+                      <div class="q-pa-md bg-grey-2 rounded-borders" style="min-height: 150px; display: flex; align-items: center; justify-content: center;">
+                        <img
+                          v-if="settings.logoUrl"
+                          :src="settings.logoUrl"
+                          alt="Institute Logo"
+                          style="max-width: 100%; max-height: 150px; object-fit: contain;"
+                        />
+                        <q-icon v-else name="business" size="80px" color="grey-5" />
+                      </div>
+                    </div>
+
+                    <!-- Upload Controls -->
+                    <div class="col-12 col-md-9">
+                      <div class="text-caption text-grey-7 q-mb-sm">
+                        Upload your institute logo. This will be displayed in the header, reports, and certificates.
+                      </div>
+                      <div class="text-caption text-grey-7 q-mb-md">
+                        Recommended: PNG or SVG format, transparent background, minimum 200x200px
+                      </div>
+                      <div class="row q-gutter-sm">
+                        <q-btn
+                          color="primary"
+                          icon="upload"
+                          label="Upload Logo"
+                          @click="$refs.logoInput.click()"
+                        />
+                        <q-btn
+                          v-if="settings.logoUrl"
+                          flat
+                          color="negative"
+                          icon="delete"
+                          label="Remove Logo"
+                          @click="removeLogo"
+                        />
+                      </div>
+                      <input
+                        ref="logoInput"
+                        type="file"
+                        accept="image/*"
+                        style="display: none"
+                        @change="handleLogoUpload"
+                      />
+                    </div>
+                  </div>
+                </q-card-section>
+              </q-card>
+            </div>
+          </div>
+
           <div class="row q-col-gutter-md">
             <div class="col-12 col-md-6">
               <q-input v-model="settings.instituteName" label="Institute Name" outlined />
@@ -773,7 +832,7 @@ const settings = ref({
   automationSettlementDate: 0,
 
   // General - New
-  instituteLogo: null,
+  instituteLogo: null, // This is likely replaced by logoUrl
   websiteUrl: '',
   establishedYear: '',
   taxNumber: '',
@@ -833,6 +892,70 @@ const settings = ref({
   userConsent: true,
   disableReportExport: false
 })
+
+// Logo Upload Functions
+const logoInput = ref(null)
+
+const handleLogoUpload = async (event) => {
+  const file = event.target.files[0]
+  if (!file) return
+
+  // Validate file type
+  if (!file.type.startsWith('image/')) {
+    $q.notify({ type: 'negative', message: 'Please select an image file' })
+    return
+  }
+
+  // Validate file size (max 2MB)
+  if (file.size > 2 * 1024 * 1024) {
+    $q.notify({ type: 'negative', message: 'Image size must be less than 2MB' })
+    return
+  }
+
+  try {
+    const formData = new FormData()
+    formData.append('logo', file)
+
+    const res = await api.post('/v1/admin/settings/upload-logo', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+
+    if (res.data && res.data.logoUrl) {
+      settings.value.logoUrl = res.data.logoUrl
+
+      // Update settings store to show logo immediately
+      settingsStore.logoUrl = res.data.logoUrl
+      localStorage.setItem('logoUrl', res.data.logoUrl)
+
+      $q.notify({ type: 'positive', message: 'Logo uploaded successfully' })
+    }
+  } catch (error) {
+    console.error('Logo upload error:', error)
+    $q.notify({
+      type: 'negative',
+      message: error.response?.data?.message || 'Failed to upload logo'
+    })
+  }
+}
+
+const removeLogo = async () => {
+  try {
+    await api.delete('/v1/admin/settings/remove-logo')
+    settings.value.logoUrl = ''
+
+    // Update settings store to remove logo immediately
+    settingsStore.logoUrl = ''
+    localStorage.removeItem('logoUrl')
+
+    $q.notify({ type: 'positive', message: 'Logo removed successfully' })
+  } catch (error) {
+    console.error('Logo removal error:', error)
+    $q.notify({
+      type: 'negative',
+      message: error.response?.data?.message || 'Failed to remove logo'
+    })
+  }
+}
 
 // Admin Profile State
 const adminProfile = ref({

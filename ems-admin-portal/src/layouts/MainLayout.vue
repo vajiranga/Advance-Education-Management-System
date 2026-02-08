@@ -4,8 +4,15 @@
       <q-toolbar>
         <q-btn flat dense round icon="menu" aria-label="Menu" @click="toggleLeftDrawer" />
 
-        <q-toolbar-title class="text-weight-bold">
-          <q-icon name="school" class="q-mr-sm" size="md" />
+        <q-toolbar-title class="text-weight-bold row items-center">
+          <!-- Institute Logo -->
+          <img
+            v-if="settings.logoUrl"
+            :src="settings.logoUrl"
+            alt="Institute Logo"
+            style="height: 40px; width: auto; object-fit: contain; margin-right: 12px;"
+          />
+          <q-icon v-else name="school" class="q-mr-sm" size="md" />
           {{ settings.instituteName }}
         </q-toolbar-title>
 
@@ -27,6 +34,20 @@
     </q-header>
 
     <q-drawer v-model="leftDrawerOpen" show-if-above bordered class="bg-grey-1">
+      <!-- Institute Logo Section -->
+      <div class="q-pa-md text-center bg-white">
+        <img
+          v-if="settings.logoUrl"
+          :src="settings.logoUrl"
+          alt="Institute Logo"
+          style="max-width: 120px; max-height: 80px; object-fit: contain;"
+        />
+        <q-icon v-else name="business" size="60px" color="primary" />
+      </div>
+
+      <q-separator />
+
+      <!-- User Info Section -->
       <div class="q-pa-md text-center">
         <div class="text-h6 text-primary">{{ userDisplayName }}</div>
         <div class="text-caption text-grey">{{ userPermissionStatus }}</div>

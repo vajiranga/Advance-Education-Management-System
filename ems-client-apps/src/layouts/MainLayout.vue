@@ -5,7 +5,14 @@
         <q-btn flat dense round icon="menu" aria-label="Menu" @click="toggleLeftDrawer" />
 
         <q-toolbar-title class="text-weight-bold row items-center">
-          <q-icon name="school" size="md" class="q-mr-sm" />
+          <!-- Institute Logo -->
+          <img
+            v-if="settingsStore.logoUrl"
+            :src="settingsStore.logoUrl"
+            alt="Institute Logo"
+            style="height: 36px; width: auto; object-fit: contain; margin-right: 12px;"
+          />
+          <q-icon v-else name="school" size="md" class="q-mr-sm" />
           <span>{{ settingsStore.instituteName }}</span>
           <span class="q-ml-sm text-subtitle2" :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey-7'">
             Student Portal
@@ -128,12 +135,24 @@
       bordered
       :class="$q.dark.isActive ? 'bg-dark' : 'bg-white'"
     >
+      <!-- Institute Logo Section -->
+      <div class="q-pa-md text-center" :class="$q.dark.isActive ? 'bg-grey-9' : 'bg-white'">
+        <img
+          v-if="settingsStore.logoUrl"
+          :src="settingsStore.logoUrl"
+          alt="Institute Logo"
+          style="max-width: 100px; max-height: 70px; object-fit: contain;"
+        />
+        <q-icon v-else name="school" size="60px" :color="$q.dark.isActive ? 'white' : 'primary'" />
+      </div>
+      <q-separator :class="$q.dark.isActive ? 'bg-grey-8' : ''" />
+
+      <!-- Institute Info -->
       <div class="q-pa-lg">
-         <div class="row items-center">
-            <q-icon name="school" size="sm" class="q-mr-sm" :color="$q.dark.isActive ? 'white' : 'primary'" />
-            <div class="text-h6 text-weight-bold" :class="$q.dark.isActive ? 'text-white' : 'text-primary'">{{ settingsStore.instituteName }}</div>
+         <div class="row items-center justify-center">
+            <div class="text-h6 text-weight-bold text-center" :class="$q.dark.isActive ? 'text-white' : 'text-primary'">{{ settingsStore.instituteName }}</div>
          </div>
-         <div class="text-caption q-ml-none" :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey-7'">Student Dashboard</div>
+         <div class="text-caption text-center" :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey-7'">Student Dashboard</div>
       </div>
       <q-separator :class="$q.dark.isActive ? 'bg-grey-8' : ''" />
       <q-list class="q-mt-md">

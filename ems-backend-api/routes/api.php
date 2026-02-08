@@ -117,6 +117,10 @@ Route::prefix('v1')->group(function () {
              Route::get('admin/dashboard/pending', [App\Http\Controllers\Api\V1\DashboardController::class, 'getPendingActions']);
              Route::get('admin/classes/today', [CourseController::class, 'getTodayClasses']);
 
+             // Settings - Logo Upload
+             Route::post('admin/settings/upload-logo', [App\Http\Controllers\Api\V1\SettingsController::class, 'uploadLogo']);
+             Route::delete('admin/settings/remove-logo', [App\Http\Controllers\Api\V1\SettingsController::class, 'removeLogo']);
+
              // Admin can likely access almost everything else too
              Route::post('admin/verify-password', [App\Http\Controllers\Api\AdminController::class, 'verifySuperAdmin']);
              Route::get('admin/admins', [App\Http\Controllers\Api\AdminController::class, 'index']);
