@@ -35,9 +35,9 @@ class PaymentController extends Controller
     {
         $user = $request->user();
 
-        // If parent, get children's fees?
-        // For now, assuming this endpoint is for Student to see their own dues.
-        // Parent logic will be separate or handled via 'child_id' param if needed.
+        $settings = \App\Models\SystemSetting::whereIn('key', ['lateFeePenalty', 'gracePeriodDays'])->pluck('value', 'key');
+        $lateFeePenalty = (float)($settings['lateFeePenalty'] ?? 0);
+        $gracePeriodDays = (int)($settings['gracePeriodDays'] ?? 0);
 
         $fees = \App\Models\StudentFee::where('student_id', $user->id)
             ->where('status', 'pending')
@@ -51,13 +51,16 @@ class PaymentController extends Controller
             ->with(['course.subject'])
             ->orderBy('month', 'desc')
             ->get()
-            ->map(function($fee) {
+            ->map(function($fee) use ($lateFeePenalty, $gracePeriodDays) {
+                $lateFee = $this->calculateLateFee($fee, $lateFeePenalty, $gracePeriodDays);
                 return [
                     'id' => $fee->id, // fee_id
                     'course_id' => $fee->course_id,
                     'course_name' => $fee->course->name ?? 'Unknown',
                     'subject' => $fee->course->subject->name ?? 'Subject',
-                    'amount' => $fee->amount,
+                    'amount' => $fee->amount + $lateFee,
+                    'original_amount' => $fee->amount,
+                    'late_fee' => $lateFee,
                     'month' => Carbon::createFromFormat('Y-m', $fee->month)->format('F Y'), // 2026-01 -> January 2026
                     'due_date' => $fee->due_date,
                     'is_overdue' => Carbon::now()->gt(Carbon::parse($fee->due_date))
@@ -285,6 +288,10 @@ class PaymentController extends Controller
     {
         $user = $request->user();
 
+        $settings = \App\Models\SystemSetting::whereIn('key', ['lateFeePenalty', 'gracePeriodDays'])->pluck('value', 'key');
+        $lateFeePenalty = (float)($settings['lateFeePenalty'] ?? 0);
+        $gracePeriodDays = (int)($settings['gracePeriodDays'] ?? 0);
+
         $childrenIds = \App\Models\User::where(function($query) use ($user) {
                 if (!empty($user->email)) $query->where('parent_email', $user->email);
                 $query->orWhere('parent_id', $user->id);
@@ -304,12 +311,15 @@ class PaymentController extends Controller
             ->with(['student', 'course'])
             ->orderBy('due_date', 'asc')
             ->get()
-            ->map(function($fee) {
+            ->map(function($fee) use ($lateFeePenalty, $gracePeriodDays) {
+                $lateFee = $this->calculateLateFee($fee, $lateFeePenalty, $gracePeriodDays);
                 return [
                     'id' => $fee->id,
                     'student_name' => $fee->student->name,
                     'course_name' => $fee->course->name ?? 'Unknown',
-                    'amount' => $fee->amount,
+                    'amount' => $fee->amount + $lateFee,
+                    'original_amount' => $fee->amount,
+                    'late_fee' => $lateFee,
                     'month_label' => Carbon::createFromFormat('Y-m', $fee->month)->format('F Y'),
                     'due_date' => $fee->due_date,
                     'is_overdue' => Carbon::now()->gt(Carbon::parse($fee->due_date))
@@ -324,6 +334,10 @@ class PaymentController extends Controller
      */
     public function getChildDueFees(Request $request, $id) {
         $user = $request->user();
+
+        $settings = \App\Models\SystemSetting::whereIn('key', ['lateFeePenalty', 'gracePeriodDays'])->pluck('value', 'key');
+        $lateFeePenalty = (float)($settings['lateFeePenalty'] ?? 0);
+        $gracePeriodDays = (int)($settings['gracePeriodDays'] ?? 0);
 
         // Validation: Ensure child belongs to parent
         $isChild = \App\Models\User::where('id', $id)
@@ -348,13 +362,16 @@ class PaymentController extends Controller
             ->with(['course.subject'])
             ->orderBy('month', 'desc')
             ->get()
-            ->map(function($fee) {
+            ->map(function($fee) use ($lateFeePenalty, $gracePeriodDays) {
+                $lateFee = $this->calculateLateFee($fee, $lateFeePenalty, $gracePeriodDays);
                 return [
                     'id' => $fee->id,
                     'course_id' => $fee->course_id,
                     'course_name' => $fee->course->name ?? 'Unknown',
                     'subject' => $fee->course->subject->name ?? 'Subject',
-                    'amount' => $fee->amount,
+                    'amount' => $fee->amount + $lateFee,
+                    'original_amount' => $fee->amount,
+                    'late_fee' => $lateFee,
                     'month' => Carbon::createFromFormat('Y-m', $fee->month)->format('F Y'),
                     'due_date' => $fee->due_date,
                     'is_overdue' => Carbon::now()->gt(Carbon::parse($fee->due_date))
@@ -854,5 +871,28 @@ class PaymentController extends Controller
         }
 
         return response()->json($result);
+    }
+    private function calculateLateFee($fee, $lateFeePenalty, $gracePeriodDays)
+    {
+        if ($fee->status !== 'pending' || !$fee->due_date) {
+            return 0;
+        }
+
+        $dueDate = Carbon::parse($fee->due_date);
+
+        if (Carbon::now()->lte($dueDate)) {
+             return 0;
+        }
+
+        $daysOverdue = abs(Carbon::now()->diffInDays($dueDate)); // Ensure positive
+
+        // Standard Late Rule: floor(overdue / grace) * penalty
+        // E.g. Grace 7. Overdue 6 -> 0. Overdue 7 -> 1 * 100 = 100. Overdue 14 -> 2 * 100 = 200.
+        if ($gracePeriodDays > 0) {
+            $cycles = floor($daysOverdue / $gracePeriodDays);
+            return $cycles * $lateFeePenalty;
+        }
+
+        return 0;
     }
 }

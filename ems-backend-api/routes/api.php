@@ -9,6 +9,8 @@ use App\Http\Controllers\Api\AuthController;
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/parent-login', [AuthController::class, 'parentLogin']);
+
+// --- TEMPORARY TEST ROUTE REMOVED ---
 // Temporary Setup Route (DISABLED FOR PRODUCTION)
 // Route::get('/setup-admin', function () {
 //     $user = \App\Models\User::firstOrCreate(

@@ -81,6 +81,10 @@
                   <div class="text-h5 text-primary text-weight-bold q-mt-md">
                     LKR {{ fee.amount }}
                   </div>
+                  <div v-if="fee.late_fee > 0" class="text-caption text-negative q-mt-xs">
+                    <q-icon name="warning" size="xs" />
+                    Includes Late Fee: LKR {{ fee.late_fee }}
+                  </div>
                   <div class="text-caption" :class="$q.dark.isActive ? 'text-grey-5' : 'text-grey'">
                     Due: Immediately
                   </div>
