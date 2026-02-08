@@ -7,7 +7,13 @@ export const useAuthStore = defineStore('auth', {
         user: JSON.parse(localStorage.getItem('user') || 'null')
     }),
     getters: {
-        isAuthenticated: (state) => !!state.token
+        isAuthenticated: (state) => !!state.token,
+        hasPermission: (state) => (permission) => {
+            if (!state.user) return false
+            // Super admin bypass or simple permission check
+            if (state.user.role === 'super_admin' || state.user.is_super_admin) return true
+            return state.user.permissions?.includes(permission) || false
+        }
     },
     actions: {
         async login(email, password) {

@@ -15,6 +15,7 @@
              </div>
         </div>
         <q-btn
+          v-if="authStore.hasPermission('payments')"
           unelevated
           color="purple"
           icon="payments"
@@ -175,18 +176,18 @@
         align="left"
         narrow-indicator
       >
-        <q-tab name="pending" label="Pending Verification" icon="hourglass_empty">
+        <q-tab v-if="authStore.hasPermission('finance_pending')" name="pending" label="Pending Verification" icon="hourglass_empty">
           <q-badge color="orange" floating v-if="pendingTransactions.length > 0">{{
             pendingTransactions.length
           }}</q-badge>
         </q-tab>
-        <q-tab name="all" label="All Transactions" icon="list" />
-        <q-tab name="uncollected" label="Uncollected Fees" icon="money_off">
+        <q-tab v-if="authStore.hasPermission('finance_transactions')" name="all" label="All Transactions" icon="list" />
+        <q-tab v-if="authStore.hasPermission('finance_uncollected')" name="uncollected" label="Uncollected Fees" icon="money_off">
           <q-badge color="red" floating v-if="uncollectedFees.length > 0">{{
             uncollectedFees.length
           }}</q-badge>
         </q-tab>
-        <q-tab name="settlements" label="Teacher Settlements" icon="payments" />
+        <q-tab v-if="authStore.hasPermission('finance_settlement')" name="settlements" label="Teacher Settlements" icon="payments" />
       </q-tabs>
 
       <q-separator />
@@ -837,11 +838,13 @@ import { ref, onMounted, watch, computed } from 'vue' // Revert watch removal if
 import { useFinanceStore } from 'stores/finance-store'
 import { api } from 'boot/axios' // Need raw api for search
 import { storeToRefs } from 'pinia'
+import { useAuthStore } from 'stores/auth-store' // Import Auth Store
 import { useQuasar } from 'quasar'
 import VueApexCharts from 'vue3-apexcharts'
 
 const $q = useQuasar()
 const financeStore = useFinanceStore()
+const authStore = useAuthStore() // Init Store
 const { transactions, pendingTransactions, stats, analyticsData, settlements, uncollectedFees } =
   storeToRefs(financeStore)
 

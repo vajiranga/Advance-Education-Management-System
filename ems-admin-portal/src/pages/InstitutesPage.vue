@@ -7,7 +7,7 @@
         <q-chip color="secondary" text-color="white" icon="event">
           {{ formattedDate }}
         </q-chip>
-        <q-btn color="primary" icon="add_location" label="Add New Hall" @click="openAddDialog" />
+        <q-btn v-if="authStore.hasPermission('halls_add')" color="primary" icon="add_location" label="Add New Hall" @click="openAddDialog" />
       </div>
     </div>
 
@@ -225,12 +225,14 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { date, useQuasar } from 'quasar'
 import { useCourseStore } from 'stores/course-store'
 import { useHallStore } from 'stores/hall-store'
+import { useAuthStore } from 'stores/auth-store'
 import { storeToRefs } from 'pinia'
 import { api } from 'src/services/api'
 
 const $q = useQuasar()
 const courseStore = useCourseStore()
 const hallStore = useHallStore()
+const authStore = useAuthStore()
 const { halls } = storeToRefs(hallStore)
 const { courses } = storeToRefs(courseStore)
 

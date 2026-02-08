@@ -352,7 +352,7 @@
                    <q-card bordered flat>
                        <q-card-section class="row items-center justify-between">
                            <div class="text-subtitle2">System Administrators</div>
-                           <q-btn label="Add New Admin" color="primary" size="sm" icon="add" @click="openAddAdmin" />
+                           <q-btn v-if="canEditSettings" label="Add New Admin" color="primary" size="sm" icon="add" @click="openAddAdmin" />
                        </q-card-section>
                        <q-separator />
                        <q-markup-table flat>
@@ -374,8 +374,8 @@
                                        </div>
                                    </td>
                                    <td class="text-right">
-                                       <q-btn flat round icon="edit" color="blue" size="sm" @click="openEditAdmin(admin)" :disable="admin.is_super_admin" />
-                                       <q-btn flat round icon="delete" color="red" size="sm" @click="deleteAdmin(admin.id)" :disable="admin.is_super_admin" />
+                                       <q-btn v-if="canEditSettings" flat round icon="edit" color="blue" size="sm" @click="openEditAdmin(admin)" :disable="admin.is_super_admin" />
+                                       <q-btn v-if="canEditSettings" flat round icon="delete" color="red" size="sm" @click="deleteAdmin(admin.id)" :disable="admin.is_super_admin" />
                                    </td>
                                </tr>
                                <tr v-if="adminList.length === 0">
@@ -428,13 +428,123 @@
                  <div class="col-12 text-weight-bold">Module Access</div>
                  <div class="col-12 text-caption text-negative">* Important: Please ensure 'Attendance' is selected.</div>
 
-                 <!-- Standard Modules -->
+                 <!-- Granular Permissions -->
                  <div class="col-12">
-                      <div class="row">
-                          <div class="col-6 col-sm-6" v-for="mod in permissionModules" :key="mod.value">
-                              <q-checkbox v-model="adminForm.permissions" :val="mod.value" :label="mod.label" />
-                          </div>
-                      </div>
+                      <q-list bordered separator class="rounded-borders">
+                          <!-- Dashboard -->
+                          <q-expansion-item
+                              expand-separator
+                              icon="dashboard"
+                              label="Dashboard"
+                              :caption="getSelectedCount('dashboard')">
+                              <q-card>
+                                  <q-card-section>
+                                      <q-checkbox v-model="adminForm.permissions" val="dashboard" label="View Dashboard" dense />
+                                      <q-checkbox v-model="adminForm.permissions" val="dashboard_broadcast" label="Send Broadcast" dense />
+                                      <q-checkbox v-model="adminForm.permissions" val="dashboard_export" label="Export Report" dense />
+                                  </q-card-section>
+                              </q-card>
+                          </q-expansion-item>
+
+                          <!-- Hall Management -->
+                          <q-expansion-item
+                              expand-separator
+                              icon="meeting_room"
+                              label="Hall Management"
+                              :caption="getSelectedCount('halls')">
+                              <q-card>
+                                  <q-card-section>
+                                      <q-checkbox v-model="adminForm.permissions" val="halls" label="View Halls" dense />
+                                      <q-checkbox v-model="adminForm.permissions" val="halls_add" label="Add New Hall" dense />
+                                  </q-card-section>
+                              </q-card>
+                          </q-expansion-item>
+
+                          <!-- Users -->
+                          <q-expansion-item
+                              expand-separator
+                              icon="people"
+                              label="Users"
+                              :caption="getSelectedCount('users')">
+                              <q-card>
+                                  <q-card-section>
+                                      <q-checkbox v-model="adminForm.permissions" val="users" label="View Users" dense />
+                                      <q-checkbox v-model="adminForm.permissions" val="users_add" label="Add New User" dense />
+                                  </q-card-section>
+                              </q-card>
+                          </q-expansion-item>
+
+                          <!-- Classes -->
+                          <q-expansion-item
+                              expand-separator
+                              icon="school"
+                              label="Classes"
+                              :caption="getSelectedCount('classes')">
+                              <q-card>
+                                  <q-card-section>
+                                      <q-checkbox v-model="adminForm.permissions" val="classes" label="View Classes" dense />
+                                      <q-checkbox v-model="adminForm.permissions" val="classes_add" label="Add New Class" dense />
+                                  </q-card-section>
+                              </q-card>
+                          </q-expansion-item>
+
+                          <!-- Attendance -->
+                          <q-expansion-item
+                              expand-separator
+                              icon="fact_check"
+                              label="Attendance"
+                              :caption="getSelectedCount('attendance')">
+                              <q-card>
+                                  <q-card-section>
+                                      <q-checkbox v-model="adminForm.permissions" val="attendance" label="View & Mark Attendance" dense />
+                                  </q-card-section>
+                              </q-card>
+                          </q-expansion-item>
+
+                          <!-- Cash Payment -->
+                          <q-expansion-item
+                              expand-separator
+                              icon="payments"
+                              label="Cash Payment"
+                              :caption="getSelectedCount('payments')">
+                              <q-card>
+                                  <q-card-section>
+                                      <q-checkbox v-model="adminForm.permissions" val="payments" label="View & Process Payments" dense />
+                                  </q-card-section>
+                              </q-card>
+                          </q-expansion-item>
+
+                          <!-- Finance -->
+                          <q-expansion-item
+                              expand-separator
+                              icon="account_balance"
+                              label="Finance"
+                              :caption="getSelectedCount('finance')">
+                              <q-card>
+                                  <q-card-section>
+                                      <q-checkbox v-model="adminForm.permissions" val="finance" label="View Finance" dense />
+                                      <q-checkbox v-model="adminForm.permissions" val="finance_pending" label="Pending Verification" dense />
+                                      <q-checkbox v-model="adminForm.permissions" val="finance_transactions" label="All Transactions" dense />
+                                      <q-checkbox v-model="adminForm.permissions" val="finance_uncollected" label="Uncollected Fees" dense />
+                                      <q-checkbox v-model="adminForm.permissions" val="finance_settlement" label="Teacher Settlement" dense />
+                                  </q-card-section>
+                              </q-card>
+                          </q-expansion-item>
+
+                          <!-- Settings -->
+                          <q-expansion-item
+                              expand-separator
+                              icon="settings"
+                              label="Settings"
+                              :caption="getSelectedCount('settings')">
+                              <q-card>
+                                  <q-card-section>
+                                      <q-checkbox v-model="adminForm.permissions" val="settings" label="View Settings" dense />
+                                      <q-checkbox v-model="adminForm.permissions" val="settings_edit" label="Edit Settings" dense />
+                                  </q-card-section>
+                              </q-card>
+                          </q-expansion-item>
+                      </q-list>
                  </div>
              </div>
         </q-card-section>
@@ -551,17 +661,11 @@ const adminForm = ref({
     permissions: []
 })
 
-const permissionModules = [
-    { label: 'Dashboard', value: 'dashboard' },
-    { label: 'Hall Management', value: 'halls' },
-    { label: 'Users', value: 'users' },
-    { label: 'Classes', value: 'classes' },
-    { label: 'Attendance', value: 'attendance' },
-    { label: 'Cash Payment', value: 'payments' },
-    { label: 'Finance', value: 'finance' },
-    { label: 'Settings (View Only)', value: 'settings' },
-    { label: 'Settings (Save/Edit)', value: 'settings_edit' },
-]
+// Helper function to count selected permissions for a module
+const getSelectedCount = (modulePrefix) => {
+    const count = adminForm.value.permissions.filter(p => p.startsWith(modulePrefix)).length
+    return count > 0 ? `${count} selected` : 'None selected'
+}
 
 // Verify Super Admin Password Flow
 const triggerSensitiveAction = (callback) => {

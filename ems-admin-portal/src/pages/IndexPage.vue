@@ -7,8 +7,9 @@
         <div class="text-subtitle1 text-grey-7">Overview of your Educational Empire</div>
       </div>
       <div class="row q-gutter-sm">
-        <q-btn icon="download" label="Export Report" color="primary" flat class="glass-btn" />
+        <q-btn v-if="authStore.hasPermission('dashboard_export')" icon="download" label="Export Report" color="primary" flat class="glass-btn" />
         <q-btn
+          v-if="authStore.hasPermission('dashboard_broadcast')"
           icon="campaign"
           label="Send Broadcast"
           color="secondary"
@@ -262,13 +263,14 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useFinanceStore } from 'stores/finance-store'
+import { useAuthStore } from 'stores/auth-store'
 import { api } from 'boot/axios'
 
 import { useQuasar } from 'quasar'
-// ... imports
 
 const $q = useQuasar()
 const financeStore = useFinanceStore()
+const authStore = useAuthStore()
 const studentCount = ref(0)
 const courseCount = ref(0)
 const recentEnrollments = ref([])

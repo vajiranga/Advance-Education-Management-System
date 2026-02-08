@@ -39,6 +39,7 @@
                     </template>
                   </q-input>
                   <q-btn
+                    v-if="authStore.hasPermission('users_add')"
                     color="primary"
                     label="Add New User"
                     icon="add"
@@ -122,6 +123,7 @@
                       </template>
                     </q-input>
                     <q-btn
+                      v-if="authStore.hasPermission('users_add')"
                       color="primary"
                       label="Add New User"
                       icon="add"
@@ -197,6 +199,7 @@
                     </template>
                   </q-input>
                   <q-btn
+                    v-if="authStore.hasPermission('users_add')"
                     color="primary"
                     label="Add New User"
                     icon="add"
@@ -463,11 +466,13 @@ import { ref, onMounted, computed } from 'vue'
 import { api } from 'boot/axios'
 import { useUserStore } from 'stores/user-store'
 import { useCourseStore } from 'stores/course-store' // Import Course Store
+import { useAuthStore } from 'stores/auth-store'
 import { useQuasar } from 'quasar'
 
 const $q = useQuasar()
 const userStore = useUserStore()
 const courseStore = useCourseStore() // Init Store
+const authStore = useAuthStore()
 
 const tab = ref('students')
 const filter = ref('')
