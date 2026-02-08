@@ -28,8 +28,8 @@
 
     <q-drawer v-model="leftDrawerOpen" show-if-above bordered class="bg-grey-1">
       <div class="q-pa-md text-center">
-        <div class="text-h6 text-primary">Super Admin</div>
-        <div class="text-caption text-grey">System Administrator</div>
+        <div class="text-h6 text-primary">{{ userDisplayName }}</div>
+        <div class="text-caption text-grey">{{ userPermissionStatus }}</div>
       </div>
 
       <q-separator />
@@ -107,6 +107,25 @@ const filteredLinks = computed(() => {
         }
         return perms.includes(link.permission)
     })
+})
+
+const userDisplayName = computed(() => {
+    const user = authStore.user
+    if (!user) return 'Admin'
+    // Super Admin shows "Super Admin"
+    if (user.is_super_admin) return 'Super Admin'
+    // Regular admin shows their name
+    return user.name || 'Admin'
+})
+
+const userPermissionStatus = computed(() => {
+    const user = authStore.user
+    if (!user) return ''
+    // Super Admin shows "Full Access"
+    if (user.is_super_admin) return 'Full Access'
+    // Regular admin shows permission count
+    const permCount = (user.permissions || []).length
+    return `${permCount} Permission${permCount !== 1 ? 's' : ''} Active`
 })
 
 const handleLogout = () => {

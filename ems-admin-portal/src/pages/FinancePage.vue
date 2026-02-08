@@ -14,14 +14,6 @@
                 <span style="font-size: 10px">{{ cycleDateRange }}</span>
              </div>
         </div>
-        <q-btn
-          v-if="authStore.hasPermission('payments')"
-          unelevated
-          color="purple"
-          icon="payments"
-          label="Record Cash"
-          @click="showCashDialog = true"
-        />
         <q-btn flat icon="refresh" @click="refreshAll" :loading="refreshing" round />
       </div>
     </div>
