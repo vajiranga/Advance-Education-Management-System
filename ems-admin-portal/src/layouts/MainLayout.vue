@@ -91,12 +91,19 @@ const filteredLinks = computed(() => {
     if (user.is_super_admin) return navigationLinks
 
     // Sub-admins see only what they have permission for
-    // Note: 'settings' permission grants view access. 'settings_edit' grants full access.
-    // If user has 'settings_edit', they implicitly can view Settings.
     const perms = user.permissions || []
     return navigationLinks.filter(link => {
+        // Settings: show if user has 'settings' or 'settings_edit'
         if (link.permission === 'settings') {
              return perms.includes('settings') || perms.includes('settings_edit')
+        }
+        // Finance: show if user has 'finance' OR any finance sub-permission
+        if (link.permission === 'finance') {
+             return perms.includes('finance') ||
+                    perms.includes('finance_pending') ||
+                    perms.includes('finance_transactions') ||
+                    perms.includes('finance_uncollected') ||
+                    perms.includes('finance_settlement')
         }
         return perms.includes(link.permission)
     })

@@ -26,8 +26,8 @@
       </div>
     </div>
 
-    <!-- Stats Cards -->
-    <div class="row q-col-gutter-md q-mb-lg">
+    <!-- Stats Cards - Only visible with 'finance' permission -->
+    <div v-if="authStore.hasPermission('finance')" class="row q-col-gutter-md q-mb-lg">
       <div class="col-12 col-sm-6 col-md-3">
         <q-card class="bg-blue-9 text-white full-height">
           <q-card-section>
@@ -85,8 +85,8 @@
       </div>
     </div>
 
-    <!-- Revenue Analytics Row -->
-    <div class="row q-col-gutter-md q-mb-lg">
+    <!-- Revenue Analytics Row - Only visible with 'finance' permission -->
+    <div v-if="authStore.hasPermission('finance')" class="row q-col-gutter-md q-mb-lg">
       <div class="col-12 col-md-6">
         <q-card class="full-height">
           <q-card-section class="row justify-between items-center">

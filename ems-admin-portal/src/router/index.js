@@ -63,6 +63,15 @@ export default function (/* { store, ssrContext } */) {
             hasAccess = true
         }
 
+        // Special handling: Finance sub-permissions grant 'finance' access
+        if (required === 'finance') {
+            hasAccess = perms.includes('finance') ||
+                       perms.includes('finance_pending') ||
+                       perms.includes('finance_transactions') ||
+                       perms.includes('finance_uncollected') ||
+                       perms.includes('finance_settlement')
+        }
+
         if (hasAccess) {
             next()
         } else {
