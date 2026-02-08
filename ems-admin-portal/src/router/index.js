@@ -27,17 +27,53 @@ export default function (/* { store, ssrContext } */) {
 
   Router.beforeEach((to, from, next) => {
     const token = localStorage.getItem('token')
+    const userStr = localStorage.getItem('user')
+    let user = null
+    try {
+        if (userStr) user = JSON.parse(userStr)
+    } catch (e) {
+        console.error('Failed to parse user from storage', e)
+    }
 
-    // If going to login but already has token, redirect to home
+    // 1. Auth Check: If not public (login) and no token, redirect to login
+    if (to.path !== '/login' && !token) {
+      return next('/login')
+    }
+
+    // 2. Login Redirect: If going to login but already has token, redirect to home
     if (to.path === '/login' && token) {
       return next('/')
     }
 
-    // If not public (login) and no token, redirect to login
-    if (to.path !== '/login' && !token) {
-      next('/login')
+    // 3. Permission Check
+    if (to.meta.permission && user) {
+        // Super Admin bypass
+        if (user.is_super_admin) {
+            return next()
+        }
+
+        const required = to.meta.permission
+        const perms = user.permissions || []
+
+        // Check access
+        let hasAccess = perms.includes(required)
+
+        // Special handling: 'settings_edit' grants 'settings' access
+        if (required === 'settings' && perms.includes('settings_edit')) {
+            hasAccess = true
+        }
+
+        if (hasAccess) {
+            next()
+        } else {
+            console.warn(`Access Denied: User lacks '${required}' permission for ${to.path}`)
+            // If direct access (from === null or from.name === null), loading a disallowed page -> redirect to login or blank
+            // If verifying failed, we should probably redirect to a safe default or show error.
+            // For now, next(false) aborts navigation.
+            next(false)
+        }
     } else {
-      next()
+        next()
     }
   })
 

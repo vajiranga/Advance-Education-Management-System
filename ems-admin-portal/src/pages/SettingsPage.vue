@@ -3,7 +3,7 @@
     <div class="row items-center justify-between q-mb-md">
       <div class="text-h5">System Settings</div>
       <!-- This button saves the Institute Settings (General, Branding, etc) -->
-      <q-btn v-if="activeTab !== 'security'" color="primary" label="Save System Settings" icon="save" @click="saveSettings" />
+      <q-btn v-if="activeTab !== 'security' && canEditSettings" color="primary" label="Save System Settings" icon="save" @click="saveSettings" />
     </div>
 
     <!-- Main Settings Tabs -->
@@ -51,8 +51,8 @@
             <div class="col-12 col-md-6">
               <q-input v-model="settings.contactEmail" label="Contact Email" outlined />
             </div>
-            <div class="col-12 col-md-6">
-              <q-input v-model="settings.instituteId" label="Institute ID" outlined />
+            <div class="col-12">
+              <q-input v-model="settings.registrationNo" label="Institute ID" outlined readonly hint="Default System ID" />
             </div>
 
             <!-- New General Settings -->
@@ -69,12 +69,12 @@
               <q-input v-model="settings.establishedYear" label="Established Year" outlined type="number" />
             </div>
 
-            <div class="col-12 col-md-6">
-              <q-select v-model="settings.currency" :options="['LKR', 'USD', 'EUR', 'GBP']" label="Default Currency" outlined />
-            </div>
-            <div class="col-12 col-md-6">
-              <q-select v-model="settings.timeZone" :options="['Asia/Colombo', 'UTC', 'America/New_York']" label="Time Zone" outlined />
-            </div>
+              <div class="col-12 col-md-6">
+                <q-select v-model="settings.currency" :options="['LKR']" label="Default Currency" outlined />
+              </div>
+              <div class="col-12 col-md-6">
+                <q-select v-model="settings.timeZone" :options="['Asia/Colombo']" label="Time Zone" outlined />
+              </div>
 
             <div class="col-12 text-subtitle2 q-mt-md">Academic Calendar & Working Hours</div>
             <div class="col-12 col-md-6">
@@ -334,122 +334,107 @@
           <div class="text-h6 q-mb-md">System Security & Policies</div>
 
           <div class="row q-col-gutter-lg q-mb-xl">
-               <!-- Password & Login Policy -->
-               <div class="col-12 col-md-6">
-                   <q-card bordered flat class="full-height">
-                       <q-card-section>
-                           <div class="text-subtitle2">Login Security</div>
-                           <q-list dense>
-                               <q-item>
-                                   <q-item-section>
-                                       <q-item-label>Min Password Length</q-item-label>
-                                   </q-item-section>
-                                   <q-item-section side>
-                                       <q-input v-model.number="settings.passwordMinLength" type="number" dense outlined style="width: 80px" />
-                                   </q-item-section>
-                               </q-item>
-                               <q-item tag="label" v-ripple>
-                                   <q-item-section>
-                                       <q-item-label>Require Strong Passwords</q-item-label>
-                                       <q-item-label caption>Mixed case, numbers, symbols</q-item-label>
-                                   </q-item-section>
-                                   <q-item-section side><q-toggle v-model="settings.requireStrongPasswords" /></q-item-section>
-                               </q-item>
-                               <q-item>
-                                   <q-item-section>
-                                       <q-item-label>Max Login Attempts</q-item-label>
-                                   </q-item-section>
-                                   <q-item-section side>
-                                       <q-input v-model.number="settings.maxLoginAttempts" type="number" dense outlined style="width: 80px" />
-                                   </q-item-section>
-                               </q-item>
-                           </q-list>
+               <!-- Administrator Management Table -->
+               <div class="col-12">
+                   <q-card bordered flat>
+                       <q-card-section class="row items-center justify-between">
+                           <div class="text-subtitle2">System Administrators</div>
+                           <q-btn label="Add New Admin" color="primary" size="sm" icon="add" @click="openAddAdmin" />
                        </q-card-section>
+                       <q-separator />
+                       <q-markup-table flat>
+                           <thead>
+                               <tr>
+                                   <th class="text-left">Name</th>
+                                   <th class="text-left">Email</th>
+                                   <th class="text-left">Permissions</th>
+                                   <th class="text-right">Actions</th>
+                               </tr>
+                           </thead>
+                           <tbody>
+                               <tr v-for="admin in adminList" :key="admin.id">
+                                   <td class="text-left">{{ admin.name }} <q-badge v-if="admin.is_super_admin" color="purple" label="Super" /></td>
+                                   <td class="text-left">{{ admin.email }}</td>
+                                   <td class="text-left">
+                                       <div class="row q-gutter-xs" style="max-width: 300px; overflow: hidden;">
+                                            <q-badge v-for="p in admin.permissions" :key="p" color="grey-3" text-color="black" :label="p" />
+                                       </div>
+                                   </td>
+                                   <td class="text-right">
+                                       <q-btn flat round icon="edit" color="blue" size="sm" @click="openEditAdmin(admin)" :disable="admin.is_super_admin" />
+                                       <q-btn flat round icon="delete" color="red" size="sm" @click="deleteAdmin(admin.id)" :disable="admin.is_super_admin" />
+                                   </td>
+                               </tr>
+                               <tr v-if="adminList.length === 0">
+                                   <td colspan="4" class="text-center text-grey">No other admins found.</td>
+                               </tr>
+                           </tbody>
+                       </q-markup-table>
                    </q-card>
                </div>
 
-               <!-- Session Timeouts -->
-               <div class="col-12 col-md-6">
-                   <q-card bordered flat class="full-height">
-                       <q-card-section>
-                           <div class="text-subtitle2">Session Timeout (Minutes)</div>
-                           <div class="text-caption text-grey q-mb-sm">0 = No Timeout</div>
-                           <div class="row q-col-gutter-sm">
-                               <div class="col-6">
-                                   <q-input v-model.number="settings.sessionTimeoutAdmin" label="Admin" type="number" dense outlined />
-                               </div>
-                               <div class="col-6">
-                                   <q-input v-model.number="settings.sessionTimeoutTeacher" label="Teacher" type="number" dense outlined />
-                               </div>
-                               <div class="col-6">
-                                   <q-input v-model.number="settings.sessionTimeoutParent" label="Parent" type="number" dense outlined />
-                               </div>
-                               <div class="col-6">
-                                   <q-input v-model.number="settings.sessionTimeoutStudent" label="Student" type="number" dense outlined />
-                               </div>
-                           </div>
-                       </q-card-section>
-                   </q-card>
-               </div>
+    <!-- Verify Password Dialog -->
+    <q-dialog v-model="showVerifyDialog" persistent>
+      <q-card style="min-width: 350px">
+        <q-card-section>
+          <div class="text-h6">Verify Super Admin</div>
+          <div class="text-caption">Please enter your password to proceed.</div>
+        </q-card-section>
 
-               <!-- Role Permissions -->
-               <div class="col-12 col-md-6">
-                   <q-card bordered flat class="full-height">
-                       <q-card-section>
-                           <div class="text-subtitle2">Role Permissions</div>
-                           <q-list dense>
-                               <q-item tag="label" v-ripple>
-                                   <q-item-section><q-item-label>Admin Full Access</q-item-label></q-item-section>
-                                   <q-item-section side><q-checkbox v-model="settings.permAdminFull" /></q-item-section>
-                               </q-item>
-                               <q-item tag="label" v-ripple>
-                                   <q-item-section><q-item-label>Teacher Edit Access</q-item-label></q-item-section>
-                                   <q-item-section side><q-checkbox v-model="settings.permTeacherEdit" /></q-item-section>
-                               </q-item>
-                               <q-item tag="label" v-ripple>
-                                   <q-item-section><q-item-label>Parent View Access</q-item-label></q-item-section>
-                                   <q-item-section side><q-checkbox v-model="settings.permParentView" /></q-item-section>
-                               </q-item>
-                               <q-item tag="label" v-ripple>
-                                   <q-item-section><q-item-label>Student View Access</q-item-label></q-item-section>
-                                   <q-item-section side><q-checkbox v-model="settings.permStudentView" /></q-item-section>
-                               </q-item>
-                           </q-list>
-                       </q-card-section>
-                   </q-card>
-               </div>
+        <q-card-section class="q-pt-none">
+          <q-input v-model="verifyPasswordInput" type="password" dense autofocus @keyup.enter="confirmVerifyPassword" label="Password" outlines />
+        </q-card-section>
 
-               <!-- Data Privacy -->
-               <div class="col-12 col-md-6">
-                   <q-card bordered flat class="full-height bg-grey-1">
-                       <q-card-section>
-                           <div class="text-subtitle2">Data Privacy & Export</div>
-                           <q-list dense>
-                               <q-item tag="label" v-ripple>
-                                   <q-item-section>
-                                       <q-item-label>Allow Data Export</q-item-label>
-                                   </q-item-section>
-                                   <q-item-section side><q-toggle v-model="settings.allowDataExport" /></q-item-section>
-                               </q-item>
-                               <q-item tag="label" v-ripple class="text-red">
-                                   <q-item-section>
-                                       <q-item-label class="text-weight-bold">Disable Report Export</q-item-label>
-                                       <q-item-label caption>Block users from downloading reports</q-item-label>
-                                   </q-item-section>
-                                   <q-item-section side><q-toggle color="red" v-model="settings.disableReportExport" /></q-item-section>
-                               </q-item>
-                               <q-item tag="label" v-ripple>
-                                   <q-item-section><q-item-label>GDPR Compliance Mode</q-item-label></q-item-section>
-                                   <q-item-section side><q-toggle v-model="settings.gdprMode" /></q-item-section>
-                               </q-item>
-                               <q-item tag="label" v-ripple>
-                                   <q-item-section><q-item-label>Require User Consent</q-item-label></q-item-section>
-                                   <q-item-section side><q-toggle v-model="settings.userConsent" /></q-item-section>
-                               </q-item>
-                           </q-list>
-                       </q-card-section>
-                   </q-card>
-               </div>
+        <q-card-actions align="right" class="text-primary">
+          <q-btn flat label="Cancel" v-close-popup />
+          <q-btn flat label="Confirm" @click="confirmVerifyPassword" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
+    <!-- Admin Form Dialog -->
+    <q-dialog v-model="showAdminDialog" persistent>
+      <q-card style="min-width: 500px">
+        <q-card-section>
+          <div class="text-h6">{{ editingAdminId ? 'Edit Admin' : 'Add New Admin' }}</div>
+        </q-card-section>
+
+        <q-card-section class="q-pt-none scroll" style="max-height: 70vh">
+             <div class="row q-col-gutter-md">
+                 <div class="col-12 col-md-6">
+                     <q-input v-model="adminForm.name" label="Name" outlined dense />
+                 </div>
+                 <div class="col-12 col-md-6">
+                     <q-input v-model="adminForm.email" label="Email" outlined dense />
+                 </div>
+                 <div class="col-12">
+                     <q-input v-model="adminForm.password" :label="editingAdminId ? 'New Password (Leave blank to keep)' : 'Password'" type="text" outlined dense hint="Password is visible here for management" />
+                 </div>
+
+                 <div class="col-12"><q-separator class="q-my-sm" /></div>
+                 <div class="col-12 text-weight-bold">Module Access</div>
+                 <div class="col-12 text-caption text-negative">* Important: Please ensure 'Attendance' is selected.</div>
+
+                 <!-- Standard Modules -->
+                 <div class="col-12">
+                      <div class="row">
+                          <div class="col-6 col-sm-6" v-for="mod in permissionModules" :key="mod.value">
+                              <q-checkbox v-model="adminForm.permissions" :val="mod.value" :label="mod.label" />
+                          </div>
+                      </div>
+                 </div>
+             </div>
+        </q-card-section>
+
+        <q-card-actions align="right">
+          <q-btn flat label="Cancel" v-close-popup />
+          <q-btn color="primary" label="Save Admin" @click="saveAdmin" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
+
+
           </div>
 
           <q-separator />
@@ -498,6 +483,7 @@
 
              <div class="col-12 q-mt-lg row items-center q-gutter-md">
                <q-btn
+                  v-if="canEditSettings"
                   color="primary"
                   label="Update Admin Profile"
                   icon="save"
@@ -521,23 +507,140 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
+
 import { useQuasar } from 'quasar'
 import { api } from 'boot/axios'
 import { useRouter } from 'vue-router'
 import { useSettingsStore } from 'stores/settings-store'
+import { useAuthStore } from 'stores/auth-store'
 
 const $q = useQuasar()
 const router = useRouter()
 const settingsStore = useSettingsStore()
+const authStore = useAuthStore()
 const activeTab = ref('general')
 const loadingProfile = ref(false)
 const loadingSettings = ref(true) // Add loading state for settings
 
+// Admin Management State
+const adminList = ref([])
+const showVerifyDialog = ref(false)
+const showAdminDialog = ref(false)
+const verifyPasswordInput = ref('')
+const pendingAction = ref(null)
+const editingAdminId = ref(null)
+
+const adminForm = ref({
+    name: '',
+    email: '',
+    password: '',
+    permissions: []
+})
+
+const permissionModules = [
+    { label: 'Dashboard', value: 'dashboard' },
+    { label: 'Hall Management', value: 'halls' },
+    { label: 'Users', value: 'users' },
+    { label: 'Classes', value: 'classes' },
+    { label: 'Attendance', value: 'attendance' },
+    { label: 'Cash Payment', value: 'payments' },
+    { label: 'Finance', value: 'finance' },
+    { label: 'Settings (View Only)', value: 'settings' },
+    { label: 'Settings (Save/Edit)', value: 'settings_edit' },
+]
+
+// Verify Super Admin Password Flow
+const triggerSensitiveAction = (callback) => {
+    // Ideally check if user is super admin first
+    // For now, always ask password as requested
+    verifyPasswordInput.value = ''
+    pendingAction.value = callback
+    showVerifyDialog.value = true
+}
+
+const confirmVerifyPassword = async () => {
+    try {
+        await api.post('/v1/admin/verify-password', { password: verifyPasswordInput.value })
+        showVerifyDialog.value = false
+        if (pendingAction.value) pendingAction.value()
+    } catch (e) {
+         console.error(e)
+         $q.notify({ type: 'negative', message: 'Incorrect Password' })
+    }
+}
+
+// CRUD
+const fetchAdmins = async () => {
+    try {
+        const res = await api.get('/v1/admin/admins')
+        adminList.value = res.data
+    } catch (e) {
+        console.error('Failed to fetch admins', e)
+    }
+}
+
+const openAddAdmin = () => {
+    triggerSensitiveAction(() => {
+        editingAdminId.value = null
+        adminForm.value = { name: '', email: '', password: '', permissions: [] }
+        showAdminDialog.value = true
+    })
+}
+
+const openEditAdmin = (admin) => {
+    triggerSensitiveAction(() => {
+        editingAdminId.value = admin.id
+        adminForm.value = {
+            name: admin.name,
+            email: admin.email,
+            password: admin.plain_password || '',
+            permissions: admin.permissions || []
+        }
+        showAdminDialog.value = true
+    })
+}
+
+const deleteAdmin = (id) => {
+    triggerSensitiveAction(async () => {
+        try {
+             await api.delete(`/v1/admin/admins/${id}`)
+             $q.notify({ type: 'positive', message: 'Admin deleted' })
+             fetchAdmins()
+        } catch (e) {
+             $q.notify({ type: 'negative', message: e.response?.data?.message || 'Failed to delete' })
+        }
+    })
+}
+
+const saveAdmin = async () => {
+    try {
+        const payload = {
+            name: adminForm.value.name,
+            email: adminForm.value.email,
+            password: adminForm.value.password,
+            permissions: adminForm.value.permissions
+        }
+
+        if (editingAdminId.value) {
+            await api.put(`/v1/admin/admins/${editingAdminId.value}`, payload)
+        } else {
+            await api.post('/v1/admin/admins', payload)
+        }
+
+        $q.notify({ type: 'positive', message: 'Admin saved successfully' })
+        showAdminDialog.value = false
+        fetchAdmins()
+
+    } catch (e) {
+        $q.notify({ type: 'negative', message: e.response?.data?.message || 'Failed to save' })
+    }
+}
+
 // Institute Settings - Initialize with empty values, will be loaded from API
 const settings = ref({
   instituteName: '',
-  registrationNo: '',
+  registrationNo: '#01',
   address: '',
   contactPhone: '',
   contactEmail: '',
@@ -648,12 +751,17 @@ onMounted(async () => {
                      }
                  }
              })
+             // Force default #01 if empty
+             if (!settings.value.registrationNo) settings.value.registrationNo = '#01'
         }
     } catch (e) {
         console.error('Failed to fetch settings', e)
     } finally {
         loadingSettings.value = false // Always set loading to false after attempt
     }
+
+    // 3. Fetch Admins (Background)
+    fetchAdmins()
 })
 
 // Save Institute Settings
@@ -753,4 +861,10 @@ const logout = async () => {
 }
 
 
+const canEditSettings = computed(() => {
+    const user = authStore.user
+    if (!user) return false
+    if (user.is_super_admin) return true
+    return (user.permissions || []).includes('settings_edit')
+})
 </script>

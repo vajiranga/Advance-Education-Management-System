@@ -37,7 +37,9 @@ class User extends Authenticatable
         'qualifications',
         'subjects',
         'experience',
-        'plain_password'
+        'plain_password',
+        'is_super_admin',
+        'permissions'
     ];
 
     /**
@@ -78,6 +80,8 @@ class User extends Authenticatable
             'password' => 'hashed',
             'qualifications' => 'array',
             'subjects' => 'array',
+            'is_super_admin' => 'boolean',
+            'permissions' => 'array',
         ];
     }
 

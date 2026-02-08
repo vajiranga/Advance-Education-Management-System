@@ -117,6 +117,12 @@ Route::prefix('v1')->group(function () {
              Route::get('admin/classes/today', [CourseController::class, 'getTodayClasses']);
 
              // Admin can likely access almost everything else too
+             Route::post('admin/verify-password', [App\Http\Controllers\Api\AdminController::class, 'verifySuperAdmin']);
+             Route::get('admin/admins', [App\Http\Controllers\Api\AdminController::class, 'index']);
+             Route::post('admin/admins', [App\Http\Controllers\Api\AdminController::class, 'store']);
+             Route::put('admin/admins/{id}', [App\Http\Controllers\Api\AdminController::class, 'update']);
+             Route::delete('admin/admins/{id}', [App\Http\Controllers\Api\AdminController::class, 'destroy']);
+
              Route::get('admin/settings', [App\Http\Controllers\Api\SystemSettingController::class, 'index']);
              Route::post('admin/settings', [App\Http\Controllers\Api\SystemSettingController::class, 'update']);
         });
