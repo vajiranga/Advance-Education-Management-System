@@ -66,12 +66,46 @@ class CourseController extends Controller
                 $query->where('status', 'approved');
             }
 
+            // Get results before filtering expired extra classes
+            $results = $query->with(['subject', 'batch', 'teacher', 'hall', 'parentCourse'])->withCount('students')->orderBy('created_at', 'desc')->get();
+
+            // Filter out expired extra classes
+            $timeoutHours = SystemSetting::where('key', 'extraClassVisibilityTimeout')->value('value') ?? 48;
+            $results = $results->filter(function($course) use ($timeoutHours) {
+                if ($course->type === 'extra' && $course->schedule) {
+                    $schedule = is_string($course->schedule) ? json_decode($course->schedule, true) : $course->schedule;
+                    if (isset($schedule['date']) && isset($schedule['end'])) {
+                        try {
+                            $endDateTime = \Carbon\Carbon::parse($schedule['date'] . ' ' . $schedule['end']);
+                            $expiryTime = $endDateTime->addHours((int)$timeoutHours);
+                            if (now()->greaterThan($expiryTime)) {
+                                return false; // Exclude expired extra class
+                            }
+                        } catch (\Exception $e) {
+                            // If parsing fails, include the class
+                        }
+                    }
+                }
+                return true;
+            });
+
             if ($request->has('all')) {
-                return response()->json($query->with(['subject', 'batch', 'teacher', 'hall', 'parentCourse'])->withCount('students')->orderBy('created_at', 'desc')->get());
+                return response()->json($results->values());
             }
 
+            // Manual pagination
             $perPage = $request->input('per_page', 20);
-            return response()->json($query->with(['subject', 'batch', 'teacher', 'hall', 'parentCourse'])->withCount('students')->orderBy('created_at', 'desc')->paginate($perPage));
+            $page = $request->input('page', 1);
+            $total = $results->count();
+            $paginatedResults = $results->forPage($page, $perPage)->values();
+
+            return response()->json([
+                'data' => $paginatedResults,
+                'current_page' => $page,
+                'per_page' => $perPage,
+                'total' => $total,
+                'last_page' => ceil($total / $perPage)
+            ]);
         } catch (\Exception $e) {
             Log::error('Course Index Error: ' . $e->getMessage());
             return response()->json(['message' => 'Failed to load courses', 'error' => $e->getMessage()], 500);
@@ -296,7 +330,14 @@ class CourseController extends Controller
     {
         $course = Course::findOrFail($id);
 
-        $query = $course->students();
+        // If this is an extra class, get students from parent course
+        $targetCourseId = $id;
+        if ($course->type === 'extra' && $course->parent_course_id) {
+            $targetCourseId = $course->parent_course_id;
+        }
+
+        $targetCourse = Course::findOrFail($targetCourseId);
+        $query = $targetCourse->students();
 
         if ($request->has('status')) {
              $query->wherePivot('status', $request->query('status'));
@@ -400,7 +441,15 @@ class CourseController extends Controller
 
         // Filter by specific Class (Course)
         if ($request->has('course_id') && $request->course_id !== 'all') {
-             $query->where('enrollments.course_id', $request->course_id);
+             $selectedCourse = Course::find($request->course_id);
+             $enrollmentCourseId = $request->course_id;
+
+             // If extra class, use parent course for enrollment lookup
+             if ($selectedCourse && $selectedCourse->type === 'extra' && $selectedCourse->parent_course_id) {
+                 $enrollmentCourseId = $selectedCourse->parent_course_id;
+             }
+
+             $query->where('enrollments.course_id', $enrollmentCourseId);
         }
 
         // Search
@@ -463,9 +512,15 @@ class CourseController extends Controller
         $dayOfWeek = \Carbon\Carbon::parse($date)->format('l'); // Monday, Tuesday, etc.
 
         // Get all approved courses (regular and extra)
-        $courses = Course::with(['teacher', 'hall', 'subject', 'batch', 'parentCourse'])
-            ->where('status', 'approved')
-            ->get()
+        $query = Course::with(['teacher', 'hall', 'subject', 'batch', 'parentCourse'])
+            ->where('status', 'approved');
+
+        // Filter by teacher if provided
+        if ($request->has('teacher_id')) {
+            $query->where('teacher_id', $request->teacher_id);
+        }
+
+        $courses = $query->get()
             ->filter(function ($course) use ($dayOfWeek, $date) {
                 // For regular classes, check schedule day
                 if ($course->type === 'regular' && $course->schedule) {

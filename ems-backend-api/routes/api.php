@@ -70,6 +70,7 @@ Route::prefix('v1')->group(function () {
 
              // Attendance
              Route::get('teacher/students', [CourseController::class, 'getMyStudents']);
+             Route::get('teacher/classes', [CourseController::class, 'getTodayClasses']);
              Route::get('attendance/students', [App\Http\Controllers\Api\V1\AttendanceController::class, 'getStudents']);
              Route::post('attendance/bulk', [App\Http\Controllers\Api\V1\AttendanceController::class, 'bulkStore']);
              Route::post('attendance', [App\Http\Controllers\Api\V1\AttendanceController::class, 'store']);

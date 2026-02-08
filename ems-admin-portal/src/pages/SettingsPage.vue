@@ -306,6 +306,19 @@
                                          />
                                      </q-item-section>
                                  </q-item>
+                                 <q-separator spaced />
+                                 <q-item>
+                                     <q-item-section>
+                                         <q-item-label>Extra Class Visibility</q-item-label>
+                                         <q-item-label caption>Time after end time to hide from list</q-item-label>
+                                     </q-item-section>
+                                     <q-item-section side>
+                                         <div class="row no-wrap items-center q-gutter-x-sm">
+                                             <q-input v-model.number="settings.extraClassVisibilityDays" type="number" dense outlined style="width: 70px" suffix="d" min="0" />
+                                             <q-input v-model.number="settings.extraClassVisibilityHours" type="number" dense outlined style="width: 70px" suffix="h" min="0" />
+                                         </div>
+                                     </q-item-section>
+                                 </q-item>
                              </q-list>
                         </q-card-section>
                     </q-card>
@@ -687,6 +700,9 @@ const settings = ref({
   autoMarkAbsentMinutes: 'Default Absent',
   attendanceReminderTime: '09:00',
   disableTeacherAttendance: false, // Feature limitation
+  extraClassVisibilityDays: 2,
+  extraClassVisibilityHours: 0,
+  extraClassVisibilityTimeout: 48,
 
   backupFrequency: 'daily',
   dataRetentionMonths: 12,
@@ -753,7 +769,13 @@ onMounted(async () => {
              })
              // Force default #01 if empty
              if (!settings.value.registrationNo) settings.value.registrationNo = '#01'
-        }
+         }
+         // Calculate days/hours from timeout
+         if (settings.value.extraClassVisibilityTimeout !== undefined) {
+             const total = parseInt(settings.value.extraClassVisibilityTimeout)
+             settings.value.extraClassVisibilityDays = Math.floor(total / 24)
+             settings.value.extraClassVisibilityHours = total % 24
+         }
     } catch (e) {
         console.error('Failed to fetch settings', e)
     } finally {
@@ -768,6 +790,9 @@ onMounted(async () => {
 const saveSettings = async () => {
   $q.loading.show({ message: 'Saving Settings...' })
   try {
+      // Calculate timeout
+      settings.value.extraClassVisibilityTimeout = (settings.value.extraClassVisibilityDays || 0) * 24 + (settings.value.extraClassVisibilityHours || 0)
+
       await api.post('/v1/admin/settings', settings.value)
 
       // Update the settings store to reflect changes immediately

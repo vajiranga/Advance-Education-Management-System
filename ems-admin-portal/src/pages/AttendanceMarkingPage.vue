@@ -40,26 +40,40 @@
                    </div>
                    <q-list v-else separator>
                        <template v-for="(group, date) in groupedSessions" :key="date">
-                           <q-item-label header class="bg-grey-3 text-grey-8 text-weight-bold sticky-top q-px-md q-py-sm shadow-1" style="z-index:10">{{ formatDateHeader(date) }}</q-item-label>
-                           <q-item
-                              v-for="(sess, idx) in group" :key="sess.id + '_' + idx"
-                              clickable
-                              v-ripple
-                              :active="selectedSession === sess"
-                              active-class="bg-blue-1 text-primary"
-                              @click="selectSession(sess)"
+                           <q-item-label
+                               header
+                               class="bg-grey-3 text-grey-8 text-weight-bold sticky-top q-px-md q-py-sm shadow-1 cursor-pointer row items-center justify-between"
+                               style="z-index:10"
+                               @click="toggleDateGroup(date)"
                            >
-                               <q-item-section>
-                                   <q-item-label class="text-weight-bold">{{ sess.course_name }}</q-item-label>
-                                   <q-item-label caption>{{ sess.start }} - {{ sess.end }}</q-item-label>
-                                   <q-item-label caption class="text-grey-8">{{ sess.teacher_name }}</q-item-label>
-                               </q-item-section>
-                               <q-item-section side>
-                                   <q-chip size="sm" :color="getStatusColor(sess.marked_status)" text-color="white">
-                                       {{ sess.marked_status }}
-                                   </q-chip>
-                               </q-item-section>
-                           </q-item>
+                               <span>{{ formatDateHeader(date) }}</span>
+                               <q-icon
+                                   :name="expandedDates[date] ? 'expand_more' : 'chevron_right'"
+                                   size="sm"
+                                   class="transition-all"
+                               />
+                           </q-item-label>
+                           <template v-if="expandedDates[date]">
+                               <q-item
+                                  v-for="(sess, idx) in group" :key="sess.id + '_' + idx"
+                                  clickable
+                                  v-ripple
+                                  :active="selectedSession === sess"
+                                  active-class="bg-blue-1 text-primary"
+                                  @click="selectSession(sess)"
+                               >
+                                   <q-item-section>
+                                       <q-item-label class="text-weight-bold">{{ sess.course_name }}</q-item-label>
+                                       <q-item-label caption>{{ sess.start }} - {{ sess.end }}</q-item-label>
+                                       <q-item-label caption class="text-grey-8">{{ sess.teacher_name }}</q-item-label>
+                                   </q-item-section>
+                                   <q-item-section side>
+                                       <q-chip size="sm" :color="getStatusColor(sess.marked_status)" text-color="white">
+                                           {{ sess.marked_status }}
+                                       </q-chip>
+                                   </q-item-section>
+                               </q-item>
+                           </template>
                        </template>
                    </q-list>
                    <div v-if="!loadingSessions && Object.keys(groupedSessions).length === 0" class="text-center q-pa-xl text-grey column flex-center">
@@ -239,12 +253,35 @@ const groupedSessions = computed(() => {
         groups[d].push(sess)
     })
 
-    // Sort dates descending
+    // Sort dates descending (newest first)
     return Object.keys(groups).sort().reverse().reduce((acc, key) => {
         acc[key] = groups[key]
         return acc
     }, {})
 })
+
+// Track which date groups are expanded
+const expandedDates = ref({})
+
+// Initialize all dates as expanded when sessions change
+watch(groupedSessions, (newGroups) => {
+    const today = new Date()
+    const year = today.getFullYear()
+    const month = String(today.getMonth() + 1).padStart(2, '0')
+    const day = String(today.getDate()).padStart(2, '0')
+    const todayStr = `${year}-${month}-${day}`
+
+    Object.keys(newGroups).forEach(date => {
+        if (expandedDates.value[date] === undefined) {
+            // Only expand today by default, collapse all others
+            expandedDates.value[date] = (date === todayStr)
+        }
+    })
+}, { immediate: true })
+
+function toggleDateGroup(date) {
+    expandedDates.value[date] = !expandedDates.value[date]
+}
 
 const dateLabel = computed(() => {
     if (!dateFilter.value) return null

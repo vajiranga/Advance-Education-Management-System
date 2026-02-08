@@ -61,20 +61,20 @@ class AttendanceController extends Controller
     public function getStudents(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'course_id' => 'required', 
+            'course_id' => 'required',
             'date' => 'required|date'
         ]);
-        
+
         if ($validator->fails()) return response()->json(['errors' => $validator->errors()], 422);
 
         $courseId = $request->course_id;
         $date = $request->date;
-        
+
         if ($courseId === 'all') {
              $teacherId = $request->user()->id;
              // Get course IDs taught by this teacher
              $courseIds = Course::where('teacher_id', $teacherId)->pluck('id');
-             
+
              // Get unique students enrolled in these courses
              $students = \App\Models\User::whereHas('courses', function($q) use ($courseIds) {
                  $q->whereIn('courses.id', $courseIds);
@@ -101,8 +101,16 @@ class AttendanceController extends Controller
         }
 
         $course = Course::findOrFail($courseId);
-        
-        $students = $course->students()
+
+        // If this is an extra class, get students from parent course
+        $targetCourseId = $courseId;
+        if ($course->type === 'extra' && $course->parent_course_id) {
+            $targetCourseId = $course->parent_course_id;
+        }
+
+        $targetCourse = Course::findOrFail($targetCourseId);
+
+        $students = $targetCourse->students()
             ->with(['attendances' => function($q) use ($courseId, $date) {
                 $q->where('course_id', $courseId)->where('date', $date);
             }])
@@ -124,7 +132,7 @@ class AttendanceController extends Controller
     public function myAttendance(Request $request)
     {
         $user = $request->user();
-        
+
         // Fetch all attendance for this user
         $attendances = Attendance::where('user_id', $user->id)
             ->with('course')
@@ -133,17 +141,17 @@ class AttendanceController extends Controller
 
         // Group by Course
         $grouped = $attendances->groupBy('course_id');
-        
+
         $response = [];
-        
+
         foreach($grouped as $courseId => $records) {
             $course = $records->first()->course;
             $courseName = $course ? $course->name : 'Unknown Course';
-            
+
             $total = $records->count();
             $present = $records->where('status', 'present')->count();
             $percentage = $total > 0 ? round(($present / $total) * 100) : 0;
-            
+
             $history = $records->map(function($rec) {
                 return [
                     'date' => $rec->date,
@@ -189,25 +197,25 @@ class AttendanceController extends Controller
                 }
                 return true;
             });
-        
+
         $now = now();
         $upcomingLimit = now()->addHours(24);
         $recentLimit = now()->subDays(7);
-        
+
         $upcomingSessions = [];
         $recentSessions = [];
-        
+
         foreach($courses as $course) {
             $schedule = $course->schedule;
             if (!$schedule) continue;
 
             // Generate occurrences for this course within range [Now-7days, Now+24hours]
             $occurrences = $this->getOccurrences($schedule, $recentLimit, $upcomingLimit);
-            
+
             foreach($occurrences as $occ) {
                 $start = \Carbon\Carbon::parse($occ['date'] . ' ' . $occ['start']);
                 $end = \Carbon\Carbon::parse($occ['date'] . ' ' . $occ['end']);
-                
+
                 // 1. Upcoming Check
                 if ($start->greaterThan($now) && $start->lessThanOrEqualTo($upcomingLimit)) {
                     $upcomingSessions[] = [
@@ -219,7 +227,7 @@ class AttendanceController extends Controller
                         'type' => $course->type ?? 'regular'
                     ];
                 }
-                
+
                 // 2. Recent/Past Check
                 if ($end->lessThan($now) && $end->greaterThanOrEqualTo($recentLimit)) {
                     // Check actual attendance record
@@ -227,15 +235,15 @@ class AttendanceController extends Controller
                                 ->where('course_id', $course->id)
                                 ->where('date', $occ['date'])
                                 ->first();
-                    
+
                     $status = $att ? $att->status : 'absent';
-                    
+
                     // User Request: If Admin hasn't marked it yet (meaning NO record), show Absent.
                     // But if it's VERY recent (e.g. class just ended 1 hour ago), maybe Admin hasn't marked it yet?
                     // User said: "attend admin pennel eken mark unee neththan ee class eka end time ekata auto pennanna oone attend unee ne kiyala"
                     // Translation: "If not marked by admin, automatically show as 'did not attend' (Absent) at the end time."
                     // So 'absent' default is correct.
-                    
+
                     $recentSessions[] = [
                          'id' => $course->id . '_' . $occ['date'],
                          'course_name' => $course->name,
@@ -247,7 +255,7 @@ class AttendanceController extends Controller
                 }
             }
         }
-        
+
         // Sort
         usort($upcomingSessions, fn($a, $b) => strcmp($a['date'].$a['start'], $b['date'].$b['start']));
         usort($recentSessions, fn($a, $b) => strcmp($b['date'].$b['time'], $a['date'].$a['time'])); // Descending
@@ -275,30 +283,38 @@ class AttendanceController extends Controller
             $startWindow = now()->subDays(3);
             $endWindow = now()->addHours(24);
         }
-        
+
         $courses = Course::where('status', 'approved')->get(); // Active courses
-        
+
         $sessions = [];
-        
+
         foreach($courses as $course) {
             $schedule = $course->schedule;
             if (!$schedule) continue;
-            
+
             $occurrences = $this->getOccurrences($schedule, $startWindow, $endWindow);
-            
+
             foreach($occurrences as $occ) {
                  // Check if attendance is already fully marked?
                  // Or just count how many marked
                  $markedCount = Attendance::where('course_id', $course->id)
                                     ->where('date', $occ['date'])
                                     ->count();
+
+                 // For extra classes, count students from parent course
                  $totalStudents = $course->students()->count();
-                 
+                 if ($course->type === 'extra' && $course->parent_course_id) {
+                     $parentCourse = Course::find($course->parent_course_id);
+                     if ($parentCourse) {
+                         $totalStudents = $parentCourse->students()->count();
+                     }
+                 }
+
                  $status = 'pending';
                  if ($markedCount > 0) {
                      $status = ($markedCount >= $totalStudents) ? 'completed' : 'partial';
                  }
-                 
+
                  $sessions[] = [
                      'course_id' => $course->id,
                      'course_name' => $course->name,
@@ -312,17 +328,17 @@ class AttendanceController extends Controller
                  ];
             }
         }
-        
+
         usort($sessions, fn($a, $b) => strcmp($b['date'].$b['start'], $a['date'].$a['start']));
-        
+
         return response()->json(['sessions' => $sessions]);
     }
 
 
-    private function getOccurrences($schedule, $startWindow, $endWindow) 
+    private function getOccurrences($schedule, $startWindow, $endWindow)
     {
         $occurrences = [];
-        
+
         // Ensure schedule is array
         if (is_string($schedule)) {
              try { $schedule = json_decode($schedule, true); } catch(\Exception $e) { return []; }
@@ -332,11 +348,11 @@ class AttendanceController extends Controller
         // Regular Class
         if (isset($schedule['day'])) {
             $targetDay = $schedule['day']; // "Monday"
-            
+
             // Loop through each day in window
             $current = clone $startWindow;
             $end = clone $endWindow;
-            
+
             while($current->lessThanOrEqualTo($end)) {
                 if ($current->format('l') === $targetDay) {
                      $occurrences[] = [
@@ -347,7 +363,7 @@ class AttendanceController extends Controller
                 }
                 $current->addDay();
             }
-        } 
+        }
         // Extra/One-off Class
         elseif (isset($schedule['date'])) {
             $date = \Carbon\Carbon::parse($schedule['date']);
@@ -359,7 +375,7 @@ class AttendanceController extends Controller
                  ];
             }
         }
-        
+
         return $occurrences;
     }
 }

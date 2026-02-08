@@ -119,5 +119,17 @@ export const useTeacherStore = defineStore('teacher', () => {
         }
     }
 
-    return { createClass, updateClass, deleteClass, fetchCourses, fetchBatches, fetchSubjects, checkHallAvailability, fetchStudentsForAttendance, saveAttendance, loading, courses }
+    async function fetchClassesForDate(teacherId, date) {
+        try {
+            const res = await api.get('/v1/teacher/classes', {
+                params: { teacher_id: teacherId, date }
+            })
+            return res.data || []
+        } catch (e) {
+            console.error('Fetch classes for date failed', e)
+            return []
+        }
+    }
+
+    return { createClass, updateClass, deleteClass, fetchCourses, fetchBatches, fetchSubjects, checkHallAvailability, fetchStudentsForAttendance, saveAttendance, fetchClassesForDate, loading, courses }
 })
