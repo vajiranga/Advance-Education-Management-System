@@ -4,32 +4,32 @@
       <div class="text-h5 text-weight-bold" :class="$q.dark.isActive ? 'text-teal-2' : 'text-teal-9'">Attendance Management</div>
       <div class="row items-center q-gutter-x-sm">
          <div class="text-subtitle2" :class="$q.dark.isActive ? 'text-white' : ''">Date:</div>
-         <q-input 
-            dense 
-            outlined 
-            v-model="selectedDate" 
-            type="date" 
-            :bg-color="$q.dark.isActive ? 'grey-9' : 'white'" 
+         <q-input
+            dense
+            outlined
+            v-model="selectedDate"
+            type="date"
+            :bg-color="$q.dark.isActive ? 'grey-9' : 'white'"
             :dark="$q.dark.isActive"
          />
       </div>
     </div>
-    
+
     <!-- Class Selector -->
     <q-card class="q-mb-md no-shadow" :class="$q.dark.isActive ? 'bg-dark border-dark' : 'bg-white border-light'">
        <q-card-section class="row items-center q-gutter-x-md">
           <div class="text-subtitle1" :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey-7'">Select Class:</div>
-          <q-select 
-            dense 
-            outlined 
-            v-model="selectedClass" 
-            :options="classOptions" 
+          <q-select
+            dense
+            outlined
+            v-model="selectedClass"
+            :options="classOptions"
             option-label="name"
-            option-value="id" 
+            option-value="id"
             label="Choose Class"
             style="min-width: 250px"
             :bg-color="$q.dark.isActive ? 'grey-9' : 'white'"
-            :dark="$q.dark.isActive" 
+            :dark="$q.dark.isActive"
           />
           <q-btn color="teal" label="Load Students" icon="refresh" @click="loadStudents" :disable="!selectedClass" />
        </q-card-section>
@@ -45,7 +45,7 @@
                 <q-chip :color="$q.dark.isActive ? 'red-9' : 'red-1'" :text-color="$q.dark.isActive ? 'red-2' : 'red'">Absent: {{ absentCount }}</q-chip>
              </div>
           </div>
-          
+
           <q-separator :class="$q.dark.isActive ? 'bg-grey-8' : ''" />
 
           <q-list separator>
@@ -59,20 +59,20 @@
                 </q-item-section>
                 <q-item-section side>
                    <div class="row q-gutter-x-md">
-                      <q-btn 
-                         round 
-                         :color="student.status === 'present' ? 'green' : ($q.dark.isActive ? 'grey-8' : 'grey-3')" 
-                         :text-color="student.status === 'present' ? 'white' : 'grey'" 
-                         icon="check" 
-                         @click="student.status = 'present'" 
+                      <q-btn
+                         round
+                         :color="student.status === 'present' ? 'green' : ($q.dark.isActive ? 'grey-8' : 'grey-3')"
+                         :text-color="student.status === 'present' ? 'white' : 'grey'"
+                         icon="check"
+                         @click="student.status = 'present'"
                          unelevated
                       />
-                      <q-btn 
-                         round 
-                         :color="student.status === 'absent' ? 'red' : ($q.dark.isActive ? 'grey-8' : 'grey-3')" 
-                         :text-color="student.status === 'absent' ? 'white' : 'grey'" 
-                         icon="close" 
-                         @click="student.status = 'absent'" 
+                      <q-btn
+                         round
+                         :color="student.status === 'absent' ? 'red' : ($q.dark.isActive ? 'grey-8' : 'grey-3')"
+                         :text-color="student.status === 'absent' ? 'white' : 'grey'"
+                         icon="close"
+                         @click="student.status = 'absent'"
                          unelevated
                       />
                       <!-- Added Late/Excused toggle if needed, or keep simple -->
@@ -80,15 +80,15 @@
                 </q-item-section>
              </q-item>
           </q-list>
-          
+
           <q-separator :class="$q.dark.isActive ? 'bg-grey-8' : ''" />
-          
-           <div class="row justify-end q-pa-md" v-if="selectedClass?.id !== 'all'">
+
+           <div class="row justify-end q-pa-md" v-if="selectedClass?.id !== 'all' && !settingsStore.disableTeacherAttendance">
               <q-btn color="teal" label="Save Attendance" icon="save" @click="saveAttendance" :loading="loading" />
            </div>
        </q-card-section>
     </q-card>
-    
+
     <div v-if="!selectedClass && attendanceList.length === 0" class="text-center text-grey q-mt-xl">
         Please select a class to mark attendance.
     </div>
@@ -99,12 +99,14 @@
 import { ref, computed, onMounted } from 'vue'
 import { useTeacherStore } from 'stores/teacher-store'
 import { useAuthStore } from 'stores/auth-store'
+import { useSettingsStore } from 'stores/settings-store'
 import { storeToRefs } from 'pinia'
 import { useQuasar, date as qDate } from 'quasar'
 
 const $q = useQuasar()
 const teacherStore = useTeacherStore()
 const authStore = useAuthStore()
+const settingsStore = useSettingsStore()
 const { courses, loading } = storeToRefs(teacherStore)
 
 const selectedClass = ref(null)
@@ -120,6 +122,7 @@ const selectedDate = ref(qDate.formatDate(Date.now(), 'YYYY-MM-DD'))
 const attendanceList = ref([])
 
 onMounted(() => {
+    settingsStore.fetchPublicSettings()
     // Ensure courses are loaded
     if (courses.value.length === 0) {
         teacherStore.fetchCourses({ teacher_id: authStore.user?.id })
@@ -128,21 +131,21 @@ onMounted(() => {
 
 async function loadStudents() {
     if (!selectedClass.value) return
-    
+
     $q.loading.show()
     attendanceList.value = []
-    
+
     // Fetch
     const res = await teacherStore.fetchStudentsForAttendance(selectedClass.value.id, selectedDate.value)
     $q.loading.hide()
-    
+
     const students = res.data || []
-    
+
     // Map backend data to UI
     attendanceList.value = students.map(s => ({
         id: s.id,
         name: s.name,
-        idNumber: s.username, 
+        idNumber: s.username,
         avatar: 'https://cdn.quasar.dev/img/boy-avatar.png',
         status: s.attendance_status || 'absent' // Default to absent
     }))
@@ -164,10 +167,10 @@ async function saveAttendance() {
             status: s.status
         }))
     }
-    
+
     const res = await teacherStore.saveAttendance(payload)
     $q.loading.hide()
-    
+
     if (res.success) {
         $q.notify({ type: 'positive', message: 'Attendance Saved Successfully' })
         // Reload to ensure sync

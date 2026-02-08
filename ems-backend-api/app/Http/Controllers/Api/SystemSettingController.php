@@ -47,7 +47,8 @@ class SystemSettingController extends Controller
             'appName',
             'instituteName',
             'instituteLogo',
-            'supportPhone'
+            'supportPhone',
+            'disableTeacherAttendance'
         ];
 
         $settings = SystemSetting::whereIn('key', $publicKeys)->pluck('value', 'key');

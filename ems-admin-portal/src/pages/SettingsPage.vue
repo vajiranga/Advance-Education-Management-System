@@ -110,7 +110,16 @@
                  <q-toggle color="red" v-model="settings.blockTeacherRegistration" />
                </q-item-section>
              </q-item>
-
+          <!-- Mobile App Notifications -->
+           <q-item tag="label" v-ripple>
+            <q-item-section>
+               <q-item-label>Mobile App Notifications</q-item-label>
+               <q-item-label caption>Master toggle for Student, Teacher & Parent Apps. Turn ON to ENABLE notifications.</q-item-label>
+            </q-item-section>
+            <q-item-section side>
+              <q-toggle color="purple" v-model="settings.enableAppNotifications" />
+            </q-item-section>
+          </q-item>
              <!-- Auto Approve Classes -->
              <q-item tag="label" v-ripple>
                <q-item-section>
@@ -121,16 +130,6 @@
                  <q-toggle color="green" v-model="settings.autoApproveClasses" />
                </q-item-section>
              </q-item>
-              <!-- Mobile App Notifications -->
-              <q-item tag="label" v-ripple>
-                <q-item-section>
-                  <q-item-label>Mobile App Notifications</q-item-label>
-                  <q-item-label caption>Master toggle for Student, Teacher & Parent Apps. Turn ON to ENABLE notifications.</q-item-label>
-                </q-item-section>
-                <q-item-section side>
-                  <q-toggle color="purple" v-model="settings.enableAppNotifications" />
-                </q-item-section>
-              </q-item>
              <!-- Auto Approve Extra Classes -->
              <q-item tag="label" v-ripple>
                <q-item-section>
@@ -141,7 +140,7 @@
                  <q-toggle color="green" v-model="settings.autoApproveExtraClasses" />
                </q-item-section>
              </q-item>
-           </q-list>
+         </q-list>
 
            <!-- Teacher Financial Settings (New Section Below) -->
            <div class="q-mt-xl">
@@ -295,10 +294,16 @@
                                  </q-item>
                                  <q-item>
                                      <q-item-section>
-                                         <q-item-label>Auto-mark Absent (Minutes Late)</q-item-label>
+                                         <q-item-label>Auto-mark Absent</q-item-label>
                                      </q-item-section>
                                      <q-item-section side>
-                                         <q-input v-model.number="settings.autoMarkAbsentMinutes" type="number" dense outlined style="width: 80px" />
+                                         <q-select
+                                            v-model="settings.autoMarkAbsentMinutes"
+                                            :options="['Default Absent']"
+                                            dense
+                                            outlined
+                                            style="width: 150px"
+                                         />
                                      </q-item-section>
                                  </q-item>
                              </q-list>
@@ -576,7 +581,7 @@ const settings = ref({
 
 
   minAttendancePercent: 80,
-  autoMarkAbsentMinutes: 30,
+  autoMarkAbsentMinutes: 'Default Absent',
   attendanceReminderTime: '09:00',
   disableTeacherAttendance: false, // Feature limitation
 

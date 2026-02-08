@@ -6,6 +6,7 @@ export const useSettingsStore = defineStore('settings', {
     instituteName: localStorage.getItem('instituteName') || '',
     appName: localStorage.getItem('appName') || '',
     instituteLogo: localStorage.getItem('instituteLogo') || null,
+    disableTeacherAttendance: localStorage.getItem('disableTeacherAttendance') === 'true',
     loading: false
   }),
 
@@ -26,6 +27,11 @@ export const useSettingsStore = defineStore('settings', {
           if (response.data.instituteLogo) {
             this.instituteLogo = response.data.instituteLogo
             localStorage.setItem('instituteLogo', this.instituteLogo)
+          }
+          if (response.data.disableTeacherAttendance !== undefined) {
+             const val = response.data.disableTeacherAttendance
+             this.disableTeacherAttendance = (val === 'true' || val === true || val === '1' || val === 1)
+             localStorage.setItem('disableTeacherAttendance', this.disableTeacherAttendance)
           }
         }
       } catch (error) {
