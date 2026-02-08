@@ -17,7 +17,8 @@ class StudentFee extends Model
         'status',
         'paid_at',
         'payment_method',
-        'transaction_ref'
+        'transaction_ref',
+        'payment_id'
     ];
 
     public function student()
@@ -28,5 +29,10 @@ class StudentFee extends Model
     public function course()
     {
         return $this->belongsTo(Course::class);
+    }
+
+    public function payment()
+    {
+        return $this->belongsTo(Payment::class);
     }
 }

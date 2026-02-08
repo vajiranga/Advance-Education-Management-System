@@ -43,12 +43,15 @@ class PaymentController extends Controller
             ->where('status', 'pending')
              // Ensure Student is actually Enrolled in the course (Active)
             ->whereHas('course', function ($query) use ($user) {
-                 $query->whereHas('students', function ($q) use ($user) {
+                 $query->withTrashed() // Include soft-deleted courses
+                       ->whereHas('students', function ($q) use ($user) {
                      $q->where('users.id', $user->id) // Current Student
                        ->where('enrollments.status', 'active'); // Active Enrollment
                  });
             })
-            ->with(['course.subject'])
+            ->with(['course' => function($q) {
+                $q->withTrashed(); // Include soft-deleted courses
+            }, 'course.subject'])
             ->orderBy('month', 'desc')
             ->get()
             ->map(function($fee) use ($lateFeePenalty, $gracePeriodDays) {
@@ -303,12 +306,15 @@ class PaymentController extends Controller
             ->where('status', 'pending')
             // Fix: Check Active Enrollment
             ->whereHas('course', function ($query) {
-                 $query->whereHas('students', function ($q) {
+                 $query->withTrashed() // Include soft-deleted courses
+                       ->whereHas('students', function ($q) {
                        $q->whereColumn('enrollments.user_id', 'student_fees.student_id')
                          ->where('enrollments.status', 'active');
                  });
             })
-            ->with(['student', 'course'])
+            ->with(['student', 'course' => function($q) {
+                $q->withTrashed(); // Include soft-deleted courses
+            }])
             ->orderBy('due_date', 'asc')
             ->get()
             ->map(function($fee) use ($lateFeePenalty, $gracePeriodDays) {
@@ -354,12 +360,15 @@ class PaymentController extends Controller
             ->where('status', 'pending')
             // Fix: Check Active Enrollment
             ->whereHas('course', function ($query) use ($id) {
-                 $query->whereHas('students', function ($q) use ($id) {
+                 $query->withTrashed() // Include soft-deleted courses
+                       ->whereHas('students', function ($q) use ($id) {
                      $q->where('users.id', $id)
                        ->where('enrollments.status', 'active');
                  });
             })
-            ->with(['course.subject'])
+            ->with(['course' => function($q) {
+                $q->withTrashed(); // Include soft-deleted courses
+            }, 'course.subject'])
             ->orderBy('month', 'desc')
             ->get()
             ->map(function($fee) use ($lateFeePenalty, $gracePeriodDays) {
@@ -773,8 +782,17 @@ class PaymentController extends Controller
     public function getStudentPendingFees(Request $request, $id) {
         $fees = \App\Models\StudentFee::where('student_id', $id)
             ->where('status', 'pending')
-            ->whereHas('course')
-            ->with(['course.subject'])
+            // Only show fees for active enrollments (matching student app)
+            ->whereHas('course', function($q) use ($id) {
+                $q->withTrashed() // Include soft-deleted courses
+                  ->whereHas('students', function ($query) use ($id) {
+                      $query->where('users.id', $id)
+                            ->where('enrollments.status', 'active'); // Active enrollment only
+                  });
+            })
+            ->with(['course' => function($q) {
+                $q->withTrashed(); // Include soft-deleted courses
+            }, 'course.subject'])
             ->orderBy('month', 'asc')
             ->get()
             ->map(function($fee) {

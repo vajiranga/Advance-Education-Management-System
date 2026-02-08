@@ -84,12 +84,12 @@
       <!-- Right Side - Pending Fees & Payment -->
       <div class="col-12 col-md-7">
         <!-- Pending Fees List -->
-        <q-card v-if="paymentForm.selectedStudent" class="q-mb-md">
+        <q-card v-if="paymentForm.selectedStudent">
           <q-card-section class="bg-orange-1">
             <div class="row items-center justify-between">
               <div class="text-h6 text-orange-9">
                 <q-icon name="receipt_long" class="q-mr-sm" />
-                Pending Fees
+                Pending Fees - Select to Pay
               </div>
               <q-badge color="orange" :label="`${enrolledClasses.length} pending`" />
             </div>
@@ -108,11 +108,14 @@
               :key="cls.id"
               clickable
               v-ripple
-              @click="selectClassForPayment(cls)"
-              :class="paymentForm.selectedClass?.id === cls.id ? 'bg-purple-1' : ''"
+              @click="toggleFeeSelection(cls)"
             >
               <q-item-section avatar>
-                <q-radio v-model="paymentForm.selectedClass" :val="cls" color="purple" />
+                <q-checkbox
+                  v-model="cls.selected"
+                  color="purple"
+                  @update:model-value="updateTotalAmount"
+                />
               </q-item-section>
               <q-item-section>
                 <q-item-label class="text-weight-bold">{{ cls.course_name }}</q-item-label>
@@ -125,69 +128,29 @@
               </q-item-section>
             </q-item>
           </q-list>
-        </q-card>
 
-        <!-- Payment Form -->
-        <q-card v-if="paymentForm.selectedClass">
-          <q-card-section class="bg-green-1">
-            <div class="text-h6 text-green-9">
-              <q-icon name="payments" class="q-mr-sm" />
-              Record Payment
+          <q-separator />
+
+          <!-- Total Amount Summary -->
+          <q-card-section v-if="selectedFeesCount > 0" class="bg-green-1">
+            <div class="row items-center justify-between">
+              <div>
+                <div class="text-caption text-grey-8">Total Amount</div>
+                <div class="text-body2">{{ selectedFeesCount }} fee{{ selectedFeesCount > 1 ? 's' : '' }} selected</div>
+              </div>
+              <div class="text-h5 text-green-9 text-weight-bold">
+                LKR {{ totalAmount.toLocaleString() }}
+              </div>
             </div>
           </q-card-section>
 
-          <q-separator />
-
-          <q-card-section class="q-gutter-md">
-            <!-- Selected Fee Summary -->
-            <q-banner class="bg-grey-2 rounded-borders">
-              <div class="row items-center justify-between">
-                <div>
-                  <div class="text-weight-bold">{{ paymentForm.selectedClass.course_name }}</div>
-                  <div class="text-caption">{{ paymentForm.selectedClass.month_label }}</div>
-                </div>
-                <div class="text-h6 text-purple">LKR {{ Number(paymentForm.selectedClass.amount).toLocaleString() }}</div>
-              </div>
-            </q-banner>
-
-            <!-- Amount Input -->
-            <q-input
-              v-model.number="paymentForm.amount"
-              label="Payment Amount (LKR)"
-              outlined
-              type="number"
-              min="0"
-              :rules="[val => val > 0 || 'Amount must be greater than 0']"
-            >
-              <template v-slot:prepend>
-                <q-icon name="attach_money" />
-              </template>
-            </q-input>
-
-            <!-- Notes -->
-            <q-input
-              v-model="paymentForm.note"
-              label="Notes (Optional)"
-              outlined
-              type="textarea"
-              rows="2"
-              placeholder="Any additional notes..."
-            >
-              <template v-slot:prepend>
-                <q-icon name="notes" />
-              </template>
-            </q-input>
-          </q-card-section>
-
-          <q-separator />
-
-          <q-card-actions class="q-pa-md">
+          <q-card-actions class="q-pa-md" v-if="selectedFeesCount > 0">
             <q-btn
               flat
-              label="Clear"
+              label="Clear Selection"
               color="grey"
-              icon="refresh"
-              @click="clearForm"
+              icon="clear_all"
+              @click="clearSelection"
             />
             <q-space />
             <q-btn
@@ -195,7 +158,6 @@
               color="purple"
               icon="payment"
               size="lg"
-              :disable="!paymentForm.amount || paymentForm.amount <= 0"
               :loading="processingPayment"
               @click="submitCashPayment"
             />
@@ -243,7 +205,7 @@
 </template>
 
 <script setup>
-import { ref, nextTick } from 'vue'
+import { ref, nextTick, computed } from 'vue'
 import { api } from 'boot/axios'
 import { useQuasar } from 'quasar'
 
@@ -258,11 +220,32 @@ const recentPayments = ref([])
 const paymentForm = ref({
   barcodeSearch: '',
   selectedStudent: null,
-  selectedClass: null,
-  amount: 0,
-  note: '',
   error: ''
 })
+
+const totalAmount = computed(() => {
+  return enrolledClasses.value
+    .filter(cls => cls.selected)
+    .reduce((sum, cls) => sum + Number(cls.amount), 0)
+})
+
+const selectedFeesCount = computed(() => {
+  return enrolledClasses.value.filter(cls => cls.selected).length
+})
+
+function toggleFeeSelection(cls) {
+  cls.selected = !cls.selected
+}
+
+function updateTotalAmount() {
+  // Trigger reactivity
+}
+
+function clearSelection() {
+  enrolledClasses.value.forEach(cls => {
+    cls.selected = false
+  })
+}
 
 async function searchStudent() {
   if (!paymentForm.value.barcodeSearch.trim()) {
@@ -272,7 +255,6 @@ async function searchStudent() {
 
   paymentForm.value.error = ''
   paymentForm.value.selectedStudent = null
-  paymentForm.value.selectedClass = null
   enrolledClasses.value = []
   loadingStudentData.value = true
 
@@ -294,8 +276,6 @@ async function searchStudent() {
 
     paymentForm.value.selectedStudent = foundStudent
     await fetchStudentClasses(foundStudent.id)
-    paymentForm.value.amount = 0
-    paymentForm.value.selectedClass = null
 
   } catch (error) {
     console.error('Search error:', error)
@@ -308,7 +288,10 @@ async function searchStudent() {
 async function fetchStudentClasses(studentId) {
   try {
     const res = await api.get(`/v1/admin/students/${studentId}/pending-fees`)
-    enrolledClasses.value = res.data || []
+    enrolledClasses.value = (res.data || []).map(fee => ({
+      ...fee,
+      selected: true // Auto-select all by default
+    }))
 
     if (enrolledClasses.value.length === 0) {
       paymentForm.value.error = 'No pending fees found for this student'
@@ -320,15 +303,8 @@ async function fetchStudentClasses(studentId) {
   }
 }
 
-function selectClassForPayment(cls) {
-  paymentForm.value.selectedClass = cls
-  paymentForm.value.amount = cls.amount || 0
-}
-
 function clearStudent() {
   paymentForm.value.selectedStudent = null
-  paymentForm.value.selectedClass = null
-  paymentForm.value.amount = 0
   paymentForm.value.error = ''
   enrolledClasses.value = []
   nextTick(() => barcodeInput.value?.focus())
@@ -338,9 +314,6 @@ function clearForm() {
   paymentForm.value = {
     barcodeSearch: '',
     selectedStudent: null,
-    selectedClass: null,
-    amount: 0,
-    note: '',
     error: ''
   }
   enrolledClasses.value = []
@@ -348,8 +321,10 @@ function clearForm() {
 }
 
 async function submitCashPayment() {
-  if (!paymentForm.value.selectedStudent || !paymentForm.value.selectedClass || !paymentForm.value.amount) {
-    $q.notify({ type: 'warning', message: 'Please fill all required fields' })
+  const selectedFees = enrolledClasses.value.filter(cls => cls.selected)
+
+  if (!paymentForm.value.selectedStudent || selectedFees.length === 0) {
+    $q.notify({ type: 'warning', message: 'Please select at least one fee to pay' })
     return
   }
 
@@ -359,9 +334,9 @@ async function submitCashPayment() {
   try {
     const payload = {
       student_id: paymentForm.value.selectedStudent.id,
-      amount: paymentForm.value.amount,
-      note: paymentForm.value.note || 'Cash Payment',
-      fee_ids: [paymentForm.value.selectedClass.id]
+      amount: totalAmount.value,
+      note: `Cash Payment for ${selectedFees.length} fee(s)`,
+      fee_ids: selectedFees.map(fee => fee.id)
     }
 
     const res = await api.post('/v1/admin/payments/record-cash', payload)
@@ -369,15 +344,15 @@ async function submitCashPayment() {
     if (res.data && res.data.message) {
       $q.notify({
         type: 'positive',
-        message: `Payment of LKR ${Number(paymentForm.value.amount).toLocaleString()} recorded for ${paymentForm.value.selectedStudent.name}`,
+        message: `Payment of LKR ${totalAmount.value.toLocaleString()} recorded for ${paymentForm.value.selectedStudent.name}`,
         timeout: 3000
       })
 
       // Track recent payment
       recentPayments.value.unshift({
         studentName: paymentForm.value.selectedStudent.name,
-        courseName: paymentForm.value.selectedClass.course_name,
-        amount: paymentForm.value.amount,
+        courseName: selectedFees.map(f => f.course_name).join(', '),
+        amount: totalAmount.value,
         time: new Date().toLocaleTimeString()
       })
 
