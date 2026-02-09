@@ -333,7 +333,18 @@
                                      </q-item-section>
                                      <q-item-section side><q-toggle v-model="settings.partialPayments" /></q-item-section>
                                  </q-item>
+                                 <q-separator spaced />
+                                 <q-item>
+                                     <q-item-section>
+                                         <q-item-label>WhatsApp Contact Number</q-item-label>
+                                         <q-item-label caption>For payment slip verification (Format: 947...)</q-item-label>
+                                     </q-item-section>
+                                     <q-item-section side>
+                                         <q-input v-model="settings.whatsappContact" dense outlined style="width: 140px" placeholder="94771234567" />
+                                     </q-item-section>
+                                 </q-item>
                              </q-list>
+
                         </q-card-section>
                     </q-card>
                 </div>
@@ -866,6 +877,7 @@ const settings = ref({
   feeCycleStartDay: 10,
   paymentGateway: false,
   partialPayments: true,
+  whatsappContact: '',
 
 
 

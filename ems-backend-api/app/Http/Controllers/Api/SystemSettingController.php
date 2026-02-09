@@ -49,7 +49,8 @@ class SystemSettingController extends Controller
             'instituteLogo',
             'logoUrl', // Expose logoUrl to public
             'supportPhone',
-            'disableTeacherAttendance'
+            'disableTeacherAttendance',
+            'whatsappContact'
         ];
 
         $settings = SystemSetting::whereIn('key', $publicKeys)->pluck('value', 'key');

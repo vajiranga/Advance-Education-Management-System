@@ -8,6 +8,7 @@ export const useSettingsStore = defineStore('settings', {
     instituteLogo: localStorage.getItem('instituteLogo') || null,
     logoUrl: localStorage.getItem('logoUrl') || '',
     disableTeacherAttendance: localStorage.getItem('disableTeacherAttendance') === 'true',
+    whatsappContact: localStorage.getItem('whatsappContact') || '',
     loading: false
   }),
 
@@ -59,6 +60,10 @@ export const useSettingsStore = defineStore('settings', {
              const val = response.data.disableTeacherAttendance
              this.disableTeacherAttendance = (val === 'true' || val === true || val === '1' || val === 1)
              localStorage.setItem('disableTeacherAttendance', this.disableTeacherAttendance)
+          }
+          if (response.data.whatsappContact) {
+            this.whatsappContact = response.data.whatsappContact
+            localStorage.setItem('whatsappContact', this.whatsappContact)
           }
         }
       } catch (error) {

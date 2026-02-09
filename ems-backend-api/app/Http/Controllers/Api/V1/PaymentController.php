@@ -155,25 +155,11 @@ class PaymentController extends Controller
             'amount' => $request->is_free_card ? 0 : $totalAmount,
             'month' => (count($validFees) === 1) ? $feeMonth : now()->format('Y-m'), // Use current month for bulk
             'type' => $request->is_free_card ? 'free_card' : $request->type,
-            'paid_at' => ($status === 'paid') ? now() : null,
+            'paid_at' => now(), // Set timestamp for creation. Status handles visibility. DB enforces NOT NULL.
             'status' => $status,
             'note' => $request->note . (count($validFees) > 1 ? ' (Bulk: ' . count($validFees) . ' items)' : ''),
-            'slip_image' => $slipPath
+            'slip_image' => $slipPath ?? '' // Assuming column is nullable. If 500 persists, might need migration or default string.
         ]);
-
-        // Link Payment ID to Fees and Update Fee Status
-        foreach ($validFees as $fee) {
-             // If cash/online (immediate success), mark fee as paid immediately
-             // If bank transfer, fee remains pending until admin approves payment
-             if ($status === 'paid') {
-                 $fee->update(['status' => 'paid', 'paid_at' => now(), 'payment_id' => $payment->id]);
-             } else {
-                 // Optionally link payment_id even if pending?
-                 // The schema might not have foreign key strictness?
-                 // Let's assume we can link it
-                 // $fee->payment_id = $payment->id; $fee->save();
-             }
-        }
 
         // --- NOTIFICATION TRIGGERS ---
         if ($status === 'paid') {
@@ -192,31 +178,22 @@ class PaymentController extends Controller
                 'type' => 'payment_pending',
                 'title' => 'Payment Under Review',
                 'message' => 'Your payment of LKR ' . number_format($totalAmount) . ' is pending verification.',
-                'data' => json_encode(['payment_id' => $payment->id]) // Should be array, Laravel casts to json automatically if cast is set, but explicit json_encode safer for string column
+                'data' => json_encode(['payment_id' => $payment->id])
             ]);
         }
-        // Update All Fees to point to this Payment
+
+        // Link Fees to Payment
         foreach ($validFees as $fee) {
+            $updateData = ['payment_id' => $payment->id];
+
             if ($status === 'paid') {
-                $fee->update([
-                    'status' => $request->is_free_card ? 'free_card' : 'paid',
-                    'paid_at' => now(),
-                    'payment_method' => $request->is_free_card ? 'free_card' : $request->type,
-                    'transaction_ref' => $payment->id
-                ]);
-            } else {
-                 // For pending bank transfer, we might want to link them too?
-                 // Currently 'transaction_ref' implies a successful payment reference.
-                 // We can leave them pending. The Admin will Approve the *Payment*.
-                 // But the Payment doesn't know WHICH fees it covers if we don't store it?
-                 // *Critical*: We need to know which fees this Payment covers to mark them paid on approval.
-                 // We can store a JSON list in Payment 'metadata' or 'description' if specific columns don't exist,
-                 // OR we can update the fees with a 'pending_payment_id' column (custom).
-                 // SIMPLER: Just link transaction_ref NOW, but keep status 'pending'.
-                 $fee->update([
-                    'transaction_ref' => $payment->id
-                 ]);
+                $updateData['status'] = $request->is_free_card ? 'free_card' : 'paid';
+                $updateData['paid_at'] = now();
+                $updateData['payment_method'] = $request->is_free_card ? 'free_card' : $request->type;
             }
+            // For pending, we just link payment_id. Status remains 'pending' (default)
+
+            $fee->update($updateData);
         }
 
         // Reactivate Student (if paid)
@@ -246,21 +223,24 @@ class PaymentController extends Controller
         $payment->paid_at = now();
         $payment->save();
 
-        // Update the related Fee
-        // Find the fee matching user, course, month (since we didn't store fee_id in payment directly, logic inferred)
-        // Ideally Payment should have fee_id, but current schema links loosely.
-        // Let's find the fee:
-        $fee = \App\Models\StudentFee::where('student_id', $payment->user_id)
-            ->where('course_id', $payment->course_id)
-            ->where('month', $payment->month)
-            ->first();
+        // Update the related Fees
+        // Use payment_id relationship first
+        $fees = \App\Models\StudentFee::where('payment_id', $payment->id)->get();
 
-        if ($fee) {
+        // Fallback for older records
+        if ($fees->isEmpty()) {
+            $fees = \App\Models\StudentFee::where('student_id', $payment->user_id)
+                ->where('course_id', $payment->course_id)
+                ->where('month', $payment->month)
+                ->get();
+        }
+
+        foreach ($fees as $fee) {
             $fee->update([
                 'status' => 'paid',
                 'paid_at' => now(),
                 'payment_method' => $payment->type,
-                'transaction_ref' => $payment->id
+                'transaction_ref' => $payment->id // Legacy support
             ]);
         }
 

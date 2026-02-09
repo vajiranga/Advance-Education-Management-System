@@ -235,6 +235,15 @@
             :pagination="tablePagination"
             :rows-per-page-options="[100, 200, 500, 1000, 0]"
           >
+            <!-- Add Filters for pending tab -->
+            <template v-slot:top-right>
+                <q-input dense debounce="300" v-model="cashSearchQuery" placeholder="Search Student ID">
+                    <template v-slot:append>
+                    <q-icon name="search" />
+                    </template>
+                </q-input>
+            </template>
+
             <template v-slot:body-cell-actions="props">
               <q-td :props="props">
                 <q-btn
@@ -256,6 +265,42 @@
             No pending payments to verify.
           </div>
         </q-tab-panel>
+
+        <!-- Verify Dialog -->
+        <q-dialog v-model="showVerifyDialog">
+            <q-card style="min-width: 400px">
+                <q-card-section>
+                    <div class="text-h6">Verify Payment</div>
+                </q-card-section>
+                <q-card-section v-if="selectedPayment">
+                    <div class="text-subtitle1">{{ selectedPayment.student?.name }} ({{ selectedPayment.student?.username }})</div>
+                    <div class="text-h5 text-primary q-my-md">LKR {{ selectedPayment.amount }}</div>
+                    <div class="q-mb-sm">
+                        <strong>Type:</strong> {{ selectedPayment.type }}<br/>
+                        <strong>Note:</strong> {{ selectedPayment.note }}
+                    </div>
+
+                    <div class="row q-col-gutter-sm q-mb-md" v-if="selectedPayment.fees && selectedPayment.fees.length > 0">
+                        <div class="col-12 text-weight-bold">Payment Covers:</div>
+                        <!-- If we had fees relation loaded, we could list them. Since backend summary might not eager load fees deeper detail, relying on note or description for now unless we fetch details. -->
+                         <!-- Assuming 'courses' or similar might be needed. -->
+                    </div>
+
+                    <div v-if="selectedPayment.slip_image">
+                         <div class="text-weight-bold q-mb-xs">Payment Slip:</div>
+                         <q-img :src="selectedPayment.slip_image" style="max-height: 300px" class="rounded-borders" />
+                         <div class="row justify-end q-mt-sm">
+                            <q-btn flat icon="print" label="Print" @click="printReceipt(selectedPayment)" size="sm" />
+                         </div>
+                    </div>
+                </q-card-section>
+                <q-card-actions align="right">
+                    <q-btn flat label="Close" v-close-popup color="grey" />
+                    <q-btn flat label="Reject" color="negative" @click="confirmReject" />
+                    <q-btn unelevated label="Approve & Verify" color="green" @click="confirmVerify" :loading="processingVerify" />
+                </q-card-actions>
+            </q-card>
+        </q-dialog>
 
         <!-- All Transactions Tab (Recent Feed) -->
         <q-tab-panel name="all" class="q-pa-md">
@@ -1343,6 +1388,49 @@ const showVerifyDialog = ref(false)
 const processingVerify = ref(false)
 const selectedPayment = ref(null)
 const verificationNote = ref('')
+
+
+
+async function confirmVerify() {
+  if (!selectedPayment.value) return
+  processingVerify.value = true
+  try {
+    await financeStore.approvePayment(selectedPayment.value.id)
+    $q.notify({ type: 'positive', message: 'Payment Verified' })
+    showVerifyDialog.value = false
+    refreshAll() // Reload data
+  } catch (e) {
+    console.error(e)
+    $q.notify({ type: 'negative', message: 'Verification Failed' })
+  } finally {
+    processingVerify.value = false
+  }
+}
+
+async function confirmReject() {
+    if (!selectedPayment.value) return
+    // Maybe prompt for rejection note or reason? For now, standard reject.
+    $q.notify({
+        message: 'Reject this payment?',
+        color: 'negative',
+        actions: [
+            { label: 'Cancel', color: 'white', handler: () => { /* ... */ } },
+            { label: 'Reject', color: 'white', handler: async () => {
+                 processingVerify.value = true
+                 try {
+                    await financeStore.rejectPayment(selectedPayment.value.id, verificationNote.value)
+                    $q.notify({ type: 'info', message: 'Payment Rejected' })
+                    showVerifyDialog.value = false
+                    refreshAll()
+                 } catch (e) {
+                    console.error(e)
+                 } finally {
+                    processingVerify.value = false
+                 }
+            }}
+        ]
+    })
+}
 
 // Filter Logic
 const filterYear = ref(new Date().getFullYear())

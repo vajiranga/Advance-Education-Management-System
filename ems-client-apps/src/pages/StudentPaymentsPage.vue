@@ -235,22 +235,37 @@
           </div>
 
           <div v-if="paymentMethod === 'bank_transfer'" class="q-mt-md">
-            <q-file
-              outlined
-              v-model="slipFile"
-              label="Upload Receipt Slip"
-              accept="image/*"
-              :dark="$q.dark.isActive"
-            >
-              <template v-slot:prepend>
-                <q-icon name="attach_file" />
-              </template>
-            </q-file>
-            <div class="text-caption text-grey q-mt-xs">
-              Bank Account: 123-456-7890 (BOC)<br />
-              Name: EMS Institute
-            </div>
+            <q-card flat bordered class="bg-grey-2 q-pa-sm">
+                <div class="text-caption text-grey-8 q-mb-sm">
+                   To complete your payment:
+                   <ol class="q-pl-md q-my-xs">
+                     <li>Click the button below to send details via WhatsApp.</li>
+                     <li>Attach your payment slip in the WhatsApp chat.</li>
+                     <li>Return here and click "Confirm Payment".</li>
+                   </ol>
+                </div>
+
+                <div class="text-subtitle2 text-weight-bold q-mb-xs">Bank Details:</div>
+                <div class="text-caption text-grey-8 q-mb-sm">
+                   Bank: Bank of Ceylon (BOC)<br />
+                   Account: 123-456-7890<br />
+                   Name: EMS Institute<br />
+                   Branch: Colombo
+                </div>
+
+                <q-btn
+                  type="a"
+                  :href="whatsappUrl"
+                  target="_blank"
+                  color="green-6"
+                  icon="assignment"
+                  label="Send Slip via WhatsApp"
+                  class="full-width q-mb-sm"
+                  no-caps
+                />
+             </q-card>
           </div>
+
         </q-card-section>
 
         <q-card-actions align="right" class="text-primary">
@@ -280,12 +295,14 @@ import { usePaymentStore } from 'stores/payment-store'
 import { storeToRefs } from 'pinia'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from 'stores/auth-store'
+import { useSettingsStore } from 'stores/settings-store'
 
 const $q = useQuasar()
 const paymentStore = usePaymentStore()
 const { pending, history } = storeToRefs(paymentStore)
 const route = useRoute()
 const authStore = useAuthStore()
+const settingsStore = useSettingsStore()
 
 const tab = ref('pending')
 const showPaymentDialog = ref(false)
@@ -478,11 +495,29 @@ const totalPayAmount = computed(() =>
   selectedFees.value.reduce((sum, f) => sum + parseFloat(f.amount), 0),
 )
 
+
+
+const whatsappUrl = computed(() => {
+    const student = authStore.user
+    const fees = selectedFees.value
+    let message = `*Payment Verification Request*\n\n`
+    message += `Student ID: ${student?.username || 'N/A'}\n`
+    message += `Name: ${student?.name || 'N/A'}\n`
+    message += `Total Amount: LKR ${totalPayAmount.value}\n\n`
+    message += `*Selected Classes:*\n`
+    fees.forEach(f => {
+        message += `- ${f.course_name} (${f.month})\n`
+    })
+    message += `\n*Note to Student:* Please attach your payment slip image to this message.`
+
+    // Use contact from settings or fallback
+    const contact = settingsStore.whatsappContact || '94771234567'
+    return `https://wa.me/${contact}?text=${encodeURIComponent(message)}`
+})
+
 const submitPayment = async () => {
-  if (paymentMethod.value === 'bank_transfer' && !slipFile.value) {
-    $q.notify({ type: 'warning', message: 'Please upload the receipt slip' })
-    return
-  }
+    // No file check needed for WhatsApp flow
+
 
   processing.value = true
 
@@ -500,8 +535,8 @@ const submitPayment = async () => {
 
       formData.append('amount', totalPayAmount.value)
       formData.append('type', 'bank_transfer')
-      formData.append('note', 'Bank Transfer Upload (Bulk)')
-      formData.append('slip', slipFile.value)
+      formData.append('note', 'WhatsApp Verification Pending')
+      // No slip file sent
       payload = formData
     } else {
       payload = {
