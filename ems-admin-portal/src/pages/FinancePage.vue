@@ -655,12 +655,12 @@
               <template v-slot:body-cell-status="props">
                 <q-td :props="props">
                   <q-chip
-                    :color="props.row.payment_status === 'paid' ? 'green' : 'red'"
+                    :color="props.row.payment_status === 'paid' ? 'green' : (props.row.payment_status === 'free_card' ? 'amber-9' : 'red')"
                     text-color="white"
                     size="sm"
-                    :icon="props.row.payment_status === 'paid' ? 'check_circle' : 'warning'"
+                    :icon="props.row.payment_status === 'paid' ? 'check_circle' : (props.row.payment_status === 'free_card' ? 'star' : 'warning')"
                   >
-                    {{ props.row.payment_status === 'paid' ? 'Paid' : 'Unpaid' }}
+                    {{ props.row.payment_status === 'paid' ? 'Paid' : (props.row.payment_status === 'free_card' ? 'Free' : 'Unpaid') }}
                   </q-chip>
                 </q-td>
               </template>

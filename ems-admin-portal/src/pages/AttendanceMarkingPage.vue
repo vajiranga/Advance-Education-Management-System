@@ -191,6 +191,9 @@
                                   <div v-if="props.row.payment_status === 'paid'" class="text-green text-weight-bold">
                                       <q-icon name="check_circle" size="xs" /> PAID
                                   </div>
+                                  <div v-else-if="props.row.payment_status === 'free_card'" class="text-amber-10 text-weight-bold">
+                                      <q-icon name="star" size="xs" /> FREE
+                                  </div>
                                   <div v-else-if="props.row.payment_status === 'not_gen'" class="text-grey-6 text-caption">
                                       N/A
                                   </div>
@@ -460,8 +463,9 @@ function onQuickMark() {
 }
 
 function isOverdue(student) {
-    if (!student.payment_added_at || student.payment_status === 'paid') return false
+    if (!student.payment_added_at || student.payment_status === 'paid' || student.payment_status === 'free_card') return false
     const added = new Date(student.payment_added_at)
+
     const now = new Date()
     const diffTime = Math.abs(now - added)
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))

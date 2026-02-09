@@ -157,6 +157,16 @@
             />
             <q-space />
             <q-btn
+              flat
+              dense
+              label="Free Card"
+              color="amber-9"
+              icon="star"
+              class="q-mr-sm"
+              :loading="processingPayment"
+              @click="submitFreeCard"
+            />
+            <q-btn
               label="Record Payment"
               color="purple"
               icon="payment"
@@ -401,7 +411,22 @@ function clearForm() {
   nextTick(() => barcodeInput.value?.focus())
 }
 
-async function submitCashPayment() {
+function submitFreeCard() {
+    $q.dialog({
+        title: 'Confirm Free Card',
+        message: 'Are you sure you want to mark these fees as "Free Card"? The amount will be set to 0 and revenue strictly not affected.',
+        cancel: true,
+        persistent: true
+    }).onOk(() => {
+        processPayment(true)
+    })
+}
+
+function submitCashPayment() {
+    processPayment(false)
+}
+
+async function processPayment(isFreeCard) {
   const selectedFees = enrolledClasses.value.filter(cls => cls.selected)
 
   if (!paymentForm.value.selectedStudent || selectedFees.length === 0) {
@@ -415,17 +440,22 @@ async function submitCashPayment() {
   try {
     const payload = {
       student_id: paymentForm.value.selectedStudent.id,
-      amount: totalAmount.value,
-      note: `Cash Payment for ${selectedFees.length} fee(s)`,
-      fee_ids: selectedFees.map(fee => fee.id)
+      amount: totalAmount.value, // Backend overrides this if is_free_card is true
+      note: isFreeCard === true ? 'Free Card Granted' : `Cash Payment for ${selectedFees.length} fee(s)`,
+      fee_ids: selectedFees.map(fee => fee.id),
+      is_free_card: isFreeCard === true
     }
 
     const res = await api.post('/v1/admin/payments/record-cash', payload)
 
     if (res.data && res.data.message) {
+      const msg = isFreeCard === true
+        ? `Free Card Recorded for ${paymentForm.value.selectedStudent.name}`
+        : `Payment of LKR ${totalAmount.value.toLocaleString()} recorded for ${paymentForm.value.selectedStudent.name}`
+
       $q.notify({
         type: 'positive',
-        message: `Payment of LKR ${totalAmount.value.toLocaleString()} recorded for ${paymentForm.value.selectedStudent.name}`,
+        message: msg,
         timeout: 3000
       })
 

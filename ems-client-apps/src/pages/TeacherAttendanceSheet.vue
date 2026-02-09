@@ -60,6 +60,7 @@
                        <q-badge :color="getPaymentColor(student)">
                            {{ getPaymentLabel(student) }}
                            <q-icon v-if="student.payment_status === 'paid'" name="check" class="q-ml-xs" />
+                           <q-icon v-else-if="student.payment_status === 'free_card'" name="star" class="q-ml-xs" />
                            <q-icon v-else-if="isOverdue(student)" name="priority_high" class="q-ml-xs" />
                        </q-badge>
                    </div>
@@ -193,7 +194,7 @@ const presentCount = computed(() => attendanceList.value.filter(s => s.status ==
 const absentCount = computed(() => attendanceList.value.filter(s => s.status === 'absent').length)
 
 function isOverdue(student) {
-    if (!student.payment_added_at || student.payment_status === 'paid') return false
+    if (!student.payment_added_at || student.payment_status === 'paid' || student.payment_status === 'free_card') return false
     const added = new Date(student.payment_added_at)
     const now = new Date()
     const diffTime = Math.abs(now - added)
@@ -203,12 +204,14 @@ function isOverdue(student) {
 
 function getPaymentColor(student) {
     if (student.payment_status === 'paid') return 'green'
+    if (student.payment_status === 'free_card') return 'amber-9'
     if (isOverdue(student)) return 'red'
     return 'orange'
 }
 
 function getPaymentLabel(student) {
     if (student.payment_status === 'paid') return 'PAID'
+    if (student.payment_status === 'free_card') return 'FREE'
     if (isOverdue(student)) return 'OVERDUE'
     return 'PENDING'
 }

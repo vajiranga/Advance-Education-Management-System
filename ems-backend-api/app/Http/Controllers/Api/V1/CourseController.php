@@ -304,21 +304,49 @@ class CourseController extends Controller
 
         // Enrich with Today's Attendance and Monthly Payment
         $today = now()->format('Y-m-d');
-        $thisMonth = now()->format('Y-m'); // "2026-01"
+        $targetMonth = $request->input('month', now()->format('Y-m'));
 
         $query->with([
             'attendances' => function($q) use ($id, $today) {
                  $q->where('course_id', $id)->where('date', $today);
             },
-            'payments' => function($q) use ($id, $thisMonth) {
-                 $q->where('course_id', $id)->where('month', $thisMonth);
-            },
-            'fees' => function($q) use ($id, $thisMonth) {
-                 $q->where('course_id', $id)->where('month', $thisMonth);
+            'fees' => function($q) use ($id, $targetMonth) {
+                 $q->where('course_id', $id)->where('month', $targetMonth);
             }
         ]);
 
         $students = $query->withPivot('status', 'enrolled_at', 'created_at', 'updated_at')->get();
+
+        // Transform to include payment status
+        $students->transform(function ($student) use ($course) {
+            $fee = $student->fees->first();
+
+            $status = 'unpaid';
+            $paidAt = null;
+            $amount = $course->fee_amount;
+
+            if ($fee) {
+                // If fee record exists, use its status (paid, free_card, pending, etc)
+                $status = $fee->status;
+
+                if ($status === 'paid') {
+                    $paidAt = $fee->paid_at;
+                } elseif ($status === 'free_card') {
+                    $paidAt = $fee->paid_at ?? $fee->updated_at;
+                    $amount = 0; // Free card has 0 financial value
+                }
+            }
+
+            $student->payment_status = $status;
+            $student->payment_date = $paidAt;
+            $student->fee_amount = $amount;
+
+            // Cleanup relations to keep response clean
+            unset($student->fees);
+            unset($student->attendances);
+
+            return $student;
+        });
 
         return response()->json(['data' => $students]);
     }

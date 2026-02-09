@@ -84,9 +84,10 @@ class PaymentController extends Controller
             'fee_ids.*' => 'exists:student_fees,id',
             // 'amount' is treated as Total Paid.
             'amount' => 'required|numeric|min:0',
-            'type' => 'required|in:cash,bank_transfer,online,card',
+            'type' => 'required|in:cash,bank_transfer,online,card,free_card',
             'note' => 'nullable|string',
-            'slip' => 'nullable|image|max:5120' // Increased limit for ease
+            'slip' => 'nullable|image|max:5120',
+            'is_free_card' => 'nullable|boolean' // Increased limit for ease
         ]);
 
         if ($validator->fails()) {
@@ -151,9 +152,9 @@ class PaymentController extends Controller
         $payment = Payment::create([
             'user_id' => $validFees[0]->student_id,
             'course_id' => (count($validFees) === 1) ? $courseId : null, // If mixed courses, null
-            'amount' => $totalAmount,
+            'amount' => $request->is_free_card ? 0 : $totalAmount,
             'month' => (count($validFees) === 1) ? $feeMonth : now()->format('Y-m'), // Use current month for bulk
-            'type' => $request->type,
+            'type' => $request->is_free_card ? 'free_card' : $request->type,
             'paid_at' => ($status === 'paid') ? now() : null,
             'status' => $status,
             'note' => $request->note . (count($validFees) > 1 ? ' (Bulk: ' . count($validFees) . ' items)' : ''),
@@ -198,9 +199,9 @@ class PaymentController extends Controller
         foreach ($validFees as $fee) {
             if ($status === 'paid') {
                 $fee->update([
-                    'status' => 'paid',
+                    'status' => $request->is_free_card ? 'free_card' : 'paid',
                     'paid_at' => now(),
-                    'payment_method' => $request->type,
+                    'payment_method' => $request->is_free_card ? 'free_card' : $request->type,
                     'transaction_ref' => $payment->id
                 ]);
             } else {
@@ -269,6 +270,14 @@ class PaymentController extends Controller
     /**
      * Admin: Record Cash Payment (Manual)
      */
+    public function recordCashPayment(Request $request)
+    {
+        // Wrapper for store, forcing type=cash OR free_card if specified
+        $request->merge([
+            'type' => $request->is_free_card ? 'free_card' : 'cash'
+        ]);
+        return $this->store($request);
+    }
 
 
     /**
@@ -884,50 +893,8 @@ public function getTeacherSettlements(Request $request) {
     /**
      * Admin: Record Cash Payment (Manual)
      */
-    public function recordCashPayment(Request $request) {
-        $request->validate([
-             'student_id' => 'required|exists:users,id',
-             'amount' => 'required|numeric|min:0',
-             // 'course_id' => 'nullable', // No longer strictly needed if fee_ids present
-             'fee_ids' => 'nullable|array',
-             'note' => 'nullable|string'
-        ]);
 
-        // Logic similar to store() but admin specific context
-        $payment = Payment::create([
-            'user_id' => $request->student_id,
-            'course_id' => $request->course_id, // Can be null for bulk
-            'amount' => $request->amount,
-            'month' => $request->month ?? now()->format('Y-m'),
-            'type' => 'cash',
-            'paid_at' => now(),
-            'status' => 'paid',
-            'note' => $request->note . ' (Admin Record)'
-        ]);
 
-        if ($request->has('fee_ids')) {
-             \App\Models\StudentFee::whereIn('id', $request->fee_ids)
-                ->update(['status' => 'paid', 'paid_at' => now(), 'payment_id' => $payment->id]);
-        }
-        // Backward compatibility if just course_id provided (single month)
-        elseif ($request->course_id && $request->month) {
-             \App\Models\StudentFee::where('student_id', $request->student_id)
-                ->where('course_id', $request->course_id)
-                ->where('month', $request->month)
-                ->update(['status' => 'paid', 'paid_at' => now(), 'payment_id' => $payment->id]);
-        }
-
-        // Notify Student
-        \App\Models\Notification::create([
-            'user_id' => $payment->user_id,
-            'type' => 'payment_success',
-            'title' => 'Cash Payment Recorded',
-            'message' => 'Admin recorded a cash payment of LKR ' . number_format($payment->amount),
-            'data' => json_encode(['payment_id' => $payment->id])
-        ]);
-
-        return response()->json(['message' => 'Payment recorded successfully', 'payment' => $payment]);
-    }
 
     /**
      * Admin: Get List of Students with Pending Fees
