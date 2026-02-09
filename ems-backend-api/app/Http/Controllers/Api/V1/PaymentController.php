@@ -654,6 +654,13 @@ class PaymentController extends Controller
 
         $month = $request->month;
         $dueDate = $request->due_date;
+        $month = $request->month; // 2026-02
+        $dueDate = $request->due_date;
+
+        // AUTO-DROP (Before counting/generating new fees)
+        // Check for students with unpaid fees for consecutive months
+        $this->processAutoDrops($month);
+
         $count = 0;
 
         // Get all active enrollments
@@ -707,6 +714,71 @@ class PaymentController extends Controller
         }
 
         return response()->json(['message' => "Successfully generated {$count} fee records for {$month}", 'count' => $count]);
+    }
+
+    /**
+     * Helper: Process Auto-Drops for Unpaid Fees
+     */
+    private function processAutoDrops($currentMonth)
+    {
+        try {
+            // Get Threshold (Default 3)
+            $threshold = (int) (\App\Models\SystemSetting::where('key', 'maxUnpaidMonthsBeforeDrop')->value('value') ?? 3);
+            if ($threshold <= 0) return;
+
+            // Get Active Enrollments
+            $activeEnrollments = \App\Models\Enrollment::where('status', 'active')
+                ->with(['course', 'student'])
+                ->get();
+
+            foreach ($activeEnrollments as $enrollment) {
+                // Get last X fees BEFORE current month
+                $lastFees = \App\Models\StudentFee::where('student_id', $enrollment->user_id)
+                    ->where('course_id', $enrollment->course_id)
+                    ->where('month', '<', $currentMonth)
+                    ->orderBy('month', 'desc')
+                    ->take($threshold)
+                    ->get();
+
+                // Only check if we have enough history (or at least 1 record if strict?)
+                // If student has < threshold records, it means they are new or data missing.
+                // We should NOT drop new students immediately unless they missed ALL their first months.
+                // But let's stick to strict threshold: must have missed X CONSECUTIVE months.
+                // If history only has 2 months and both unpaid, and threshold is 3, we wait for 3rd.
+                if ($lastFees->count() < $threshold) {
+                    continue;
+                }
+
+                // Check if ALL are unpaid
+                // ('paid' is good. 'pending', 'overdue', 'partially_paid' are bad?)
+                // User said "fees pay karee nethinam" (if fees not paid). partial is payment.
+                // We assume strict unpaid here: status != 'paid' AND status != 'partially_paid'
+
+                $allUnpaid = $lastFees->every(function ($fee) {
+                    return !in_array($fee->status, ['paid', 'partially_paid']);
+                });
+
+                if ($allUnpaid) {
+                    // DROP STUDENT
+                    $enrollment->status = 'dropped';
+                    $enrollment->save();
+
+                    // Notify
+                    \App\Models\Notification::create([
+                        'user_id' => $enrollment->user_id,
+                        'type' => 'enrollment_dropped',
+                        'title' => 'Class Enrollment Dropped',
+                        'message' => "You have been automatically dropped from '{$enrollment->course->name}' due to unpaid fees for {$threshold} consecutive months.",
+                        'data' => json_encode(['course_id' => $enrollment->course_id])
+                    ]);
+
+                    // Admin Notification? (Optional)
+                }
+            }
+        } catch (\Exception $e) {
+            // Log error but continue generating fees
+            \Illuminate\Support\Facades\Log::error("Auto-Drop Error: " . $e->getMessage());
+        }
     }
 
     /**
@@ -970,7 +1042,7 @@ public function getTeacherSettlements(Request $request) {
 
         // Summary Stats
         $totalPaid = \App\Models\Payment::where('user_id', $id)->where('status', 'paid')->sum('amount');
-        
+
         return response()->json([
             'student' => $student,
             'enrollments' => $allEnrollments,

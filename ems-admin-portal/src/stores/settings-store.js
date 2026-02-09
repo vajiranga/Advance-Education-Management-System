@@ -6,7 +6,6 @@ export const useSettingsStore = defineStore('settings', {
     instituteName: localStorage.getItem('instituteName') || '',
     appName: localStorage.getItem('appName') || '',
     instituteLogo: localStorage.getItem('instituteLogo') || null,
-    logoUrl: localStorage.getItem('logoUrl') || '',
     loading: false
   }),
 
@@ -24,13 +23,25 @@ export const useSettingsStore = defineStore('settings', {
             this.appName = response.data.appName
             localStorage.setItem('appName', this.appName)
           }
+          if (response.data.logoUrl) {
+           let url = response.data.logoUrl
+
+           // Force 127.0.0.1:8000 for local development to avoid port mismatch issues
+           if (url.includes('localhost') || url.includes('127.0.0.1')) {
+                let cleanPath = url.replace(/^https?:\/\/[^/]+/, '')
+                if (!cleanPath.startsWith('/')) cleanPath = '/' + cleanPath
+                url = 'http://127.0.0.1:8000' + cleanPath
+           }
+           else if (url.startsWith('/')) {
+                url = 'http://127.0.0.1:8000' + url
+           }
+
+            this.logoUrl = url
+            localStorage.setItem('logoUrl', this.logoUrl)
+          }
           if (response.data.instituteLogo) {
             this.instituteLogo = response.data.instituteLogo
             localStorage.setItem('instituteLogo', this.instituteLogo)
-          }
-          if (response.data.logoUrl) {
-            this.logoUrl = response.data.logoUrl
-            localStorage.setItem('logoUrl', this.logoUrl)
           }
         }
       } catch (error) {

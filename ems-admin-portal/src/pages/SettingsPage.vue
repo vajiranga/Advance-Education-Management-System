@@ -45,7 +45,7 @@
                   <div class="row items-center q-col-gutter-md">
                     <!-- Logo Preview -->
                     <div class="col-12 col-md-3 text-center">
-                      <div class="q-pa-md bg-grey-2 rounded-borders" style="min-height: 150px; display: flex; align-items: center; justify-content: center;">
+                      <div class="q-pa-md bg-grey-2 rounded-borders" style="min-height: 150px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
                         <img
                           v-if="settings.logoUrl"
                           :src="settings.logoUrl"
@@ -300,9 +300,18 @@
                                          <q-item-label>Grace Period (Days)</q-item-label>
                                      </q-item-section>
                                      <q-item-section side>
-                                         <q-input v-model.number="settings.gracePeriodDays" type="number" dense outlined style="width: 80px" />
-                                     </q-item-section>
-                                 </q-item>
+                                          <q-input v-model.number="settings.gracePeriodDays" type="number" dense outlined style="width: 80px" />
+                                      </q-item-section>
+                                  </q-item>
+                                  <q-item>
+                                      <q-item-section>
+                                          <q-item-label>Max Unpaid Before Drop (Months)</q-item-label>
+                                          <q-item-label caption>Auto-drop student if fees unpaid for consecutive months</q-item-label>
+                                      </q-item-section>
+                                      <q-item-section side>
+                                          <q-input v-model.number="settings.maxUnpaidMonthsBeforeDrop" type="number" dense outlined style="width: 80px" min="1" max="12" />
+                                      </q-item-section>
+                                  </q-item>
                                  <q-item>
                                      <q-item-section>
                                          <q-item-label>Fee Cycle Start Day</q-item-label>
@@ -833,6 +842,7 @@ const settings = ref({
 
   // General - New
   instituteLogo: null, // This is likely replaced by logoUrl
+  logoUrl: null, // REQUIRED for API loop to pick it up
   websiteUrl: '',
   establishedYear: '',
   taxNumber: '',
@@ -921,11 +931,24 @@ const handleLogoUpload = async (event) => {
     })
 
     if (res.data && res.data.logoUrl) {
-      settings.value.logoUrl = res.data.logoUrl
+       let fixedUrl = res.data.logoUrl
+       // Fix localhost URL issues or relative path - FORCE 127.0.0.1:8000
+       if (fixedUrl.includes('localhost') || fixedUrl.includes('127.0.0.1')) {
+            // Replace any localhost/127 variants with clean 127.0.0.1:8000
+            // First remove protocol if exists to simplify
+            let cleanPath = fixedUrl.replace(/^https?:\/\/[^/]+/, '')
+            // If it was just a domain, cleanPath might be empty? No, usually creates path.
+            if (!cleanPath.startsWith('/')) cleanPath = '/' + cleanPath
+            fixedUrl = 'http://127.0.0.1:8000' + cleanPath
+       } else if (fixedUrl.startsWith('/')) {
+            fixedUrl = 'http://127.0.0.1:8000' + fixedUrl
+       }
+
+      settings.value.logoUrl = fixedUrl
 
       // Update settings store to show logo immediately
-      settingsStore.logoUrl = res.data.logoUrl
-      localStorage.setItem('logoUrl', res.data.logoUrl)
+      settingsStore.logoUrl = fixedUrl
+      localStorage.setItem('logoUrl', fixedUrl)
 
       $q.notify({ type: 'positive', message: 'Logo uploaded successfully' })
     }
@@ -996,6 +1019,18 @@ onMounted(async () => {
              })
              // Force default #01 if empty
              if (!settings.value.registrationNo) settings.value.registrationNo = '#01'
+
+             // Fix Logo URL on load - FORCE 127.0.0.1:8000
+             if (settings.value.logoUrl) {
+                let url = settings.value.logoUrl
+                if (url.includes('localhost') || url.includes('127.0.0.1')) {
+                    let cleanPath = url.replace(/^https?:\/\/[^/]+/, '')
+                    if (!cleanPath.startsWith('/')) cleanPath = '/' + cleanPath
+                    settings.value.logoUrl = 'http://127.0.0.1:8000' + cleanPath
+                } else if (url.startsWith('/')) {
+                     settings.value.logoUrl = 'http://127.0.0.1:8000' + url
+                }
+             }
          }
          // Calculate days/hours from timeout
          if (settings.value.extraClassVisibilityTimeout !== undefined) {

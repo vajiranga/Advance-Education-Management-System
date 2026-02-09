@@ -9,7 +9,6 @@
           <img
             v-if="settingsStore.logoUrl"
             :src="settingsStore.logoUrl"
-            alt="Institute Logo"
             style="height: 36px; width: auto; object-fit: contain; margin-right: 12px;"
           />
           <q-icon v-else name="school" size="md" class="q-mr-sm" />
@@ -67,8 +66,9 @@
             </q-menu>
           </q-btn>
 
-          <q-avatar size="36px" class="q-ml-sm cursor-pointer shadow-1 bg-primary text-white">
-            <span class="text-weight-bold">{{ authStore.user?.name?.charAt(0) || 'S' }}</span>
+          <q-avatar size="36px" class="q-ml-sm cursor-pointer shadow-1 bg-white text-primary">
+            <img v-if="settingsStore.logoUrl" :src="settingsStore.logoUrl" style="object-fit: contain" />
+            <span v-else class="text-weight-bold">{{ authStore.user?.name?.charAt(0) || 'S' }}</span>
             <q-menu :class="$q.dark.isActive ? 'bg-dark text-white' : 'bg-white'">
               <q-list style="min-width: 220px">
                 <q-item class="bg-primary text-white">
@@ -237,6 +237,9 @@ onMounted(async () => {
     // Fetch Notifications
     await notificationStore.fetchNotifications()
     setInterval(() => notificationStore.fetchNotifications(), 60000)
+
+    // Load Public Settings (Logo, Name)
+    await settingsStore.fetchPublicSettings()
 })
 
 function toggleLeftDrawer () {

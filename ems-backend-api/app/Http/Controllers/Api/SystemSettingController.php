@@ -47,6 +47,7 @@ class SystemSettingController extends Controller
             'appName',
             'instituteName',
             'instituteLogo',
+            'logoUrl', // Expose logoUrl to public
             'supportPhone',
             'disableTeacherAttendance'
         ];

@@ -4,19 +4,34 @@
       <q-toolbar>
         <q-btn flat dense round icon="menu" aria-label="Menu" @click="toggleLeftDrawer" />
 
-        <q-toolbar-title class="text-weight-bold">
-          <q-icon name="school" class="q-mr-sm" size="md" />
+        <q-toolbar-title class="text-weight-bold row items-center">
+          <img
+            v-if="settings.logoUrl"
+            :src="settings.logoUrl"
+            style="height: 36px; object-fit: contain; margin-right: 8px;"
+            alt="Logo"
+          />
+          <q-icon v-else name="school" class="q-mr-sm" size="md" />
           {{ settings.instituteName }}
         </q-toolbar-title>
 
         <div class="row q-gutter-sm items-center">
-          <q-btn flat round icon="account_circle" size="md" />
+          <q-btn flat round to="/settings">
+            <q-avatar size="32px" class="bg-white shadow-1">
+               <img v-if="settings.logoUrl" :src="settings.logoUrl" style="object-fit: contain" />
+               <q-icon v-else name="account_circle" color="grey" />
+            </q-avatar>
+          </q-btn>
         </div>
       </q-toolbar>
     </q-header>
 
     <q-drawer v-model="leftDrawerOpen" show-if-above bordered class="bg-grey-1">
       <div class="q-pa-md text-center">
+         <q-avatar size="80px" class="q-mb-sm shadow-1 bg-white">
+             <img v-if="settings.logoUrl" :src="settings.logoUrl" style="object-fit: contain" />
+             <q-icon v-else name="account_circle" size="60px" color="grey-5" />
+         </q-avatar>
         <div class="text-h6 text-primary">Super Admin</div>
         <div class="text-caption text-grey">System Administrator</div>
       </div>
@@ -57,6 +72,12 @@ defineOptions({
 })
 
 const settings = useSettingsStore()
+
+import { onMounted } from 'vue'
+
+onMounted(() => {
+    settings.fetchPublicSettings()
+})
 
 const navigationLinks = [
   { title: 'Dashboard', icon: 'dashboard', path: '/dashboard' },

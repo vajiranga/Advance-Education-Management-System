@@ -32,7 +32,8 @@ class SettingsController extends Controller
             $file = $request->file('logo');
             $filename = 'logo_' . time() . '.' . $file->getClientOriginalExtension();
             $file->move(public_path('uploads/logo'), $filename);
-            $logoUrl = url('uploads/logo/' . $filename);
+            // innovative: Store relative path to avoid domain/port mismatch
+            $logoUrl = '/uploads/logo/' . $filename;
 
             // Save to database
             SystemSetting::updateOrCreate(

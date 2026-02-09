@@ -13,6 +13,16 @@ export const useSettingsStore = defineStore('settings', {
 
   actions: {
     async fetchPublicSettings() {
+      // Fix existing broken URL from storage immediately
+      if (this.logoUrl && (this.logoUrl.includes('localhost') || this.logoUrl.includes('127.0.0.1'))) {
+           let cleanPath = this.logoUrl.replace(/^https?:\/\/[^/]+/, '')
+           if (!cleanPath.startsWith('/')) cleanPath = '/' + cleanPath
+           const newUrl = 'http://127.0.0.1:8000' + cleanPath
+           if (this.logoUrl !== newUrl) {
+               this.logoUrl = newUrl
+               localStorage.setItem('logoUrl', newUrl)
+           }
+      }
       this.loading = true
       try {
         const response = await api.get('/v1/settings/config')
@@ -30,7 +40,19 @@ export const useSettingsStore = defineStore('settings', {
             localStorage.setItem('instituteLogo', this.instituteLogo)
           }
           if (response.data.logoUrl) {
-            this.logoUrl = response.data.logoUrl
+           let url = response.data.logoUrl
+
+           // Force 127.0.0.1:8000 for local development to avoid port mismatch issues
+           if (url.includes('localhost') || url.includes('127.0.0.1')) {
+                let cleanPath = url.replace(/^https?:\/\/[^/]+/, '')
+                if (!cleanPath.startsWith('/')) cleanPath = '/' + cleanPath
+                url = 'http://127.0.0.1:8000' + cleanPath
+           }
+           else if (url.startsWith('/')) {
+                url = 'http://127.0.0.1:8000' + url
+           }
+
+            this.logoUrl = url
             localStorage.setItem('logoUrl', this.logoUrl)
           }
           if (response.data.disableTeacherAttendance !== undefined) {

@@ -1864,7 +1864,7 @@ async function loadClassPaymentStatus() {
     })
 
     // Transform the data to include payment status
-    classPaymentData.value = res.data.map(student => ({
+    classPaymentData.value = (res.data.data || []).map(student => ({
       student_id: student.id,
       student_name: student.name,
       student_username: student.username,
