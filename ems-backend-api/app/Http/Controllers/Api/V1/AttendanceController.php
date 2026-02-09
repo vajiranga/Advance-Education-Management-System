@@ -69,11 +69,22 @@ class AttendanceController extends Controller
 
         $courseId = $request->course_id;
         $date = $request->date;
+        $month = \Carbon\Carbon::parse($date)->format('Y-m');
 
         if ($courseId === 'all') {
              $teacherId = $request->user()->id;
              // Get course IDs taught by this teacher
              $courseIds = Course::where('teacher_id', $teacherId)->pluck('id');
+
+             // Get fees for these courses and month
+             // Note: 'all' mode might be complex for fetching fees for multiple courses per student.
+             // We'll simplify by NOT adding payment info for 'all' mode yet, or fetching broadly.
+             // Given the user use case suggests specific class marking (screenshot), we focus there.
+             // But let's try to add it for completeness if easy.
+             // Actually, different students might be in different courses.
+             // For 'all' view, which specific course fee do we check? The one they are attending?
+             // Since 'all' groups by... actually 'all' just lists students.
+             // Let's stick to the main Single Course view for now which is safer.
 
              // Get unique students enrolled in these courses
              $students = \App\Models\User::whereHas('courses', function($q) use ($courseIds) {
@@ -110,15 +121,27 @@ class AttendanceController extends Controller
 
         $targetCourse = Course::findOrFail($targetCourseId);
 
+        // Fetch Fees for this Course and Month
+        $fees = \App\Models\StudentFee::where('course_id', $targetCourseId)
+            ->where('month', $month)
+            ->get()
+            ->keyBy('student_id');
+
         $students = $targetCourse->students()
             ->with(['attendances' => function($q) use ($courseId, $date) {
                 $q->where('course_id', $courseId)->where('date', $date);
             }])
             ->get()
-            ->map(function($student) {
+            ->map(function($student) use ($fees) {
                 $att = $student->attendances->first();
                 $student->attendance_status = $att ? $att->status : null;
                 $student->attendance_note = $att ? $att->note : null;
+
+                // Attach Fee Info
+                $fee = $fees->get($student->id);
+                $student->payment_status = $fee ? $fee->status : 'not_gen'; // 'not_gen' = Not Generated
+                $student->payment_added_at = $fee ? $fee->created_at->toIso8601String() : null;
+
                 unset($student->attendances);
                 return $student;
             });

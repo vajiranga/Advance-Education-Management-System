@@ -92,6 +92,16 @@
                        <div class="row q-gutter-sm">
                            <q-btn flat dense color="primary" label="Mark All Present" icon="done_all" @click="markAllPresent" />
                            <q-btn unelevated color="primary" label="Save" icon="save" :loading="saving" @click="saveAttendance" />
+                           <q-btn flat round dense icon="settings" color="grey-7" title="Payment Settings">
+                               <q-popup-proxy>
+                                   <div class="q-pa-md" style="min-width: 250px">
+                                       <div class="text-subtitle2 q-mb-sm">Red Notice Settings</div>
+                                       <q-input v-model.number="paymentOverdueDays" type="number" label="Overdue Days" dense outlined suffix="days" hint="Show red notice if payment pending after X days" />
+                                       <q-separator class="q-my-sm" />
+                                       <q-toggle v-model="blockOverdueAttendance" label="Block Attendance if Overdue" dense color="red" />
+                                   </div>
+                               </q-popup-proxy>
+                           </q-btn>
                        </div>
                    </div>
                </q-card-section>
@@ -177,6 +187,19 @@
                                     </template>
                                   </q-btn-toggle>
                               </q-td>
+                              <q-td key="payment" :props="props">
+                                  <div v-if="props.row.payment_status === 'paid'" class="text-green text-weight-bold">
+                                      <q-icon name="check_circle" size="xs" /> PAID
+                                  </div>
+                                  <div v-else-if="props.row.payment_status === 'not_gen'" class="text-grey-6 text-caption">
+                                      N/A
+                                  </div>
+                                  <div v-else>
+                                      <q-badge :color="isOverdue(props.row) ? 'red' : 'orange'" :label="isOverdue(props.row) ? 'OVERDUE' : 'PENDING'">
+                                         <q-tooltip v-if="isOverdue(props.row)">Payment added > {{ paymentOverdueDays }} days ago</q-tooltip>
+                                      </q-badge>
+                                  </div>
+                              </q-td>
                               <q-td key="note" :props="props">
                                   <q-input dense borderless v-model="props.row.attendance_note" placeholder="Note" />
                               </q-td>
@@ -214,11 +237,15 @@ const saving = ref(false)
 const search = ref('')
 const dateFilter = ref(null)
 const tablePagination = ref({ rowsPerPage: 100 })
+const paymentOverdueDays = ref(14)
+const blockOverdueAttendance = ref(false)
+
 
 const columns = [
     { name: 'name', label: 'Student Name', align: 'left', field: 'name', sortable: true },
     { name: 'contact', label: 'Contact', align: 'left', field: 'phone' },
     { name: 'status', label: 'Status', align: 'center', field: 'attendance_status' },
+    { name: 'payment', label: 'Payment', align: 'center', field: 'payment_status' },
     { name: 'note', label: 'Note', align: 'left', field: 'attendance_note' }
 ]
 
@@ -404,6 +431,25 @@ function onQuickMark() {
     )
 
     if (student) {
+        // 1. Check Overdue
+        if (isOverdue(student)) {
+            $q.notify({
+                type: 'negative',
+                message: `PAYMENT OVERDUE: ${student.name}`,
+                caption: `Payment pending > ${paymentOverdueDays.value} days`,
+                position: 'center',
+                timeout: 2000,
+                icon: 'warning',
+                classes: 'text-h6'
+            })
+
+            if (blockOverdueAttendance.value) {
+                 $q.notify({ type: 'warning', message: 'Attendance Blocked (Overdue)', position: 'top', timeout: 1000 })
+                 quickSearch.value = ''
+                 return
+            }
+        }
+
         student.attendance_status = 'present'
         $q.notify({ type: 'positive', message: `Marked Present: ${student.name}`, position: 'top', timeout: 500 })
         quickSearch.value = ''
@@ -412,6 +458,16 @@ function onQuickMark() {
         quickSearch.value = ''
     }
 }
+
+function isOverdue(student) {
+    if (!student.payment_added_at || student.payment_status === 'paid') return false
+    const added = new Date(student.payment_added_at)
+    const now = new Date()
+    const diffTime = Math.abs(now - added)
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    return diffDays > paymentOverdueDays.value
+}
+
 
 function exportCSV() {
     if (!selectedSession.value || students.value.length === 0) return

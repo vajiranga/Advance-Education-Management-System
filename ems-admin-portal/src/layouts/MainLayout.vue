@@ -16,11 +16,24 @@
         </q-toolbar-title>
 
         <div class="row q-gutter-sm items-center">
-          <q-btn flat round to="/settings">
+          <q-btn flat round>
             <q-avatar size="32px" class="bg-white shadow-1">
                <img v-if="settings.logoUrl" :src="settings.logoUrl" style="object-fit: contain" />
                <q-icon v-else name="account_circle" color="grey" />
             </q-avatar>
+            <q-menu>
+              <q-list style="min-width: 150px">
+                <q-item clickable v-close-popup to="/settings">
+                   <q-item-section avatar><q-icon name="settings" /></q-item-section>
+                   <q-item-section>Settings</q-item-section>
+                </q-item>
+                <q-separator />
+                <q-item clickable v-close-popup @click="logout">
+                   <q-item-section avatar><q-icon name="logout" color="red" /></q-item-section>
+                   <q-item-section class="text-red">Logout</q-item-section>
+                </q-item>
+              </q-list>
+            </q-menu>
           </q-btn>
         </div>
       </q-toolbar>
@@ -65,13 +78,23 @@
 
 <script setup>
 import { ref } from 'vue'
+
 import { useSettingsStore } from 'stores/settings-store'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from 'stores/auth-store'
 
 defineOptions({
   name: 'MainLayout',
 })
 
 const settings = useSettingsStore()
+const authStore = useAuthStore()
+const router = useRouter()
+
+function logout() {
+    authStore.logout()
+    router.replace('/login')
+}
 
 import { onMounted } from 'vue'
 

@@ -56,6 +56,13 @@
                 <q-item-section>
                    <q-item-label class="text-weight-bold" :class="$q.dark.isActive ? 'text-white' : ''">{{ student.name }}</q-item-label>
                    <q-item-label caption :class="$q.dark.isActive ? 'text-grey-4' : ''">{{ student.idNumber }}</q-item-label>
+                   <div class="q-mt-xs" v-if="student.payment_status && student.payment_status !== 'not_gen'">
+                       <q-badge :color="getPaymentColor(student)">
+                           {{ getPaymentLabel(student) }}
+                           <q-icon v-if="student.payment_status === 'paid'" name="check" class="q-ml-xs" />
+                           <q-icon v-else-if="isOverdue(student)" name="priority_high" class="q-ml-xs" />
+                       </q-badge>
+                   </div>
                 </q-item-section>
                 <q-item-section side>
                    <div class="row q-gutter-x-md">
@@ -147,7 +154,9 @@ async function loadStudents() {
         name: s.name,
         idNumber: s.username,
         avatar: 'https://cdn.quasar.dev/img/boy-avatar.png',
-        status: s.attendance_status || 'absent' // Default to absent
+        status: s.attendance_status || 'absent', // Default to absent
+        payment_status: s.payment_status,
+        payment_added_at: s.payment_added_at
     }))
 
     if (attendanceList.value.length === 0) {
@@ -182,6 +191,27 @@ async function saveAttendance() {
 
 const presentCount = computed(() => attendanceList.value.filter(s => s.status === 'present').length)
 const absentCount = computed(() => attendanceList.value.filter(s => s.status === 'absent').length)
+
+function isOverdue(student) {
+    if (!student.payment_added_at || student.payment_status === 'paid') return false
+    const added = new Date(student.payment_added_at)
+    const now = new Date()
+    const diffTime = Math.abs(now - added)
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    return diffDays > 14 // Default 14 days
+}
+
+function getPaymentColor(student) {
+    if (student.payment_status === 'paid') return 'green'
+    if (isOverdue(student)) return 'red'
+    return 'orange'
+}
+
+function getPaymentLabel(student) {
+    if (student.payment_status === 'paid') return 'PAID'
+    if (isOverdue(student)) return 'OVERDUE'
+    return 'PENDING'
+}
 </script>
 
 <style scoped>
