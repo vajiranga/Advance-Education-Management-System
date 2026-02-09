@@ -7,12 +7,30 @@
       </div>
       <div class="row q-gutter-sm">
         <div class="row q-gutter-sm items-center bg-grey-2 q-pa-sm rounded-borders">
-             <q-select v-model="filterYear" :options="yearOptions" label="Year" dense outlined bg-color="white" style="width: 100px" />
-             <q-select v-model="filterMonth" :options="monthFilterOptions" label="Month" dense outlined bg-color="white" style="width: 140px" emit-value map-options />
-             <div class="text-caption text-grey-8 q-px-sm column">
-                <span class="text-weight-bold">Billing Cycle</span>
-                <span style="font-size: 10px">{{ cycleDateRange }}</span>
-             </div>
+          <q-select
+            v-model="filterYear"
+            :options="yearOptions"
+            label="Year"
+            dense
+            outlined
+            bg-color="white"
+            style="width: 100px"
+          />
+          <q-select
+            v-model="filterMonth"
+            :options="monthFilterOptions"
+            label="Month"
+            dense
+            outlined
+            bg-color="white"
+            style="width: 140px"
+            emit-value
+            map-options
+          />
+          <div class="text-caption text-grey-8 q-px-sm column">
+            <span class="text-weight-bold">Billing Cycle</span>
+            <span style="font-size: 10px">{{ cycleDateRange }}</span>
+          </div>
         </div>
         <q-btn flat icon="refresh" @click="refreshAll" :loading="refreshing" round />
       </div>
@@ -168,18 +186,39 @@
         align="left"
         narrow-indicator
       >
-        <q-tab v-if="authStore.hasPermission('finance_pending')" name="pending" label="Pending Verification" icon="hourglass_empty">
+        <q-tab
+          v-if="authStore.hasPermission('finance_pending')"
+          name="pending"
+          label="Pending Verification"
+          icon="hourglass_empty"
+        >
           <q-badge color="orange" floating v-if="pendingTransactions.length > 0">{{
             pendingTransactions.length
           }}</q-badge>
         </q-tab>
-        <q-tab v-if="authStore.hasPermission('finance_transactions')" name="all" label="All Transactions" icon="list" />
-        <q-tab v-if="authStore.hasPermission('finance_uncollected')" name="uncollected" label="Uncollected Fees" icon="money_off">
+        <q-tab
+          v-if="authStore.hasPermission('finance_transactions')"
+          name="all"
+          label="All Transactions"
+          icon="list"
+        />
+        <q-tab
+          v-if="authStore.hasPermission('finance_uncollected')"
+          name="uncollected"
+          label="Uncollected Fees"
+          icon="money_off"
+        >
           <q-badge color="red" floating v-if="uncollectedFees.length > 0">{{
             uncollectedFees.length
           }}</q-badge>
         </q-tab>
-        <q-tab v-if="authStore.hasPermission('finance_settlement')" name="settlements" label="Teacher Settlements" icon="payments" />
+        <q-tab
+          v-if="authStore.hasPermission('finance_settlement')"
+          name="settlements"
+          label="Teacher Settlements"
+          icon="payments"
+        />
+        <q-tab name="class-status" label="Class Payment Status" icon="school" />
       </q-tabs>
 
       <q-separator />
@@ -254,67 +293,140 @@
         </q-tab-panel>
 
         <!-- Uncollected Fees Tab -->
-        <q-tab-panel name="uncollected" class="q-pa-none">
-          <q-table
-            :rows="uncollectedFees"
-            :columns="uncollectedColumns"
-            row-key="id"
-            flat
-            :pagination="tablePagination"
-            :rows-per-page-options="[100, 200, 500, 1000, 0]"
-            :filter="uncollectedFilter"
-          >
-            <template v-slot:top-right>
-              <q-input
-                borderless
+        <q-tab-panel name="uncollected" class="q-pa-md">
+          <!-- Filters -->
+          <div class="row q-col-gutter-md q-mb-md items-center">
+            <div class="col-auto">
+              <div class="text-subtitle1 text-weight-medium">Filter by Month:</div>
+            </div>
+            <div class="col-auto">
+              <q-select
+                outlined
                 dense
-                debounce="300"
-                v-model="uncollectedFilter"
-                placeholder="Search Student or Course"
-              >
-                <template v-slot:append>
-                  <q-icon name="search" />
-                </template>
-              </q-input>
-            </template>
-            <template v-slot:body-cell-status="props">
-              <q-td :props="props">
-                <q-chip color="red-1" text-color="red" label="Pending" size="sm" icon="warning" />
-              </q-td>
-            </template>
-
-            <template v-slot:body-cell-amount="props">
-              <q-td :props="props" class="text-weight-bold"> LKR {{ props.value }} </q-td>
-            </template>
-          </q-table>
-          <div v-if="uncollectedFees.length === 0" class="text-center q-pa-lg text-grey">
-            No pending fees found.
+                v-model="uncollectedYear"
+                :options="yearOptions"
+                label="Year"
+                style="width: 100px"
+                bg-color="white"
+              />
+            </div>
+            <div class="col-auto">
+              <q-select
+                outlined
+                dense
+                v-model="uncollectedMonth"
+                :options="monthFilterOptions"
+                label="Month"
+                style="width: 140px"
+                emit-value
+                map-options
+                bg-color="white"
+              />
+            </div>
+            <div class="col-auto">
+              <q-btn
+                flat
+                round
+                icon="refresh"
+                @click="loadUncollectedFees"
+                :loading="loadingUncollected"
+              />
+            </div>
+            <div class="col-auto q-ml-auto">
+              <div class="text-caption text-grey-8">
+                <span class="text-weight-bold">Billing Cycle:</span>
+                {{ uncollectedCycleDateRange }}
+              </div>
+            </div>
           </div>
+
+          <!-- Summary Cards -->
+          <div class="row q-col-gutter-md q-mb-md">
+            <div class="col-12 col-sm-6 col-md-3">
+              <q-card class="bg-red-9 text-white">
+                <q-card-section>
+                  <div class="text-h4 text-weight-bold">{{ uncollectedStats.totalStudents }}</div>
+                  <div class="text-caption">Students with Pending Fees</div>
+                </q-card-section>
+              </q-card>
+            </div>
+            <div class="col-12 col-sm-6 col-md-3">
+              <q-card class="bg-orange-8 text-white">
+                <q-card-section>
+                  <div class="text-h4 text-weight-bold">
+                    LKR {{ uncollectedStats.totalAmount.toLocaleString() }}
+                  </div>
+                  <div class="text-caption">Total Uncollected Amount</div>
+                </q-card-section>
+              </q-card>
+            </div>
+            <div class="col-12 col-sm-6 col-md-3">
+              <q-card class="bg-purple-8 text-white">
+                <q-card-section>
+                  <div class="text-h4 text-weight-bold">{{ uncollectedStats.totalFees }}</div>
+                  <div class="text-caption">Total Pending Fees</div>
+                </q-card-section>
+              </q-card>
+            </div>
+            <div class="col-12 col-sm-6 col-md-3">
+              <q-card class="bg-indigo-7 text-white">
+                <q-card-section>
+                  <div class="text-h4 text-weight-bold">
+                    LKR {{ uncollectedStats.averagePerStudent.toLocaleString() }}
+                  </div>
+                  <div class="text-caption">Average per Student</div>
+                </q-card-section>
+              </q-card>
+            </div>
+          </div>
+
+          <!-- Table -->
+          <q-card>
+            <q-table
+              :rows="uncollectedFees"
+              :columns="uncollectedColumns"
+              row-key="id"
+              flat
+              :pagination="tablePagination"
+              :rows-per-page-options="[100, 200, 500, 1000, 0]"
+              :filter="uncollectedFilter"
+              :loading="loadingUncollected"
+            >
+              <template v-slot:top-right>
+                <q-input
+                  borderless
+                  dense
+                  debounce="300"
+                  v-model="uncollectedFilter"
+                  placeholder="Search Student or Course"
+                  bg-color="white"
+                  outlined
+                >
+                  <template v-slot:append>
+                    <q-icon name="search" />
+                  </template>
+                </q-input>
+              </template>
+              <template v-slot:body-cell-status="props">
+                <q-td :props="props">
+                  <q-chip color="red-1" text-color="red" label="Pending" size="sm" icon="warning" />
+                </q-td>
+              </template>
+
+              <template v-slot:body-cell-amount="props">
+                <q-td :props="props" class="text-weight-bold"> LKR {{ props.value }} </q-td>
+              </template>
+            </q-table>
+            <div v-if="uncollectedFees.length === 0" class="text-center q-pa-lg text-grey">
+              No pending fees found for this period.
+            </div>
+          </q-card>
         </q-tab-panel>
 
         <!-- Settlements Tab -->
         <q-tab-panel name="settlements" class="q-pa-none">
-          <!-- Month Selector -->
-          <div class="row items-center q-pa-md justify-between">
+          <div class="q-pa-md">
             <div class="text-h6">Teacher Settlements</div>
-            <div class="row q-gutter-sm items-center">
-              <span>Month:</span>
-              <q-input outlined dense v-model="settlementMonth" mask="####-##" style="width: 150px">
-                <template v-slot:append>
-                  <q-icon name="event" class="cursor-pointer">
-                    <q-popup-proxy cover transition-show="scale" transition-hide="scale">
-                      <q-date
-                        v-model="settlementMonth"
-                        mask="YYYY-MM"
-                        minimal
-                        emit-immediately
-                        v-close-popup
-                      />
-                    </q-popup-proxy>
-                  </q-icon>
-                </template>
-              </q-input>
-            </div>
           </div>
 
           <q-table
@@ -343,6 +455,237 @@
               </q-td>
             </template>
           </q-table>
+        </q-tab-panel>
+
+        <!-- Class Payment Status Tab -->
+        <q-tab-panel name="class-status" class="q-pa-md">
+          <div class="row q-col-gutter-md q-mb-md">
+            <!-- Filters -->
+            <div class="col-12 col-md-3">
+              <q-select
+                outlined
+                v-model="teacherFilter"
+                :options="teacherOptions"
+                label="Filter by Teacher"
+                emit-value
+                map-options
+                clearable
+                @update:model-value="onTeacherFilterChange"
+              >
+                <template v-slot:prepend>
+                  <q-icon name="person" />
+                </template>
+              </q-select>
+            </div>
+            <div class="col-12 col-md-3">
+              <q-select
+                outlined
+                v-model="classFilter"
+                :options="filteredClassOptions"
+                label="Select Class"
+                emit-value
+                map-options
+                clearable
+                @update:model-value="loadClassPaymentStatus"
+              >
+                <template v-slot:prepend>
+                  <q-icon name="school" />
+                </template>
+              </q-select>
+            </div>
+            <div class="col-12 col-md-2">
+              <q-select
+                outlined
+                v-model="classMonthFilter"
+                :options="monthFilterOptions"
+                label="Month"
+                emit-value
+                map-options
+                @update:model-value="loadClassPaymentStatus"
+              >
+                <template v-slot:prepend>
+                  <q-icon name="calendar_month" />
+                </template>
+              </q-select>
+            </div>
+            <div class="col-12 col-md-2">
+              <q-select
+                outlined
+                v-model="classYearFilter"
+                :options="yearOptions"
+                label="Year"
+                @update:model-value="loadClassPaymentStatus"
+              >
+                <template v-slot:prepend>
+                  <q-icon name="event" />
+                </template>
+              </q-select>
+            </div>
+            <div class="col-12 col-md-2">
+              <q-btn
+                unelevated
+                color="primary"
+                icon="refresh"
+                label="Refresh"
+                @click="loadClassPaymentStatus"
+                :loading="loadingClassStatus"
+                class="full-width"
+              />
+            </div>
+          </div>
+
+          <!-- Class Details Card -->
+          <q-card v-if="selectedClassDetails" class="q-mb-md bg-blue-1">
+            <q-card-section>
+              <div class="row items-center q-col-gutter-md">
+                <div class="col-12 col-md-3">
+                  <div class="text-caption text-grey-7">Class Name</div>
+                  <div class="text-h6 text-weight-bold">{{ selectedClassDetails.name }}</div>
+                </div>
+                <div class="col-12 col-md-2">
+                  <div class="text-caption text-grey-7">Teacher</div>
+                  <div class="text-body1 text-weight-medium">{{ selectedClassDetails.teacher_name }}</div>
+                </div>
+                <div class="col-12 col-md-2">
+                  <div class="text-caption text-grey-7">Grade/Batch</div>
+                  <div class="text-body1">{{ selectedClassDetails.batch_name }}</div>
+                </div>
+                <div class="col-12 col-md-2">
+                  <div class="text-caption text-grey-7">Subject</div>
+                  <div class="text-body1">{{ selectedClassDetails.subject_name }}</div>
+                </div>
+                <div class="col-12 col-md-3">
+                  <div class="text-caption text-grey-7">Monthly Fee</div>
+                  <div class="text-h6 text-primary text-weight-bold">
+                    LKR {{ Number(selectedClassDetails.fee_amount || 0).toLocaleString() }}
+                  </div>
+                </div>
+              </div>
+            </q-card-section>
+          </q-card>
+
+          <!-- Stats Cards -->
+          <div v-if="classFilter" class="row q-col-gutter-md q-mb-md">
+            <div class="col-12 col-sm-6 col-md-3">
+              <q-card class="bg-blue-9 text-white">
+                <q-card-section>
+                  <div class="text-h4 text-weight-bold">{{ classPaymentStats.totalStudents }}</div>
+                  <div class="text-caption">Total Active Students</div>
+                </q-card-section>
+              </q-card>
+            </div>
+            <div class="col-12 col-sm-6 col-md-3">
+              <q-card class="bg-green-8 text-white">
+                <q-card-section>
+                  <div class="text-h4 text-weight-bold">{{ classPaymentStats.paidCount }}</div>
+                  <div class="text-caption">Paid Students</div>
+                  <div class="text-caption text-green-2 q-mt-xs">
+                    LKR {{ classPaymentStats.paidAmount.toLocaleString() }}
+                  </div>
+                </q-card-section>
+              </q-card>
+            </div>
+            <div class="col-12 col-sm-6 col-md-3">
+              <q-card class="bg-orange-8 text-white">
+                <q-card-section>
+                  <div class="text-h4 text-weight-bold">{{ classPaymentStats.unpaidCount }}</div>
+                  <div class="text-caption">Unpaid Students</div>
+                  <div class="text-caption text-orange-2 q-mt-xs">
+                    LKR {{ classPaymentStats.unpaidAmount.toLocaleString() }}
+                  </div>
+                </q-card-section>
+              </q-card>
+            </div>
+            <div class="col-12 col-sm-6 col-md-3">
+              <q-card class="bg-purple-8 text-white">
+                <q-card-section>
+                  <div class="text-h4 text-weight-bold">
+                    {{ classPaymentStats.collectionRate }}%
+                  </div>
+                  <div class="text-caption">Collection Rate</div>
+                  <q-linear-progress
+                    :value="classPaymentStats.collectionRate / 100"
+                    color="white"
+                    track-color="purple-4"
+                    class="q-mt-sm"
+                    rounded
+                  />
+                </q-card-section>
+              </q-card>
+            </div>
+          </div>
+
+          <!-- Students Table -->
+          <q-card v-if="classFilter">
+            <q-card-section class="bg-grey-2">
+              <div class="row items-center justify-between">
+                <div class="text-h6">Student Payment Details</div>
+                <q-input
+                  borderless
+                  dense
+                  debounce="300"
+                  v-model="classStudentFilter"
+                  placeholder="Search Student"
+                  bg-color="white"
+                  outlined
+                  style="width: 250px"
+                >
+                  <template v-slot:append>
+                    <q-icon name="search" />
+                  </template>
+                </q-input>
+              </div>
+            </q-card-section>
+            <q-separator />
+            <q-table
+              :rows="filteredClassStudents"
+              :columns="classPaymentColumns"
+              row-key="student_id"
+              flat
+              :pagination="{ rowsPerPage: 50 }"
+              :rows-per-page-options="[25, 50, 100, 0]"
+              :loading="loadingClassStatus"
+            >
+              <template v-slot:body-cell-student="props">
+                <q-td :props="props">
+                  <div class="text-weight-bold">{{ props.row.student_name }}</div>
+                  <div class="text-caption text-grey">{{ props.row.student_username }}</div>
+                </q-td>
+              </template>
+              <template v-slot:body-cell-status="props">
+                <q-td :props="props">
+                  <q-chip
+                    :color="props.row.payment_status === 'paid' ? 'green' : 'red'"
+                    text-color="white"
+                    size="sm"
+                    :icon="props.row.payment_status === 'paid' ? 'check_circle' : 'warning'"
+                  >
+                    {{ props.row.payment_status === 'paid' ? 'Paid' : 'Unpaid' }}
+                  </q-chip>
+                </q-td>
+              </template>
+              <template v-slot:body-cell-amount="props">
+                <q-td :props="props" class="text-weight-bold">
+                  LKR {{ Number(props.row.amount || 0).toLocaleString() }}
+                </q-td>
+              </template>
+              <template v-slot:body-cell-payment_date="props">
+                <q-td :props="props">
+                  <span v-if="props.row.payment_date">
+                    {{ new Date(props.row.payment_date).toLocaleDateString() }}
+                  </span>
+                  <span v-else class="text-grey">-</span>
+                </q-td>
+              </template>
+            </q-table>
+          </q-card>
+
+          <!-- Empty State -->
+          <div v-if="!classFilter" class="text-center q-pa-xl text-grey">
+            <q-icon name="school" size="4em" />
+            <div class="text-h6 q-mt-md">Select a Class to View Payment Status</div>
+            <div class="text-body2 q-mt-sm">Choose a class and month from the filters above</div>
+          </div>
         </q-tab-panel>
       </q-tab-panels>
     </q-card>
@@ -840,6 +1183,40 @@ const authStore = useAuthStore() // Init Store
 const { transactions, pendingTransactions, stats, analyticsData, settlements, uncollectedFees } =
   storeToRefs(financeStore)
 
+// Uncollected Fees Filters
+const uncollectedYear = ref(new Date().getFullYear())
+const uncollectedMonth = ref(new Date().getMonth() + 1)
+const loadingUncollected = ref(false)
+
+const uncollectedCycleDateRange = computed(() => {
+  const cycleDay = feeCycleStartDay.value
+  const year = uncollectedYear.value
+  const month = uncollectedMonth.value
+
+  const startDate = new Date(year, month - 1, cycleDay)
+  const endDate = new Date(year, month, cycleDay - 1)
+
+  const formatDate = (d) => {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    return `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`
+  }
+
+  return `${formatDate(startDate)} - ${formatDate(endDate)}`
+})
+
+const uncollectedStats = computed(() => {
+  const fees = uncollectedFees.value || []
+  const totalAmount = fees.reduce((sum, fee) => sum + Number(fee.amount || 0), 0)
+  const uniqueStudents = new Set(fees.map(f => f.student_id)).size
+
+  return {
+    totalStudents: uniqueStudents,
+    totalAmount: totalAmount,
+    totalFees: fees.length,
+    averagePerStudent: uniqueStudents > 0 ? Math.round(totalAmount / uniqueStudents) : 0
+  }
+})
+
 const tablePagination = ref({
   rowsPerPage: 100,
 })
@@ -860,6 +1237,77 @@ const collectionRate = computed(() => {
 })
 
 const tab = ref('pending')
+
+// Class Payment Status Variables
+const teacherFilter = ref(null)
+const teacherOptions = ref([])
+const classFilter = ref(null)
+const classMonthFilter = ref(new Date().getMonth() + 1)
+const classYearFilter = ref(new Date().getFullYear())
+const classOptions = ref([])
+const classPaymentData = ref([])
+const classStudentFilter = ref('')
+const loadingClassStatus = ref(false)
+const selectedClassDetails = ref(null)
+
+const filteredClassOptions = computed(() => {
+  if (!teacherFilter.value) return classOptions.value
+
+  return classOptions.value.filter(opt => opt.teacher_id === teacherFilter.value)
+})
+
+const classPaymentStats = computed(() => {
+  const data = classPaymentData.value
+  const totalStudents = data.length
+  const paidStudents = data.filter((s) => s.payment_status === 'paid')
+  const unpaidStudents = data.filter((s) => s.payment_status !== 'paid')
+
+  const paidAmount = paidStudents.reduce((sum, s) => sum + Number(s.amount || 0), 0)
+  const unpaidAmount = unpaidStudents.reduce((sum, s) => sum + Number(s.amount || 0), 0)
+
+  const collectionRate =
+    totalStudents > 0 ? Math.round((paidStudents.length / totalStudents) * 100) : 0
+
+  return {
+    totalStudents,
+    paidCount: paidStudents.length,
+    unpaidCount: unpaidStudents.length,
+    paidAmount,
+    unpaidAmount,
+    collectionRate,
+  }
+})
+
+const filteredClassStudents = computed(() => {
+  if (!classStudentFilter.value) return classPaymentData.value
+
+  const search = classStudentFilter.value.toLowerCase()
+  return classPaymentData.value.filter(
+    (s) =>
+      s.student_name?.toLowerCase().includes(search) ||
+      s.student_username?.toLowerCase().includes(search),
+  )
+})
+
+const classPaymentColumns = [
+  { name: 'student', label: 'Student', field: 'student_name', align: 'left', sortable: true },
+  {
+    name: 'status',
+    label: 'Payment Status',
+    field: 'payment_status',
+    align: 'center',
+    sortable: true,
+  },
+  { name: 'amount', label: 'Amount', field: 'amount', align: 'right', sortable: true },
+  {
+    name: 'payment_date',
+    label: 'Payment Date',
+    field: 'payment_date',
+    align: 'center',
+    sortable: true,
+  },
+  { name: 'month', label: 'Month', field: 'month', align: 'center', sortable: true },
+]
 const filter = ref('')
 const uncollectedFilter = ref('')
 const reportLoading = ref(false)
@@ -874,59 +1322,59 @@ const filterMonth = ref(new Date().getMonth() + 1) // 1-12
 const feeCycleStartDay = ref(10) // Default
 
 const yearOptions = computed(() => {
-    const y = new Date().getFullYear()
-    return [y - 1, y, y + 1]
+  const y = new Date().getFullYear()
+  return [y - 1, y, y + 1]
 })
 
 const monthFilterOptions = [
-    { label: 'January', value: 1 },
-    { label: 'February', value: 2 },
-    { label: 'March', value: 3 },
-    { label: 'April', value: 4 },
-    { label: 'May', value: 5 },
-    { label: 'June', value: 6 },
-    { label: 'July', value: 7 },
-    { label: 'August', value: 8 },
-    { label: 'September', value: 9 },
-    { label: 'October', value: 10 },
-    { label: 'November', value: 11 },
-    { label: 'December', value: 12 }
+  { label: 'January', value: 1 },
+  { label: 'February', value: 2 },
+  { label: 'March', value: 3 },
+  { label: 'April', value: 4 },
+  { label: 'May', value: 5 },
+  { label: 'June', value: 6 },
+  { label: 'July', value: 7 },
+  { label: 'August', value: 8 },
+  { label: 'September', value: 9 },
+  { label: 'October', value: 10 },
+  { label: 'November', value: 11 },
+  { label: 'December', value: 12 },
 ]
 
 const cycleDateRange = computed(() => {
-    const y = filterYear.value
-    const m = filterMonth.value
-    const d = feeCycleStartDay.value
+  const y = filterYear.value
+  const m = filterMonth.value
+  const d = feeCycleStartDay.value
 
-    // Start Date
-    const start = new Date(y, m - 1, d)
-    // End Date (Next month same day)
-    const end = new Date(y, m, d)
+  // Start Date
+  const start = new Date(y, m - 1, d)
+  // End Date (Next month same day)
+  const end = new Date(y, m, d)
 
-    return `${start.toLocaleDateString()} - ${end.toLocaleDateString()}`
+  return `${start.toLocaleDateString()} - ${end.toLocaleDateString()}`
 })
 
 const apiParams = computed(() => {
-    const y = filterYear.value
-    const m = filterMonth.value
-    const d = feeCycleStartDay.value
+  const y = filterYear.value
+  const m = filterMonth.value
+  const d = feeCycleStartDay.value
 
-    // Start: Y-m-d
-    const start = new Date(y, m - 1, d)
+  // Start: Y-m-d
+  const start = new Date(y, m - 1, d)
 
-    // End: Next Month Day - 1 (The day BEFORE the next cycle starts)
-    // Date(y, m, d) is Start of next cycle.
-    // Date(y, m, d - 1) is End of current cycle.
-    const end = new Date(y, m, d - 1)
+  // End: Next Month Day - 1 (The day BEFORE the next cycle starts)
+  // Date(y, m, d) is Start of next cycle.
+  // Date(y, m, d - 1) is End of current cycle.
+  const end = new Date(y, m, d - 1)
 
-    const formatDate = (date) => {
-        return date.toISOString().slice(0, 10)
-    }
+  const formatDate = (date) => {
+    return date.toISOString().slice(0, 10)
+  }
 
-    return {
-        start_date: formatDate(start),
-        end_date: formatDate(end)
-    }
+  return {
+    start_date: formatDate(start),
+    end_date: formatDate(end),
+  }
 })
 
 function openVerifyDialog(row) {
@@ -971,8 +1419,6 @@ async function processVerification(status) {
     processingVerify.value = false
   }
 }
-
-
 
 const showGenerateDialog = ref(false)
 const genMonth = ref(new Date().toISOString().slice(0, 10))
@@ -1065,17 +1511,19 @@ const chartSeries = ref([
 ])
 
 // Watch for analytics data to update chart
-const chartYear = ref(new Date().getMonth() < 1 ? new Date().getFullYear() - 1 : new Date().getFullYear())
+const chartYear = ref(
+  new Date().getMonth() < 1 ? new Date().getFullYear() - 1 : new Date().getFullYear(),
+)
 const chartMetric = ref('revenue')
 const chartMetricOptions = [
-    { label: 'Collected Fees', value: 'revenue', type: 'currency' },
-    { label: 'Uncollected Fees', value: 'pending', type: 'currency' },
-    { label: 'Net Profit', value: 'netProfit', type: 'currency' },
-    { label: 'New Students', value: 'students', type: 'count' }
+  { label: 'Collected Fees', value: 'revenue', type: 'currency' },
+  { label: 'Uncollected Fees', value: 'pending', type: 'currency' },
+  { label: 'Net Profit', value: 'netProfit', type: 'currency' },
+  { label: 'New Students', value: 'students', type: 'count' },
 ]
 
 async function loadChartData() {
-    await financeStore.fetchAnalytics({ year: chartYear.value })
+  await financeStore.fetchAnalytics({ year: chartYear.value })
 }
 
 // Watch for analytics data to update chart
@@ -1084,7 +1532,7 @@ watch(
   ([newVal, metric]) => {
     if (newVal && newVal.chartData) {
       // Academic Year Data
-      const metricOption = chartMetricOptions.find(o => o.value === metric)
+      const metricOption = chartMetricOptions.find((o) => o.value === metric)
       const isCurrency = metricOption?.type === 'currency'
 
       chartOptions.value = {
@@ -1104,25 +1552,28 @@ watch(
                 return 'LKR ' + val.toFixed(0)
               }
               return val.toFixed(0) // Count format
-            }
-          }
+            },
+          },
         },
         tooltip: {
           y: {
-            formatter: (val) => isCurrency ? 'LKR ' + val.toLocaleString() : val.toString()
-          }
-        }
+            formatter: (val) => (isCurrency ? 'LKR ' + val.toLocaleString() : val.toString()),
+          },
+        },
       }
       chartSeries.value = [
         {
-            name: metricOption?.label || 'Value',
-            data: newVal.chartData.datasets[metric] || []
-        }
+          name: metricOption?.label || 'Value',
+          data: newVal.chartData.datasets[metric] || [],
+        },
       ]
     } else if (newVal && newVal.monthly) {
-       // Legacy Fallback (Should not happen with new backend)
-      chartOptions.value = { ...chartOptions.value, xaxis: { categories: newVal.monthly.map(i => i.month) } }
-      chartSeries.value = [{ name: 'Revenue', data: newVal.monthly.map(i => i.total) }]
+      // Legacy Fallback (Should not happen with new backend)
+      chartOptions.value = {
+        ...chartOptions.value,
+        xaxis: { categories: newVal.monthly.map((i) => i.month) },
+      }
+      chartSeries.value = [{ name: 'Revenue', data: newVal.monthly.map((i) => i.total) }]
     }
 
     // Update Pie Chart for Payment Methods
@@ -1138,7 +1589,7 @@ watch(
 )
 
 watch(chartYear, () => {
-    loadChartData()
+  loadChartData()
 })
 
 async function generateReport() {
@@ -1146,11 +1597,11 @@ async function generateReport() {
   try {
     const res = await financeStore.exportReport(apiParams.value)
     if (res) {
-       // Download logic handled in store now usually, but if store returns boolean:
-       // The store logic I updated handles download.
-       $q.notify({ type: 'positive', message: 'Report Downloaded' })
+      // Download logic handled in store now usually, but if store returns boolean:
+      // The store logic I updated handles download.
+      $q.notify({ type: 'positive', message: 'Report Downloaded' })
     } else {
-       // Failure handled in store
+      // Failure handled in store
     }
   } catch (e) {
     console.error(e)
@@ -1159,7 +1610,6 @@ async function generateReport() {
     reportLoading.value = false
   }
 }
-
 
 // Watch student selection to fetch PENDING FEES
 watch(cashStudent, async (newVal) => {
@@ -1319,14 +1769,14 @@ const uncollectedColumns = [
 const refreshing = ref(false)
 
 async function fetchSettings() {
-    try {
-        const res = await api.get('/v1/admin/settings')
-        if (res.data && res.data.feeCycleStartDay) {
-            feeCycleStartDay.value = parseInt(res.data.feeCycleStartDay)
-        }
-    } catch (e) {
-        console.warn('Failed to fetch settings for fee cycle', e)
+  try {
+    const res = await api.get('/v1/admin/settings')
+    if (res.data && res.data.feeCycleStartDay) {
+      feeCycleStartDay.value = parseInt(res.data.feeCycleStartDay)
     }
+  } catch (e) {
+    console.warn('Failed to fetch settings for fee cycle', e)
+  }
 }
 
 async function refreshAll() {
@@ -1337,11 +1787,111 @@ async function refreshAll() {
       financeStore.fetchTransactions(params),
       financeStore.fetchSettlements(params),
       financeStore.fetchUncollectedFees(),
-      loadChartData() // Load chart independently
+      loadChartData(), // Load chart independently
     ])
     $q.notify({ type: 'positive', message: 'Dashboard Updated', timeout: 500, position: 'top' })
   } finally {
     refreshing.value = false
+  }
+}
+
+async function loadTeachers() {
+  try {
+    const res = await api.get('/v1/users', { params: { role: 'teacher', per_page: 1000 } })
+    teacherOptions.value = [
+      { label: 'All Teachers', value: null },
+      ...res.data.data.map(teacher => ({
+        label: teacher.name,
+        value: teacher.id
+      }))
+    ]
+  } catch (e) {
+    console.error('Failed to load teachers:', e)
+  }
+}
+
+function onTeacherFilterChange() {
+  // Reset class filter when teacher changes
+  classFilter.value = null
+  selectedClassDetails.value = null
+  classPaymentData.value = []
+}
+
+async function loadClassOptions() {
+  try {
+    const res = await api.get('/v1/courses', { params: { per_page: 1000 } })
+    classOptions.value = res.data.data.map(course => ({
+      label: course.name,
+      value: course.id,
+      teacher_id: course.teacher_id,
+      teacher_name: course.teacher?.name || 'N/A',
+      batch_name: course.batch?.name || 'N/A',
+      subject_name: course.subject?.name || 'N/A',
+      fee_amount: course.fee_amount
+    }))
+  } catch (e) {
+    console.error('Failed to load classes:', e)
+  }
+}
+
+async function loadClassPaymentStatus() {
+  if (!classFilter.value || !classMonthFilter.value || !classYearFilter.value) {
+    classPaymentData.value = []
+    selectedClassDetails.value = null
+    return
+  }
+
+  // Set class details
+  const classInfo = classOptions.value.find(c => c.value === classFilter.value)
+  if (classInfo) {
+    selectedClassDetails.value = {
+      name: classInfo.label,
+      teacher_name: classInfo.teacher_name,
+      batch_name: classInfo.batch_name,
+      subject_name: classInfo.subject_name,
+      fee_amount: classInfo.fee_amount
+    }
+  }
+
+  loadingClassStatus.value = true
+  try {
+    const monthStr = `${classYearFilter.value}-${String(classMonthFilter.value).padStart(2, '0')}`
+    const res = await api.get(`/v1/courses/${classFilter.value}/students`, {
+      params: {
+        month: monthStr,
+        include_payment_status: true
+      }
+    })
+
+    // Transform the data to include payment status
+    classPaymentData.value = res.data.map(student => ({
+      student_id: student.id,
+      student_name: student.name,
+      student_username: student.username,
+      payment_status: student.payment_status || 'unpaid',
+      amount: student.fee_amount || 0,
+      payment_date: student.payment_date || null,
+      month: monthStr
+    }))
+  } catch (e) {
+    console.error('Failed to load class payment status:', e)
+    $q.notify({ type: 'negative', message: 'Failed to load class payment data' })
+    classPaymentData.value = []
+  } finally {
+    loadingClassStatus.value = false
+  }
+}
+
+async function loadUncollectedFees() {
+  loadingUncollected.value = true
+  try {
+    const monthStr = `${uncollectedYear.value}-${String(uncollectedMonth.value).padStart(2, '0')}`
+    await financeStore.fetchUncollectedFees(monthStr)
+  } catch (e) {
+    console.error('Failed to load uncollected fees:', e)
+    $q.notify({ type: 'negative', message: 'Failed to load uncollected fees' })
+  } finally {
+    loadingUncollected.value = false
   }
 }
 
@@ -1354,16 +1904,29 @@ onMounted(async () => {
     today.setMonth(today.getMonth() - 1)
   }
 
-  // Set filters
+  // Set filters for main finance page
   filterYear.value = today.getFullYear()
   filterMonth.value = today.getMonth() + 1
 
+  // Set filters for uncollected fees tab
+  uncollectedYear.value = today.getFullYear()
+  uncollectedMonth.value = today.getMonth() + 1
+
   refreshAll()
+  loadClassOptions()
+  loadTeachers()
+  loadUncollectedFees()
 })
 
 watch(apiParams, () => {
-    refreshAll()
+  refreshAll()
 })
+
+watch([uncollectedYear, uncollectedMonth], () => {
+  loadUncollectedFees()
+})
+
+
 
 const columns = [
   { name: 'id', label: 'ID', field: 'id', align: 'left' },
@@ -1419,7 +1982,6 @@ const showPaysheetDialog = ref(false)
 const activeSettlement = ref(null)
 const instituteCommission = ref(20)
 
-const settlementMonth = ref(new Date().toISOString().slice(0, 7))
 const bonusAmount = ref(0)
 const deductionAmount = ref(0)
 const bonusNote = ref('')
@@ -1452,9 +2014,7 @@ function printPaysheet() {
   window.print()
 }
 
-watch(settlementMonth, (newVal) => {
-  financeStore.fetchSettlements({ month: newVal })
-})
+
 
 async function handleGenerate() {
   // Validate inputs

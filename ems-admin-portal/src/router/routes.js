@@ -5,14 +5,14 @@ const routes = [
     component: () => import('layouts/MainLayout.vue'),
     children: [
       { path: '', redirect: '/dashboard' },
-      { path: 'dashboard', component: () => import('pages/IndexPage.vue'), meta: { permission: 'dashboard' } },
-      { path: 'institutes', component: () => import('pages/InstitutesPage.vue'), meta: { permission: 'halls' } },
-      { path: 'users', component: () => import('pages/UsersPage.vue'), meta: { permission: 'users' } },
-      { path: 'courses', component: () => import('pages/CoursesPage.vue'), meta: { permission: 'classes' } },
-      { path: 'finance', component: () => import('pages/FinancePage.vue'), meta: { permission: 'finance' } },
-      { path: 'attendance', component: () => import('pages/AttendanceMarkingPage.vue'), meta: { permission: 'attendance' } },
-      { path: 'cashpayment', component: () => import('pages/CashPaymentPage.vue'), meta: { permission: 'payments' } },
-      { path: 'settings', component: () => import('pages/SettingsPage.vue'), meta: { permission: 'settings' } }
+      { path: 'dashboard', component: () => import('pages/IndexPage.vue') },
+      { path: 'institutes', component: () => import('pages/InstitutesPage.vue') },
+      { path: 'users', component: () => import('pages/UsersPage.vue') },
+      { path: 'courses', component: () => import('pages/CoursesPage.vue') },
+      { path: 'finance', component: () => import('pages/FinancePage.vue') },
+      { path: 'attendance', component: () => import('pages/AttendanceMarkingPage.vue') },
+      { path: 'cashpayment', component: () => import('pages/CashPaymentPage.vue') },
+      { path: 'settings', component: () => import('pages/SettingsPage.vue') }
     ]
   },
   {

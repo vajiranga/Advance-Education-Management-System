@@ -15,3 +15,6 @@ Schedule::command('fees:generate')->monthlyOn(1, '01:00');
 
 // Schedule Teacher Settlements - Runs daily but only processes if it matches the configured settlement day
 Schedule::command('settlements:process')->dailyAt('01:00');
+
+// Schedule Auto-Drop Unpaid Students - run daily to check logic
+Schedule::command('enrollments:auto-drop-unpaid')->dailyAt('02:00');

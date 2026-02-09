@@ -58,6 +58,9 @@
                     <div v-if="paymentForm.selectedStudent.phone" class="text-caption text-grey-7">
                       <q-icon name="phone" size="xs" /> {{ paymentForm.selectedStudent.phone }}
                     </div>
+                    <div class="q-mt-xs">
+                      <q-btn outline dense color="secondary" label="View History" size="sm" icon="history" @click="openHistory" />
+                    </div>
                   </div>
                   <q-btn flat round icon="close" color="grey" @click="clearStudent" />
                 </div>
@@ -201,6 +204,68 @@
         </q-card>
       </div>
     </div>
+    <!-- Student History Dialog -->
+    <q-dialog v-model="showHistoryDialog" full-width>
+      <q-card class="full-height">
+        <q-toolbar class="bg-primary text-white">
+          <q-btn flat round dense icon="close" v-close-popup />
+          <q-toolbar-title>Student History: {{ paymentForm.selectedStudent?.name }}</q-toolbar-title>
+        </q-toolbar>
+
+        <q-card-section v-if="!studentHistory" class="flex flex-center" style="height: 200px">
+          <q-spinner color="primary" size="3em" />
+        </q-card-section>
+
+        <q-card-section v-else class="row q-col-gutter-md">
+           <!-- Enrollment History -->
+           <div class="col-12 col-md-6">
+             <div class="text-h6 q-mb-md">Enrollments</div>
+             <q-table
+               :rows="studentHistory.enrollments"
+               :columns="[
+                  { name: 'course', label: 'Course', field: 'course_name', align: 'left', sortable: true },
+                  { name: 'status', label: 'Status', field: 'status', align: 'center', sortable: true },
+                  { name: 'enrolled', label: 'Enrolled', field: 'enrolled_at', format: val => val ? new Date(val).toLocaleDateString() : '-', sortable: true },
+                  { name: 'dropped', label: 'Dropped', field: 'dropped_at', format: val => val ? new Date(val).toLocaleDateString() : '-', sortable: true },
+               ]"
+               row-key="id"
+               dense
+               flat
+               bordered
+               :pagination="{ rowsPerPage: 10 }"
+             >
+                <template v-slot:body-cell-status="props">
+                  <q-td :props="props">
+                    <q-chip :color="props.row.status === 'active' ? 'green' : 'red'" text-color="white" size="sm">
+                      {{ props.row.status }}
+                    </q-chip>
+                  </q-td>
+                </template>
+             </q-table>
+           </div>
+
+           <!-- Payment History -->
+           <div class="col-12 col-md-6">
+             <div class="text-h6 q-mb-md">Recent Payments</div>
+             <q-table
+               :rows="studentHistory.payments"
+               :columns="[
+                  { name: 'date', label: 'Date', field: 'paid_at', format: val => new Date(val).toLocaleDateString(), sortable: true },
+                  { name: 'amount', label: 'Amount', field: 'amount', format: val => `LKR ${Number(val).toLocaleString()}`, align: 'right', sortable: true },
+                  { name: 'month', label: 'For Month', field: 'month', sortable: true },
+                  { name: 'course', label: 'Course', field: 'course_name', align: 'left' },
+               ]"
+               row-key="id"
+               dense
+               flat
+               bordered
+               :pagination="{ rowsPerPage: 10 }"
+             />
+           </div>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
+
   </q-page>
 </template>
 
@@ -208,8 +273,10 @@
 import { ref, nextTick, computed } from 'vue'
 import { api } from 'boot/axios'
 import { useQuasar } from 'quasar'
+import { useFinanceStore } from 'stores/finance-store'
 
 const $q = useQuasar()
+const financeStore = useFinanceStore()
 
 const barcodeInput = ref(null)
 const loadingStudentData = ref(false)
@@ -245,6 +312,20 @@ function clearSelection() {
   enrolledClasses.value.forEach(cls => {
     cls.selected = false
   })
+}
+
+const showHistoryDialog = ref(false)
+const studentHistory = ref(null)
+
+async function openHistory() {
+  if (!paymentForm.value.selectedStudent) return
+  studentHistory.value = null
+  showHistoryDialog.value = true
+
+  const data = await financeStore.fetchStudentHistory(paymentForm.value.selectedStudent.id)
+  if (data) {
+    studentHistory.value = data
+  }
 }
 
 async function searchStudent() {

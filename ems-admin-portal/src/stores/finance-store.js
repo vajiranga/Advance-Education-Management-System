@@ -115,9 +115,10 @@ export const useFinanceStore = defineStore('finance', () => {
 
     const uncollectedFees = ref([])
 
-    async function fetchUncollectedFees() {
+    async function fetchUncollectedFees(month = null) {
         try {
-            const res = await api.get('/v1/admin/payments/pending-list')
+            const params = month ? { month } : {}
+            const res = await api.get('/v1/admin/payments/pending-list', { params })
             uncollectedFees.value = res.data
         } catch (e) {
             console.error(e)
@@ -144,6 +145,16 @@ export const useFinanceStore = defineStore('finance', () => {
         }
     }
 
+    async function fetchStudentHistory(studentId) {
+        try {
+            const res = await api.get(`/v1/admin/students/${studentId}/history`)
+            return res.data
+        } catch (e) {
+            console.error('Failed to fetch student history', e)
+            return null
+        }
+    }
+
     return {
         transactions,
         pendingTransactions,
@@ -161,6 +172,7 @@ export const useFinanceStore = defineStore('finance', () => {
         recordBatchPayment,
         approvePayment,
         rejectPayment,
-        uncollectedFees
+        uncollectedFees,
+        fetchStudentHistory
     }
 })

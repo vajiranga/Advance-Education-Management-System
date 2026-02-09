@@ -96,7 +96,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useTeacherStore } from 'stores/teacher-store'
 import { useAuthStore } from 'stores/auth-store'
 import { useSettingsStore } from 'stores/settings-store'
@@ -107,41 +107,27 @@ const $q = useQuasar()
 const teacherStore = useTeacherStore()
 const authStore = useAuthStore()
 const settingsStore = useSettingsStore()
-const { loading } = storeToRefs(teacherStore)
+const { courses, loading } = storeToRefs(teacherStore)
 
 const selectedClass = ref(null)
-const classesForDate = ref([])
 
 const classOptions = computed(() => {
     return [
         { id: 'all', name: 'All Students' },
-        ...classesForDate.value
+        ...courses.value
     ]
 })
 
 const selectedDate = ref(qDate.formatDate(Date.now(), 'YYYY-MM-DD'))
 const attendanceList = ref([])
 
-onMounted(async () => {
+onMounted(() => {
     settingsStore.fetchPublicSettings()
-    // Load classes for today
-    await loadClassesForDate()
+    // Ensure courses are loaded
+    if (courses.value.length === 0) {
+        teacherStore.fetchCourses({ teacher_id: authStore.user?.id })
+    }
 })
-
-// Watch for date changes and reload classes
-watch(selectedDate, async () => {
-    await loadClassesForDate()
-    // Clear selection when date changes
-    selectedClass.value = null
-    attendanceList.value = []
-})
-
-async function loadClassesForDate() {
-    if (!authStore.user?.id) return
-
-    const classes = await teacherStore.fetchClassesForDate(authStore.user.id, selectedDate.value)
-    classesForDate.value = classes
-}
 
 async function loadStudents() {
     if (!selectedClass.value) return
