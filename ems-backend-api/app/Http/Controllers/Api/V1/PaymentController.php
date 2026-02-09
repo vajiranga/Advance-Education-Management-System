@@ -505,8 +505,16 @@ class PaymentController extends Controller
          // Total Pending (Global, action required)
          $totalPendingCount = Payment::where('status', 'pending')->count();
 
-         // Uncollected Fees (Global outstanding)
-         $uncollectedAmount = \App\Models\StudentFee::where('status', 'pending')->sum('amount');
+         // Uncollected Fees (Filtered by date if provided, otherwise Global)
+         $uncollectedFeesQuery = \App\Models\StudentFee::where('status', 'pending');
+
+         if ($request->has('start_date')) {
+            // The billing cycle 'start_date' (e.g., 2026-01-10) directly corresponds to the fee month (e.g., 2026-01)
+            $targetMonth = \Carbon\Carbon::parse($request->start_date)->format('Y-m');
+            $uncollectedFeesQuery->where('month', $targetMonth);
+         }
+
+         $uncollectedAmount = $uncollectedFeesQuery->sum('amount');
 
          // Default sort (using paid_at for paid transactions, created_at for pending)
          $query->orderBy('paid_at', 'desc');

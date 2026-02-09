@@ -1379,10 +1379,14 @@ const cycleDateRange = computed(() => {
 
   // Start Date
   const start = new Date(y, m - 1, d)
-  // End Date (Next month same day)
-  const end = new Date(y, m, d)
+  // End Date (Next month day - 1)
+  const end = new Date(y, m, d - 1)
 
-  return `${start.toLocaleDateString()} - ${end.toLocaleDateString()}`
+  const formatDate = (date) => {
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  }
+
+  return `${formatDate(start)} - ${formatDate(end)}`
 })
 
 const apiParams = computed(() => {
