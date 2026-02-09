@@ -257,39 +257,68 @@
           </div>
         </q-tab-panel>
 
-        <!-- All Transactions Tab -->
-        <q-tab-panel name="all" class="q-pa-none">
-          <!-- ... existing ... -->
-          <q-table
-            :rows="transactions"
-            :columns="columns"
-            row-key="id"
-            flat
-            :filter="filter"
-            :pagination="tablePagination"
-            :rows-per-page-options="[100, 200, 500, 1000, 0]"
-          >
-            <template v-slot:top-right>
-              <q-input borderless dense debounce="300" v-model="filter" placeholder="Search">
-                <template v-slot:append>
-                  <q-icon name="search" />
-                </template>
-              </q-input>
-            </template>
-            <template v-slot:body-cell-status="props">
-              <q-td :props="props">
-                <q-chip :color="getStatusColor(props.row.status)" text-color="white" size="sm">
-                  {{ props.row.status }}
-                </q-chip>
-              </q-td>
-            </template>
-            <template v-slot:body-cell-student="props">
-              <q-td :props="props">
-                <div>{{ props.row.student?.name }}</div>
-                <div class="text-caption text-grey">{{ props.row.student?.username }}</div>
-              </q-td>
-            </template>
-          </q-table>
+        <!-- All Transactions Tab (Recent Feed) -->
+        <q-tab-panel name="all" class="q-pa-md">
+          <q-card flat bordered class="bg-white">
+            <q-card-section>
+               <div class="text-h6 text-grey-9">Recent Transactions</div>
+               <div class="text-caption text-grey">Showing latest activity</div>
+            </q-card-section>
+             <q-separator />
+             <div v-if="loadingRecent" class="row justify-center q-pa-lg">
+                <q-spinner color="primary" size="3em" />
+             </div>
+             <q-list separator v-else>
+                <q-item v-for="(item, i) in allRecentTransactions" :key="i" clickable v-ripple>
+                  <q-item-section avatar>
+                    <q-avatar color="primary" text-color="white">
+                      {{ item.student?.name?.charAt(0) || 'U' }}
+                    </q-avatar>
+                  </q-item-section>
+
+                  <q-item-section>
+                    <q-item-label class="text-weight-bold">{{ item.student?.name }}</q-item-label>
+                    <q-item-label caption>
+                       {{ item.student?.username }}
+                    </q-item-label>
+                    <q-item-label caption class="q-mt-xs text-grey-8">
+                       Paid for {{ item.course?.name }}
+                    </q-item-label>
+                  </q-item-section>
+
+                  <q-item-section side>
+                    <div class="column items-end">
+                       <q-badge
+                        :color="item.status === 'paid' ? 'green' : (item.status === 'free_card' ? 'amber-9' : 'orange')"
+                        :label="item.status === 'free_card' ? 'FREE' : item.status"
+                        class="q-mb-xs"
+                      />
+                      <div class="text-body2 text-weight-bold">
+                         {{ item.status === 'free_card' ? 'LKR 0' : 'LKR ' + Number(item.amount).toLocaleString() }}
+                      </div>
+                      <div class="text-caption text-grey">
+                         {{ new Date(item.created_at).toLocaleDateString() }}
+                      </div>
+                    </div>
+                  </q-item-section>
+                </q-item>
+
+                <div v-if="allRecentTransactions.length === 0" class="text-center text-grey q-pa-xl">
+                   <q-icon name="receipt_long" size="4em" />
+                   <div class="text-h6 q-mt-md">No recent transactions</div>
+                </div>
+
+                <div v-if="hasMoreRecent" class="row justify-center q-pa-md">
+                    <q-btn
+                        outline
+                        color="primary"
+                        label="Load More"
+                        @click="loadRecentTransactions(true)"
+                        :loading="loadingMoreRecent"
+                    />
+                </div>
+             </q-list>
+          </q-card>
         </q-tab-panel>
 
         <!-- Uncollected Fees Tab -->
@@ -1180,7 +1209,7 @@ import VueApexCharts from 'vue3-apexcharts'
 const $q = useQuasar()
 const financeStore = useFinanceStore()
 const authStore = useAuthStore() // Init Store
-const { transactions, pendingTransactions, stats, analyticsData, settlements, uncollectedFees } =
+const { pendingTransactions, stats, analyticsData, settlements, uncollectedFees } =
   storeToRefs(financeStore)
 
 // Uncollected Fees Filters
@@ -1308,7 +1337,6 @@ const classPaymentColumns = [
   },
   { name: 'month', label: 'Month', field: 'month', align: 'center', sortable: true },
 ]
-const filter = ref('')
 const uncollectedFilter = ref('')
 const reportLoading = ref(false)
 const showVerifyDialog = ref(false)
@@ -1337,9 +1365,12 @@ const monthFilterOptions = [
   { label: 'August', value: 8 },
   { label: 'September', value: 9 },
   { label: 'October', value: 10 },
-  { label: 'November', value: 11 },
   { label: 'December', value: 12 },
 ]
+
+watch([filterYear, filterMonth], () => {
+  refreshAll()
+})
 
 const cycleDateRange = computed(() => {
   const y = filterYear.value
@@ -1733,12 +1764,7 @@ function printAdminReceipt(payment, student, course) {
   printWindow.document.close()
 }
 
-const getStatusColor = (status) => {
-  if (status === 'paid') return 'green'
-  if (status === 'pending') return 'orange'
-  if (status === 'rejected') return 'red'
-  return 'grey'
-}
+
 
 // ... (existing functions) ...
 
@@ -1779,15 +1805,63 @@ async function fetchSettings() {
   }
 }
 
+const allRecentTransactions = ref([])
+const loadingRecent = ref(false)
+const loadingMoreRecent = ref(false)
+const recentPage = ref(1)
+const hasMoreRecent = ref(false)
+
+async function loadRecentTransactions(append = false) {
+  if (append) {
+    loadingMoreRecent.value = true
+  } else {
+    loadingRecent.value = true
+    recentPage.value = 1
+  }
+
+  try {
+    const params = {
+        per_page: 10,
+        page: recentPage.value
+    }
+
+    const res = await api.get('/v1/admin/payments/summary', { params })
+    const newData = res.data.data || res.data
+    const meta = res.data // Access meta data (current_page, last_page)
+
+    if (append) {
+      allRecentTransactions.value = [...allRecentTransactions.value, ...newData]
+    } else {
+      allRecentTransactions.value = newData
+    }
+
+    // Pagination Logic
+    if (meta.current_page < meta.last_page) {
+        hasMoreRecent.value = true
+        recentPage.value++
+    } else {
+        hasMoreRecent.value = false
+    }
+
+  } catch (e) {
+    console.error("Failed to load recent transactions", e)
+  } finally {
+    loadingRecent.value = false
+    loadingMoreRecent.value = false
+  }
+}
+
+
 async function refreshAll() {
   refreshing.value = true
   try {
     const params = apiParams.value
     await Promise.all([
-      financeStore.fetchTransactions(params),
+      financeStore.fetchTransactions(params), // Keeps stats cards updated with filters
+      loadRecentTransactions(false), // Updates the feed WITHOUT filters (Reset)
       financeStore.fetchSettlements(params),
       financeStore.fetchUncollectedFees(),
-      loadChartData(), // Load chart independently
+      loadChartData(),
     ])
     $q.notify({ type: 'positive', message: 'Dashboard Updated', timeout: 500, position: 'top' })
   } finally {

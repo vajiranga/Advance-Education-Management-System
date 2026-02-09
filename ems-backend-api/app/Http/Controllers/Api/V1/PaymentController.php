@@ -472,29 +472,46 @@ class PaymentController extends Controller
              });
          }
 
-         // Date Range Filter (using paid_at for consistency with settlements)
+         // Date Range Filter (Consistent with Dashboard Cycle)
          if ($request->has('start_date') && $request->has('end_date')) {
-             $start = $request->start_date . ' 00:00:00';
-             $end = $request->end_date . ' 23:59:59';
-             $query->whereBetween('paid_at', [$start, $end]);
+             $start = \Carbon\Carbon::parse($request->start_date)->startOfDay();
+             $end = \Carbon\Carbon::parse($request->end_date)->endOfDay();
+
+             $query->where(function($q) use ($start, $end) {
+                 $q->whereBetween('paid_at', [$start, $end])
+                   ->orWhere(function($sub) use ($start, $end) {
+                        // For pending/rejected, use created_at as they have no paid_at
+                        $sub->whereNull('paid_at')->whereBetween('created_at', [$start, $end]);
+                   });
+             });
          }
 
-         // Calculate Global Stats
-         $statsQuery = Payment::query();
+         // Calculate Global Stats matching the filtered query
+         // We must replicate the date filter logic for accuracy
+         $statsRevenueQuery = Payment::query()->where('status', 'paid');
+
          if ($request->has('start_date') && $request->has('end_date')) {
-             $statsQuery->whereBetween('paid_at', [$request->start_date . ' 00:00:00', $request->end_date . ' 23:59:59']);
+             $start = \Carbon\Carbon::parse($request->start_date)->startOfDay();
+             $end = \Carbon\Carbon::parse($request->end_date)->endOfDay();
+             $statsRevenueQuery->whereBetween('paid_at', [$start, $end]);
          }
 
-         // Filter out payments from deleted courses
-         $statsQuery->whereHas('course');
+         $totalRevenue = $statsRevenueQuery->sum('amount');
 
-         $totalRevenue = (clone $statsQuery)->where('status', 'paid')->sum('amount');
-         $totalPendingCount = (clone $statsQuery)->where('status', 'pending')->count();
-         $uncollectedAmount = \App\Models\StudentFee::where('status', 'pending')->sum('amount'); // This is total outstanding, arguably shouldn't filter by transaction date.
+         // Pending Count (Filtered by date? Usually users want to see ALL pending, but if filtered by month, maybe just that month's?)
+         // Let's keep pending count GLOBAL for action items, but we can also provide filtered.
+         // User asked to make them "same". Dashboard usually shows "Month Revenue".
+
+         // Total Pending (Global, action required)
+         $totalPendingCount = Payment::where('status', 'pending')->count();
+
+         // Uncollected Fees (Global outstanding)
+         $uncollectedAmount = \App\Models\StudentFee::where('status', 'pending')->sum('amount');
 
          // Default sort (using paid_at for paid transactions, created_at for pending)
          $query->orderBy('paid_at', 'desc');
-         $paginated = $query->paginate(20);
+         $perPage = $request->input('per_page', 20);
+         $paginated = $query->paginate($perPage);
 
          // Custom response format to include stats
          return response()->json([
