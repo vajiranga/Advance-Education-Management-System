@@ -52,7 +52,8 @@ export const useTeacherStore = defineStore('teacher', () => {
 
         loading.value = true
         try {
-            const res = await api.get('/v1/courses', { params })
+            // Always include 'all=true' to get filtered list (removes expired extra classes)
+            const res = await api.get('/v1/courses', { params: { ...params, all: true } })
             courses.value = res.data.data ? res.data.data : res.data
         } catch (e) {
             console.error('Fetch courses failed', e)

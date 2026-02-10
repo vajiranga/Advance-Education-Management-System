@@ -12,8 +12,8 @@ export const useCourseStore = defineStore('course', () => {
     async function fetchCourses(params = {}) {
         loading.value = true
         try {
-            // Add cache buster
-            const queryParams = { ...params, _t: Date.now() }
+            // Add cache buster and 'all=true' to filter expired extra classes
+            const queryParams = { all: true, ...params, _t: Date.now() }
             const res = await api.get('/v1/courses', { params: queryParams })
             courses.value = res.data.data ? res.data.data : res.data
         } catch (e) {

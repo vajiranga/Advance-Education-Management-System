@@ -256,6 +256,7 @@ function getIcon(type) {
         case 'exam_results': return 'assignment'
         case 'notice': return 'campaign'
         case 'meeting': return 'groups'
+        case 'low_attendance_alert': return 'warning' // New Alert
         default: return 'notifications'
     }
 }
@@ -269,6 +270,7 @@ function getIconColor(type) {
         case 'exam_results': return 'primary' // Blue
         case 'notice': return 'orange'
         case 'meeting': return 'teal'
+        case 'low_attendance_alert': return 'negative' // Red for alert
         default: return 'primary'
     }
 }
@@ -284,6 +286,8 @@ function handleNotificationClick(note) {
         router.push('/student/payments')
     } else if (note.type === 'exam_scheduled' || note.type === 'exam_results') {
         router.push('/student/exams')
+    } else if (note.type === 'low_attendance_alert') {
+        router.push('/student/attendance')
     }
 }
 </script>

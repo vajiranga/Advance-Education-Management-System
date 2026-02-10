@@ -67,7 +67,41 @@ class CourseController extends Controller
             }
 
             if ($request->has('all')) {
-                return response()->json($query->with(['subject', 'batch', 'teacher', 'hall', 'parentCourse'])->withCount('students')->orderBy('created_at', 'desc')->get());
+                $courses = $query->with(['subject', 'batch', 'teacher', 'hall', 'parentCourse'])
+                    ->withCount('students')
+                    ->orderBy('created_at', 'desc')
+                    ->get();
+
+                // Apply Extra Class Visibility Filter if 'all' is requested (usually for dropdowns)
+                $visDays = (int) (\App\Models\SystemSetting::where('key', 'extraClassVisibilityDays')->value('value') ?? 0);
+                $visHours = (int) (\App\Models\SystemSetting::where('key', 'extraClassVisibilityHours')->value('value') ?? 2);
+                $now = now();
+
+                $courses = $courses->filter(function($course) use ($visDays, $visHours, $now) {
+                    if ($course->type === 'extra') {
+                        $schedule = is_string($course->schedule) ? json_decode($course->schedule, true) : $course->schedule;
+
+                        // If no date, maybe keep it or hide it? Assuming hide if invalid extra.
+                        if (!isset($schedule['date'])) return true;
+
+                        // Parse End Time
+                        $endTimeStr = $schedule['end'] ?? '23:59';
+                        try {
+                            $classEnd = \Carbon\Carbon::parse($schedule['date'] . ' ' . $endTimeStr);
+                            $expiryTime = $classEnd->copy()->addDays($visDays)->addHours($visHours);
+
+                            if ($now->gt($expiryTime)) {
+                                return false; // Expired, hide
+                            }
+                        } catch (\Exception $e) {
+                            // If date parse fails, keep it to be safe
+                            return true;
+                        }
+                    }
+                    return true;
+                })->values(); // Re-index array
+
+                return response()->json($courses);
             }
 
             $perPage = $request->input('per_page', 20);
@@ -504,7 +538,36 @@ class CourseController extends Controller
                 // For extra classes, check schedule['date']
                 if ($course->type === 'extra') {
                     $schedule = is_string($course->schedule) ? json_decode($course->schedule, true) : $course->schedule;
-                    return isset($schedule['date']) && $schedule['date'] === $date;
+
+                    if (!isset($schedule['date']) || $schedule['date'] !== $date) {
+                        return false;
+                    }
+
+                    // --- VISIBILITY CHECK ---
+                    // "Hide after ended" logic based on system settings
+                    // Only apply if looking at TODAY'S or PAST classes. Future classes should be visible.
+                    // If date > today, always show.
+                    // If date < today, always hide? Or apply window?
+                    // Usually "Extra Class Visibility" implies hiding completed classes from the "Today" list or "Upcoming" list after X time.
+                    // The request is: "dropdown list ekee extra class ee davasen passe nethi vena vidiyata logic eka enna oone"
+                    // (Transl: In the dropdown list, extra classes should disappear after that day based on logic)
+
+                    // Actually, let's just use the settings.
+                    $visDays = (int) (SystemSetting::where('key', 'extraClassVisibilityDays')->value('value') ?? 0);
+                    $visHours = (int) (SystemSetting::where('key', 'extraClassVisibilityHours')->value('value') ?? 2);
+
+                    // End Time of the class
+                    $endTimeStr = $schedule['end'] ?? '23:59';
+                    $classEnd = \Carbon\Carbon::parse($schedule['date'] . ' ' . $endTimeStr);
+
+                    // Visibility Expiry Time = Class End + Visibility Duration
+                    $expiryTime = $classEnd->copy()->addDays($visDays)->addHours($visHours);
+
+                    if (now()->gt($expiryTime)) {
+                        return false; // Expired, hide it
+                    }
+
+                    return true;
                 }
 
                 return false;

@@ -16,4 +16,8 @@ Schedule::command('fees:generate')->monthlyOn(1, '01:00');
 
 
 // Schedule Auto-Drop Unpaid Students - run daily to check logic
+// Schedule Auto-Drop Unpaid Students - run daily to check logic
 Schedule::command('enrollments:auto-drop-unpaid')->dailyAt('02:00');
+
+// Schedule Monthly Attendance Check - Last day of month at 23:00
+Schedule::command('attendance:check-monthly')->lastDayOfMonth('23:00');

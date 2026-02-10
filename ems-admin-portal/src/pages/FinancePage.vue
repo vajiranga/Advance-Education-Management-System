@@ -2041,8 +2041,9 @@ function onTeacherFilterChange() {
 
 async function loadClassOptions() {
   try {
-    const res = await api.get('/v1/courses', { params: { per_page: 1000 } })
-    classOptions.value = res.data.data.map(course => ({
+    const res = await api.get('/v1/courses', { params: { all: true } })
+    const courses = res.data.data ? res.data.data : res.data // Handle both pagination and 'all' response
+    classOptions.value = courses.map(course => ({
       label: course.name,
       value: course.id,
       teacher_id: course.teacher_id,

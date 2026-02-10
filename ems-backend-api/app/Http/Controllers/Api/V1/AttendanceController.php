@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Attendance;
 use App\Models\Course;
 use Illuminate\Support\Facades\Validator;
+use App\Models\SystemSetting;
 
 class AttendanceController extends Controller
 {
@@ -184,11 +185,16 @@ class AttendanceController extends Controller
                 ];
             })->values();
 
+            // Fetch Min Attendance Threshold
+            $minAttendance = (int) (SystemSetting::where('key', 'minAttendancePercent')->value('value') ?? 80);
+
             $response[] = [
                 'course_name' => $courseName,
                 'total_sessions' => $total,
                 'present_sessions' => $present,
                 'percentage' => $percentage,
+                'min_attendance_threshold' => $minAttendance,
+                'is_low_attendance' => $percentage < $minAttendance,
                 'history' => $history
             ];
         }
@@ -223,7 +229,16 @@ class AttendanceController extends Controller
 
         $now = now();
         $upcomingLimit = now()->addHours(24);
-        $recentLimit = now()->subDays(7);
+
+        // Get Visibility Settings
+        $visDays = (int) (SystemSetting::where('key', 'extraClassVisibilityDays')->value('value') ?? 7);
+        $visHours = (int) (SystemSetting::where('key', 'extraClassVisibilityHours')->value('value') ?? 0);
+
+        // Calculate recent limit based on settings
+        // If settings are 0, default to reasonable minimal fallback (e.g. 2 hours) to avoid immediate disappearance if desired,
+        // OR purely respect 0. The user prompts implies "hide from list" "after end time".
+        // If user sets 0d 0h, it means immediate hide.
+        $recentLimit = now()->subDays($visDays)->subHours($visHours);
 
         $upcomingSessions = [];
         $recentSessions = [];
