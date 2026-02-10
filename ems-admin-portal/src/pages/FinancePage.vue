@@ -2192,7 +2192,7 @@ const settlementColumns = [
   },
   {
     name: 'share',
-    label: 'Default Share (80%)',
+    label: 'Teacher Share (Net)',
     field: 'teacher_share',
     align: 'right',
     format: (val) => parseFloat(val).toLocaleString(),
@@ -2224,7 +2224,7 @@ const activeShare = computed(() => {
 
 function openPaysheet(row) {
   activeSettlement.value = row
-  instituteCommission.value = 20
+  instituteCommission.value = row.deduction_percentage || 20 // Use row value or default
   bonusAmount.value = 0
   deductionAmount.value = 0
   bonusNote.value = ''
