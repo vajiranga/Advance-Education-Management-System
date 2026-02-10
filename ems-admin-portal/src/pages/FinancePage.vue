@@ -151,24 +151,36 @@
 
       <div class="col-12 col-md-3">
         <!-- Course Breakdown -->
-        <q-card class="full-height scroll">
+        <!-- Course Breakdown -->
+        <q-card class="full-height scroll" style="max-height: 400px">
           <q-card-section>
             <div class="text-h6">Top Courses</div>
+            <div class="text-caption text-grey">By Revenue ({{ cycleDateRange }})</div>
           </q-card-section>
           <q-list separator dense>
-            <q-item v-for="(course, i) in analyticsData.courses" :key="i">
+            <q-item v-for="(course, i) in topCourses" :key="i">
               <q-item-section>
-                <q-item-label class="text-caption">{{ course.course_name }}</q-item-label>
-                <q-linear-progress :value="0.8" class="q-mt-xs" color="primary" size="xs" />
+                <q-item-label class="text-weight-medium">{{ course.course_name }}</q-item-label>
+                <q-item-label caption>{{ course.teacher_name }}</q-item-label>
+                <q-linear-progress :value="1" class="q-mt-xs" color="primary" size="xs" />
               </q-item-section>
               <q-item-section side>
                 <div class="text-caption text-weight-bold">
-                  LKR {{ (parseInt(course.total) / 1000).toFixed(1) }}k
+                  LKR {{ Number(course.total_revenue).toLocaleString() }}
                 </div>
               </q-item-section>
             </q-item>
-            <div v-if="analyticsData.courses.length === 0" class="text-center text-grey q-pa-md">
+
+            <div v-if="loadingTopCourses" class="row justify-center q-pa-sm">
+                <q-spinner size="20px" color="primary" />
+            </div>
+
+            <div v-if="topCourses.length === 0 && !loadingTopCourses" class="text-center text-grey q-pa-md">
               No Data Available
+            </div>
+
+            <div v-if="topCoursesHasMore && !loadingTopCourses" class="text-center q-pa-sm">
+                 <q-btn flat label="See More" color="primary" size="sm" @click="loadTopCourses(false)" />
             </div>
           </q-list>
         </q-card>
@@ -218,7 +230,7 @@
           label="Teacher Settlements"
           icon="payments"
         />
-        <q-tab name="class-status" label="Class Payment Status" icon="school" />
+        <q-tab v-if="authStore.hasPermission('finance_class_status')" name="class-status" label="Class Payment Status" icon="school" />
       </q-tabs>
 
       <q-separator />
@@ -1944,6 +1956,49 @@ async function loadRecentTransactions(append = false) {
 }
 
 
+const topCourses = ref([])
+const topCoursesPage = ref(1)
+const topCoursesHasMore = ref(false)
+const loadingTopCourses = ref(false)
+
+async function loadTopCourses(reset = false) {
+  if (reset) {
+    topCoursesPage.value = 1
+    topCourses.value = []
+  }
+
+  loadingTopCourses.value = true
+  try {
+    const params = {
+      ...apiParams.value,
+      page: topCoursesPage.value,
+      per_page: 5
+    }
+    const res = await api.get('/v1/admin/payments/top-courses', { params })
+
+    // If reset, replace. If not, append.
+    if (reset) {
+       topCourses.value = res.data.data
+    } else {
+       topCourses.value = [...topCourses.value, ...res.data.data]
+    }
+
+    // Update pagination state
+    if (res.data.current_page < res.data.last_page) {
+        topCoursesHasMore.value = true
+        topCoursesPage.value = res.data.current_page + 1
+    } else {
+        topCoursesHasMore.value = false
+    }
+
+  } catch (e) {
+    console.error('Failed to load top courses', e)
+    $q.notify({ type: 'warning', message: 'Could not load top courses' })
+  } finally {
+    loadingTopCourses.value = false
+  }
+}
+
 async function refreshAll() {
   refreshing.value = true
   try {
@@ -1954,6 +2009,7 @@ async function refreshAll() {
       financeStore.fetchSettlements(params),
       financeStore.fetchUncollectedFees(),
       loadChartData(),
+      loadTopCourses(true),
     ])
     $q.notify({ type: 'positive', message: 'Dashboard Updated', timeout: 500, position: 'top' })
   } finally {

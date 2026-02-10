@@ -98,6 +98,7 @@ Route::prefix('v1')->group(function () {
              Route::get('admin/payments/summary', [App\Http\Controllers\Api\V1\PaymentController::class, 'getAdminPaymentSummary']);
              Route::get('admin/payments/analytics', [App\Http\Controllers\Api\V1\PaymentController::class, 'getAnalytics']);
              Route::get('admin/payments/settlements', [App\Http\Controllers\Api\V1\PaymentController::class, 'getTeacherSettlements']);
+             Route::get('admin/payments/top-courses', [App\Http\Controllers\Api\V1\PaymentController::class, 'getTopCourses']);
              Route::get('admin/payments/export', [App\Http\Controllers\Api\V1\PaymentController::class, 'exportReport']);
              Route::post('admin/payments/generate', [App\Http\Controllers\Api\V1\PaymentController::class, 'generateMonthlyFees']);
              Route::post('admin/payments/record-cash', [App\Http\Controllers\Api\V1\PaymentController::class, 'recordCashPayment']);

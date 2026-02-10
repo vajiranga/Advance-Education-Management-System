@@ -19,7 +19,7 @@
                        <div class="col-auto">
                            <q-btn flat round dense icon="event" class="text-white" title="Filter by Date">
                                <q-popup-proxy cover transition-show="scale" transition-hide="scale">
-                                   <q-date v-model="dateFilter" range>
+                                   <q-date v-model="dateFilter" range mask="YYYY-MM-DD">
                                        <div class="row items-center justify-end">
                                            <q-btn v-close-popup label="Close" color="primary" flat />
                                        </div>
@@ -30,7 +30,6 @@
                    </div>
                    <div class="text-caption text-blue-2 q-mt-xs" v-if="dateLabel">
                        Currently viewing: {{ dateLabel }}
-                       <q-btn flat dense size="sm" icon="close" color="white" @click="dateFilter = null" />
                    </div>
                </q-card-section>
 
@@ -44,9 +43,10 @@
                            :key="date"
                            :label="formatDateHeader(date)"
                            header-class="bg-grey-3 text-grey-8 text-weight-bold shadow-1 sticky-top"
-                           :default-opened="isToday(date)"
+                           :default-opened="true"
                            expand-separator
                        >
+
                            <q-item
                               v-for="(sess, idx) in group" :key="sess.id + '_' + idx"
                               clickable
@@ -238,7 +238,11 @@ const loadingStudents = ref(false)
 const saving = ref(false)
 
 const search = ref('')
-const dateFilter = ref(null)
+
+// Initialize with Today
+const todayDt = new Date()
+const dateFilter = ref(date.formatDate(todayDt, 'YYYY-MM-DD'))
+
 const tablePagination = ref({ rowsPerPage: 100 })
 const paymentOverdueDays = ref(14)
 const blockOverdueAttendance = ref(false)
@@ -305,14 +309,6 @@ function formatDateHeader(dateStr) {
     return date.formatDate(d, 'dddd, MMMM Do YYYY')
 }
 
-function isToday(dateStr) {
-    if (dateStr === 'Unknown') return false
-    const d = new Date(dateStr)
-    d.setHours(0,0,0,0)
-    const today = new Date()
-    today.setHours(0,0,0,0)
-    return d.getTime() === today.getTime()
-}
 
 const counts = computed(() => {
     const present = students.value.filter(s => s.attendance_status === 'present').length

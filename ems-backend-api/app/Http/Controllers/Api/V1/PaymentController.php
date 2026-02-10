@@ -8,6 +8,8 @@ use App\Models\Course;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
+use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
 
 class PaymentController extends Controller
 {
@@ -35,9 +37,7 @@ class PaymentController extends Controller
     {
         $user = $request->user();
 
-        $settings = \App\Models\SystemSetting::whereIn('key', ['lateFeePenalty', 'gracePeriodDays'])->pluck('value', 'key');
-        $lateFeePenalty = (float)($settings['lateFeePenalty'] ?? 0);
-        $gracePeriodDays = (int)($settings['gracePeriodDays'] ?? 0);
+
 
         $fees = \App\Models\StudentFee::where('student_id', $user->id)
             ->where('status', 'pending')
@@ -54,16 +54,15 @@ class PaymentController extends Controller
             }, 'course.subject'])
             ->orderBy('month', 'desc')
             ->get()
-            ->map(function($fee) use ($lateFeePenalty, $gracePeriodDays) {
-                $lateFee = $this->calculateLateFee($fee, $lateFeePenalty, $gracePeriodDays);
+            ->map(function($fee) {
                 return [
                     'id' => $fee->id, // fee_id
                     'course_id' => $fee->course_id,
                     'course_name' => $fee->course->name ?? 'Unknown',
                     'subject' => $fee->course->subject->name ?? 'Subject',
-                    'amount' => $fee->amount + $lateFee,
+                    'amount' => $fee->amount,
                     'original_amount' => $fee->amount,
-                    'late_fee' => $lateFee,
+                    'late_fee' => 0,
                     'month' => Carbon::createFromFormat('Y-m', $fee->month)->format('F Y'), // 2026-01 -> January 2026
                     'due_date' => $fee->due_date,
                     'is_overdue' => Carbon::now()->gt(Carbon::parse($fee->due_date))
@@ -280,9 +279,7 @@ class PaymentController extends Controller
     {
         $user = $request->user();
 
-        $settings = \App\Models\SystemSetting::whereIn('key', ['lateFeePenalty', 'gracePeriodDays'])->pluck('value', 'key');
-        $lateFeePenalty = (float)($settings['lateFeePenalty'] ?? 0);
-        $gracePeriodDays = (int)($settings['gracePeriodDays'] ?? 0);
+
 
         $childrenIds = \App\Models\User::where(function($query) use ($user) {
                 if (!empty($user->email)) $query->where('parent_email', $user->email);
@@ -306,15 +303,14 @@ class PaymentController extends Controller
             }])
             ->orderBy('due_date', 'asc')
             ->get()
-            ->map(function($fee) use ($lateFeePenalty, $gracePeriodDays) {
-                $lateFee = $this->calculateLateFee($fee, $lateFeePenalty, $gracePeriodDays);
+            ->map(function($fee) {
                 return [
                     'id' => $fee->id,
                     'student_name' => $fee->student->name,
                     'course_name' => $fee->course->name ?? 'Unknown',
-                    'amount' => $fee->amount + $lateFee,
+                    'amount' => $fee->amount,
                     'original_amount' => $fee->amount,
-                    'late_fee' => $lateFee,
+                    'late_fee' => 0,
                     'month_label' => Carbon::createFromFormat('Y-m', $fee->month)->format('F Y'),
                     'due_date' => $fee->due_date,
                     'is_overdue' => Carbon::now()->gt(Carbon::parse($fee->due_date))
@@ -330,9 +326,7 @@ class PaymentController extends Controller
     public function getChildDueFees(Request $request, $id) {
         $user = $request->user();
 
-        $settings = \App\Models\SystemSetting::whereIn('key', ['lateFeePenalty', 'gracePeriodDays'])->pluck('value', 'key');
-        $lateFeePenalty = (float)($settings['lateFeePenalty'] ?? 0);
-        $gracePeriodDays = (int)($settings['gracePeriodDays'] ?? 0);
+
 
         // Validation: Ensure child belongs to parent
         $isChild = \App\Models\User::where('id', $id)
@@ -360,16 +354,15 @@ class PaymentController extends Controller
             }, 'course.subject'])
             ->orderBy('month', 'desc')
             ->get()
-            ->map(function($fee) use ($lateFeePenalty, $gracePeriodDays) {
-                $lateFee = $this->calculateLateFee($fee, $lateFeePenalty, $gracePeriodDays);
+            ->map(function($fee) {
                 return [
                     'id' => $fee->id,
                     'course_id' => $fee->course_id,
                     'course_name' => $fee->course->name ?? 'Unknown',
                     'subject' => $fee->course->subject->name ?? 'Subject',
-                    'amount' => $fee->amount + $lateFee,
+                    'amount' => $fee->amount,
                     'original_amount' => $fee->amount,
-                    'late_fee' => $lateFee,
+                    'late_fee' => 0,
                     'month' => Carbon::createFromFormat('Y-m', $fee->month)->format('F Y'),
                     'due_date' => $fee->due_date,
                     'is_overdue' => Carbon::now()->gt(Carbon::parse($fee->due_date))
@@ -862,6 +855,43 @@ public function getTeacherSettlements(Request $request) {
 
     return response()->json($settlements);
 }
+
+    /**
+     * Admin: Get List of Top Courses by Revenue
+     */
+    public function getTopCourses(Request $request) {
+        $query = \App\Models\StudentFee::where('status', 'paid');
+
+        if ($request->has('start_date') && $request->has('end_date')) {
+            $query->whereBetween('paid_at', [$request->start_date . ' 00:00:00', $request->end_date . ' 23:59:59']);
+        }
+
+        $topCourses = $query->select('course_id', \Illuminate\Support\Facades\DB::raw('SUM(amount) as total_revenue'))
+            ->groupBy('course_id')
+            ->orderByDesc('total_revenue')
+            ->with('course') // Eager load course details
+            ->paginate($request->input('per_page', 5)); // Use per_page pagination, default 5
+
+        $result = $topCourses->getCollection()->transform(function ($item) {
+            return [
+                'course_id' => $item->course_id,
+                'course_name' => $item->course->name ?? 'Unknown Course',
+                'teacher_name' => $item->course->teacher->name ?? 'Unknown Teacher', // Assuming teacher relationship exists
+                'total_revenue' => $item->total_revenue
+            ];
+        });
+
+        // Paginate needs manual collection set if we transform it, but paginate() returns Paginated resource.
+        // Better to separate transformation or rely on API resource if possible.
+        // Simple map here:
+        return response()->json([
+            'data' => $result,
+            'current_page' => $topCourses->currentPage(),
+            'last_page' => $topCourses->lastPage(),
+            'total' => $topCourses->total()
+        ]);
+    }
+
     /**
      * Admin: Get Pending Fees for Specific Student (for Cash Payment)
      */
@@ -894,12 +924,6 @@ public function getTeacherSettlements(Request $request) {
 
         return response()->json($fees);
     }
-
-    /**
-     * Admin: Record Cash Payment (Manual)
-     */
-
-
 
     /**
      * Admin: Get List of Students with Pending Fees
@@ -942,88 +966,5 @@ public function getTeacherSettlements(Request $request) {
 
         return response()->json($result);
     }
-    private function calculateLateFee($fee, $lateFeePenalty, $gracePeriodDays)
-    {
-        if ($fee->status !== 'pending' || !$fee->due_date) {
-            return 0;
-        }
 
-        $dueDate = Carbon::parse($fee->due_date);
-
-        if (Carbon::now()->lte($dueDate)) {
-             return 0;
-        }
-
-        $daysOverdue = abs(Carbon::now()->diffInDays($dueDate)); // Ensure positive
-
-        // Standard Late Rule: floor(overdue / grace) * penalty
-        // E.g. Grace 7. Overdue 6 -> 0. Overdue 7 -> 1 * 100 = 100. Overdue 14 -> 2 * 100 = 200.
-        if ($gracePeriodDays > 0) {
-            $cycles = floor($daysOverdue / $gracePeriodDays);
-            return $cycles * $lateFeePenalty;
-        }
-
-        return 0;
-    }
-
-    /**
-     * Admin: Get Student History (Enrollments & Payments)
-     */
-    public function getStudentHistory($id)
-    {
-        $student = \App\Models\User::findOrFail($id);
-
-        // All Enrollments
-        $allEnrollments = $student->belongsToMany(\App\Models\Course::class, 'enrollments', 'user_id', 'course_id')
-            ->withPivot('status', 'enrolled_at', 'created_at', 'updated_at')
-            ->with(['teacher', 'subject', 'batch'])
-            ->orderBy('enrollments.created_at', 'desc')
-            ->get()
-            ->map(function ($course) {
-                return [
-                    'id' => $course->id,
-                    'course_name' => $course->title ?? $course->name,
-                    'subject' => $course->subject->name ?? 'N/A',
-                    'teacher' => $course->teacher->name ?? 'N/A',
-                    'batch' => $course->batch->name ?? 'N/A',
-                    'status' => $course->pivot->status, // active/dropped
-                    'enrolled_at' => $course->pivot->enrolled_at ?? $course->pivot->created_at,
-                    'dropped_at' => $course->pivot->status !== 'active' ? $course->pivot->updated_at : null
-                ];
-            });
-
-        // Payment History (Last 50)
-        $paymentHistory = \App\Models\Payment::where('user_id', $id)
-            ->with(['course' => function($q) {
-                $q->withTrashed();
-            }])
-            ->orderBy('created_at', 'desc')
-            ->limit(50)
-            ->get()
-            ->map(function ($payment) {
-                return [
-                    'id' => $payment->id,
-                    'amount' => $payment->amount,
-                    'month' => $payment->month,
-                    'type' => $payment->type,
-                    'course_name' => $payment->course->title ?? $payment->course->name ?? 'General',
-                    'paid_at' => $payment->paid_at ?? $payment->created_at,
-                    'status' => $payment->status
-                ];
-            });
-
-        // Summary Stats
-        $totalPaid = \App\Models\Payment::where('user_id', $id)->where('status', 'paid')->sum('amount');
-
-        return response()->json([
-            'student' => $student,
-            'enrollments' => $allEnrollments,
-            'payments' => $paymentHistory,
-            'stats' => [
-                'active_classes' => $allEnrollments->where('status', 'active')->count(),
-                'inactive_classes' => $allEnrollments->where('status', '!=', 'active')->count(),
-                'total_paid' => $totalPaid
-            ]
-        ]);
-    }
 }

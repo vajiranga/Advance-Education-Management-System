@@ -287,22 +287,6 @@
                         <q-card-section>
                             <div class="text-subtitle1 text-weight-bold">Payment Settings</div>
                              <q-list dense>
-                                 <q-item>
-                                     <q-item-section>
-                                         <q-item-label>Late Fee Penalty (Amount)</q-item-label>
-                                     </q-item-section>
-                                     <q-item-section side>
-                                         <q-input v-model.number="settings.lateFeePenalty" type="number" dense outlined style="width: 80px" />
-                                     </q-item-section>
-                                 </q-item>
-                                 <q-item>
-                                     <q-item-section>
-                                         <q-item-label>Grace Period (Days)</q-item-label>
-                                     </q-item-section>
-                                     <q-item-section side>
-                                          <q-input v-model.number="settings.gracePeriodDays" type="number" dense outlined style="width: 80px" />
-                                      </q-item-section>
-                                  </q-item>
                                   <q-item>
                                       <q-item-section>
                                           <q-item-label>Max Unpaid Before Drop (Months)</q-item-label>
@@ -563,6 +547,7 @@
                                   <q-card-section>
                                       <q-checkbox v-model="adminForm.permissions" val="classes" label="View Classes" dense />
                                       <q-checkbox v-model="adminForm.permissions" val="classes_add" label="Add New Class" dense />
+                                      <q-checkbox v-model="adminForm.permissions" val="classes_delete" label="Delete All Classes" dense />
                                   </q-card-section>
                               </q-card>
                           </q-expansion-item>
@@ -606,6 +591,7 @@
                                       <q-checkbox v-model="adminForm.permissions" val="finance_transactions" label="All Transactions" dense />
                                       <q-checkbox v-model="adminForm.permissions" val="finance_uncollected" label="Uncollected Fees" dense />
                                       <q-checkbox v-model="adminForm.permissions" val="finance_settlement" label="Teacher Settlement" dense />
+                                      <q-checkbox v-model="adminForm.permissions" val="finance_class_status" label="Class Payment Status" dense />
                                   </q-card-section>
                               </q-card>
                           </q-expansion-item>

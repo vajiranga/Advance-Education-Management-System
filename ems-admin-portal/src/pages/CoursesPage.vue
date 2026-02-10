@@ -4,7 +4,7 @@
     <div class="row items-center justify-between q-mb-md">
       <div class="text-h5">Class Management</div>
       <div class="q-gutter-md">
-        <q-btn color="primary" icon="add_card" label="Create New Class" @click="openAddDialog" />
+        <q-btn v-if="authStore.hasPermission('classes_add')" color="primary" icon="add_card" label="Create New Class" @click="openAddDialog" />
       </div>
     </div>
 
@@ -71,7 +71,7 @@
             />
 
             <q-btn
-              v-if="filteredCourses.length > 0"
+              v-if="filteredCourses.length > 0 && authStore.hasPermission('classes_delete')"
               color="negative"
               icon="delete_sweep"
               label="Delete All"
@@ -559,11 +559,13 @@ import { useQuasar, date } from 'quasar'
 import { api } from 'boot/axios'
 import { useCourseStore } from 'stores/course-store'
 import { useUserStore } from 'stores/user-store'
+import { useAuthStore } from 'stores/auth-store'
 import { storeToRefs } from 'pinia'
 
 const $q = useQuasar()
 const courseStore = useCourseStore()
 const userStore = useUserStore()
+const authStore = useAuthStore()
 const { courses, loading, subjects, batches, halls } = storeToRefs(courseStore)
 const { teachers } = storeToRefs(userStore)
 
