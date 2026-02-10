@@ -249,7 +249,7 @@
                 <div class="text-caption text-grey-8 q-mb-sm">
                    Bank: Bank of Ceylon (BOC)<br />
                    Account: 123-456-7890<br />
-                   Name: EMS Institute<br />
+                   Name: {{ settingsStore.instituteName || 'EMS Institute' }}<br />
                    Branch: Colombo
                 </div>
 
@@ -403,7 +403,7 @@ function printReceipt(payment) {
         </head>
         <body>
             <div class="header">
-                <div class="title">EMS Institute</div>
+                <div class="title">${settingsStore.instituteName || 'EMS Institute'}</div>
                 <div class="subtitle">Official Payment Receipt</div>
             </div>
 
