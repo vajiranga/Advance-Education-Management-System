@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 
 class NoticeController extends Controller
 {
-    public function store(Request $request) 
+    public function store(Request $request)
     {
         $request->validate([
             'title' => 'required|string|max:255',

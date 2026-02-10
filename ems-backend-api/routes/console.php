@@ -21,3 +21,6 @@ Schedule::command('enrollments:auto-drop-unpaid')->dailyAt('02:00');
 
 // Schedule Monthly Attendance Check - Last day of month at 23:00
 Schedule::command('attendance:check-monthly')->lastDayOfMonth('23:00');
+
+// Schedule Unpaid Fees Check - Daily at 01:00 AM
+Schedule::command('fees:check-unpaid')->dailyAt('01:00');
