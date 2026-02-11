@@ -9,6 +9,8 @@ export const useSettingsStore = defineStore('settings', {
     logoUrl: localStorage.getItem('logoUrl') || '',
     disableTeacherAttendance: localStorage.getItem('disableTeacherAttendance') === 'true',
     whatsappContact: localStorage.getItem('whatsappContact') || '',
+    paymentGateway: localStorage.getItem('paymentGateway') === 'true',
+    enableBankTransfer: localStorage.getItem('enableBankTransfer') === 'true',
     loading: false
   }),
 
@@ -64,6 +66,16 @@ export const useSettingsStore = defineStore('settings', {
           if (response.data.whatsappContact) {
             this.whatsappContact = response.data.whatsappContact
             localStorage.setItem('whatsappContact', this.whatsappContact)
+          }
+          if (response.data.paymentGateway !== undefined) {
+             const val = response.data.paymentGateway
+             this.paymentGateway = (val === 'true' || val === true || val === '1' || val === 1)
+             localStorage.setItem('paymentGateway', this.paymentGateway)
+          }
+          if (response.data.enableBankTransfer !== undefined) {
+             const val = response.data.enableBankTransfer
+             this.enableBankTransfer = (val === 'true' || val === true || val === '1' || val === 1)
+             localStorage.setItem('enableBankTransfer', this.enableBankTransfer)
           }
         }
       } catch (error) {

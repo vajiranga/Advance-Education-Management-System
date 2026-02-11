@@ -216,17 +216,27 @@
             Total: LKR {{ totalPayAmount }}
           </div>
 
-          <div class="text-subtitle2 q-mb-sm" :class="$q.dark.isActive ? 'text-grey-4' : ''">
+          <!-- Notice when both payment methods are disabled -->
+          <q-banner v-if="!settingsStore.paymentGateway && !settingsStore.enableBankTransfer" class="bg-orange-2 text-orange-9 q-mb-md" rounded>
+            <template v-slot:avatar>
+              <q-icon name="info" color="orange" />
+            </template>
+            Only cash payments are currently available. Please contact the institute to make a payment.
+          </q-banner>
+
+          <div v-else class="text-subtitle2 q-mb-sm" :class="$q.dark.isActive ? 'text-grey-4' : ''">
             Select Payment Method:
           </div>
-          <div class="q-gutter-sm">
+          <div v-if="settingsStore.paymentGateway || settingsStore.enableBankTransfer" class="q-gutter-sm">
             <q-radio
+              v-if="settingsStore.paymentGateway"
               v-model="paymentMethod"
               val="online"
               label="Online Payment (Card/Gateway)"
               :dark="$q.dark.isActive"
             />
             <q-radio
+              v-if="settingsStore.enableBankTransfer"
               v-model="paymentMethod"
               val="bank_transfer"
               label="Bank Transfer (Upload Slip)"
@@ -276,6 +286,7 @@
             :color="$q.dark.isActive ? 'grey-5' : 'grey-7'"
           />
           <q-btn
+            v-if="settingsStore.paymentGateway || settingsStore.enableBankTransfer"
             unelevated
             color="primary"
             label="Confirm Payment"

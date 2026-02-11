@@ -305,7 +305,7 @@
                                   <q-item-label caption>Auto-drop threshold</q-item-label>
                               </q-item-section>
                               <q-item-section side>
-                                  <q-input v-model.number="settings.maxUnpaidMonthsBeforeDrop" type="number" dense outlined style="width: 80px" min="1" max="12" />
+                                  <q-input v-model.number="settings.maxUnpaidMonths" type="number" dense outlined style="width: 80px" min="1" max="12" />
                               </q-item-section>
                           </q-item>
                          <q-item tag="label" v-ripple>
@@ -315,10 +315,10 @@
                              <q-item-section side><q-toggle v-model="settings.paymentGateway" color="green" /></q-item-section>
                          </q-item>
                          <q-item tag="label" v-ripple>
-                             <q-item-section>
-                                 <q-item-label>Accept Partial Payments</q-item-label>
-                             </q-item-section>
-                             <q-item-section side><q-toggle v-model="settings.partialPayments" color="blue" /></q-item-section>
+                              <q-item-section>
+                                  <q-item-label>Enable Bank Transfers</q-item-label>
+                              </q-item-section>
+                              <q-item-section side><q-toggle v-model="settings.enableBankTransfer" color="blue" /></q-item-section>
                          </q-item>
                          <q-separator spaced />
                          <q-item>
@@ -839,6 +839,7 @@ const settings = ref({
   guestAccess: false,
   // System Controls
   blockTeacherRegistration: false,
+  enableAppNotifications: false,
   autoApproveClasses: false,
   autoApproveExtraClasses: false,
   // Teacher Financial Settings
@@ -870,7 +871,8 @@ const settings = ref({
   gracePeriodDays: 5,
   feeCycleStartDay: 10,
   paymentGateway: false,
-  partialPayments: true,
+  enableBankTransfer: true,
+  maxUnpaidMonths: 0,
   whatsappContact: '',
 
 
