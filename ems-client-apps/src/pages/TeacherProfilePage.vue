@@ -9,11 +9,11 @@
       <div class="col-12 col-md-4 column q-gutter-y-lg">
           <!-- Profile Summary -->
           <q-card class="col-auto text-center q-pa-lg shadow-2 rounded-borders" :class="$q.dark.isActive ? 'bg-dark border-dark' : 'bg-white'">
-              <q-avatar size="100px" font-size="50px" :color="$q.dark.isActive ? 'deep-purple-9' : 'deep-purple'" text-color="white" class="shadow-3 q-mb-md">
+              <q-avatar size="100px" font-size="50px" :color="$q.dark.isActive ? 'teal-9' : 'primary'" text-color="white" class="shadow-3 q-mb-md">
                 {{ form.name.charAt(0) }}
               </q-avatar>
               <div class="text-h6 text-weight-bold" :class="$q.dark.isActive ? 'text-white' : 'text-grey-9'">{{ authStore.user?.name }}</div>
-              <div class="text-subtitle2" :class="$q.dark.isActive ? 'text-deep-purple-2' : 'text-deep-purple'">{{ authStore.user?.username || authStore.user?.email }}</div>
+              <div class="text-subtitle2" :class="$q.dark.isActive ? 'text-teal-2' : 'text-primary'">{{ displayTeacherId }}</div>
               <div class="text-caption text-uppercase q-mt-xs" :class="$q.dark.isActive ? 'text-grey-5' : 'text-grey-7'">{{ form.role }}</div>
           </q-card>
 
@@ -30,13 +30,13 @@
 
                          <!-- Card Content -->
                          <div class="relative-position full-height column items-center justify-center text-center q-pa-md text-white">
-                             <div class="text-h6 text-uppercase text-weight-bolder letter-spacing-1 q-mb-xs">Parent ID</div>
-                             <q-avatar size="60px" class="bg-white text-deep-purple q-my-sm shadow-2">
+                             <div class="text-h6 text-uppercase text-weight-bolder letter-spacing-1 q-mb-xs">Teacher ID</div>
+                             <q-avatar size="60px" class="bg-white text-primary q-my-sm shadow-2">
                                 <span class="text-weight-bold text-h5">{{ form.name.charAt(0) }}</span>
                              </q-avatar>
                              <div class="text-subtitle1 text-weight-bold q-mt-xs">{{ authStore.user?.name }}</div>
-                             <div class="text-h5 text-weight-bolder letter-spacing-2 bg-white text-deep-purple q-px-sm rounded-borders q-mt-sm">{{ authStore.user?.username || 'PARENT' }}</div>
-                             <div class="text-caption q-mt-md opacity-80">Registered Parent of {{ $q.dark.isActive ? 'Institute' : 'Our Institute' }}</div>
+                             <div class="text-h5 text-weight-bolder letter-spacing-2 bg-white text-primary q-px-sm rounded-borders q-mt-sm">{{ displayTeacherId }}</div>
+                             <div class="text-caption q-mt-md opacity-80">Certified Teacher of {{ $q.dark.isActive ? 'Institute' : 'Our Institute' }}</div>
                          </div>
                      </div>
                  </div>
@@ -46,7 +46,7 @@
                  <q-btn
                     icon="download"
                     label="Download ID Card"
-                    color="deep-purple"
+                    color="primary"
                     unelevated
                     class="full-width"
                     @click="downloadIdCard"
@@ -62,7 +62,7 @@
           <q-form @submit="updateProfile" class="column full-height">
 
             <!-- Personal Info -->
-            <div class="text-h6 q-mb-md" :class="$q.dark.isActive ? 'text-deep-purple-2' : 'text-deep-purple'">
+            <div class="text-h6 q-mb-md" :class="$q.dark.isActive ? 'text-teal-2' : 'text-primary'">
                 <q-icon name="person_outline" size="sm" class="q-mr-sm" />Personal Information
             </div>
 
@@ -98,7 +98,7 @@
             <q-separator class="q-my-md" :class="$q.dark.isActive ? 'bg-grey-8' : ''" />
 
             <!-- Contact Details -->
-            <div class="text-h6 q-mb-md" :class="$q.dark.isActive ? 'text-deep-purple-2' : 'text-deep-purple'">
+            <div class="text-h6 q-mb-md" :class="$q.dark.isActive ? 'text-teal-2' : 'text-primary'">
                 <q-icon name="contact_phone" size="sm" class="q-mr-sm" />Contact Details
             </div>
 
@@ -130,7 +130,7 @@
             <q-separator class="q-my-md" :class="$q.dark.isActive ? 'bg-grey-8' : ''" />
 
             <!-- Security -->
-            <div class="text-h6 q-mb-md" :class="$q.dark.isActive ? 'text-deep-purple-2' : 'text-deep-purple'">
+            <div class="text-h6 q-mb-md" :class="$q.dark.isActive ? 'text-teal-2' : 'text-primary'">
                 <q-icon name="security" size="sm" class="q-mr-sm" />Security
             </div>
 
@@ -165,7 +165,7 @@
 
             <!-- Actions -->
             <div class="row justify-end q-mt-xl">
-              <q-btn label="Update Profile" icon="save" type="submit" color="deep-purple" :loading="loading" class="q-px-xl q-py-xs" unelevated />
+              <q-btn label="Update Profile" icon="save" type="submit" color="primary" :loading="loading" class="q-px-xl q-py-xs" unelevated />
             </div>
 
           </q-form>
@@ -193,16 +193,24 @@ const form = ref({
   email: '',
   phone: '',
   whatsapp: '',
-  role: 'parent',
+  role: 'teacher',
   password: '',
   password_confirmation: ''
+})
+
+const displayTeacherId = computed(() => {
+    let id = authStore.user?.username || ''
+    if (id && id.startsWith('STU')) { // Teachers are registered as STU usually but role is teacher, fix visual ID
+        return id.replace('STU', 'TCH')
+    }
+    return id
 })
 
 const idCardStyle = computed(() => ({
     width: '300px',
     height: '180px',
     borderRadius: '12px',
-    background: 'linear-gradient(135deg, #4527a0 0%, #7e57c2 100%)', // Deep Purple Gradient
+    background: 'linear-gradient(135deg, #009688 0%, #4db6ac 100%)', // Teal Gradient
     boxShadow: '0 4px 15px rgba(0,0,0,0.2)'
 }))
 
@@ -212,7 +220,7 @@ onMounted(() => {
     form.value.email = authStore.user.email || ''
     form.value.phone = authStore.user.phone || ''
     form.value.whatsapp = authStore.user.whatsapp || ''
-    form.value.role = authStore.user.role || 'parent'
+    form.value.role = authStore.user.role || 'teacher'
   }
 })
 
@@ -250,7 +258,7 @@ const downloadIdCard = async () => {
             backgroundColor: null
         })
         const link = document.createElement('a')
-        link.download = `Parent_ID_${authStore.user.username || 'P'}.png`
+        link.download = `Teacher_ID_${displayTeacherId.value}.png`
         link.href = canvas.toDataURL('image/png')
         link.click()
         $q.notify({ type: 'positive', message: 'ID Card Downloaded' })

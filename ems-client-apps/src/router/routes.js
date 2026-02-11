@@ -60,6 +60,7 @@ const routes = [
       { path: 'classes', component: () => import('pages/TeacherClassList.vue') },
       { path: 'attendance', component: () => import('pages/TeacherAttendanceSheet.vue') },
       { path: 'exams', component: () => import('pages/TeacherExamBoard.vue') },
+      { path: 'profile', component: () => import('pages/TeacherProfilePage.vue') },
     ]
   },
   {

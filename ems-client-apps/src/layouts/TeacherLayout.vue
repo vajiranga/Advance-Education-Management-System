@@ -23,7 +23,7 @@
           </q-btn>
 
           <q-btn round flat icon="notifications" :color="$q.dark.isActive ? 'white' : 'grey-7'">
-            <q-badge floating color="red" rounded dot v-if="notifications.length > 0" />
+            <q-badge floating color="red" rounded dot v-if="unreadCount > 0" />
             <q-menu :class="$q.dark.isActive ? 'bg-dark text-white' : 'bg-white'">
                <q-list style="min-width: 300px">
                   <q-item-label header :class="$q.dark.isActive ? 'text-grey-5' : 'text-grey-7'">Notifications</q-item-label>
@@ -71,6 +71,11 @@
                  <q-item clickable v-close-popup to="/teacher/dashboard">
                    <q-item-section avatar><q-icon name="dashboard" /></q-item-section>
                    <q-item-section>Dashboard</q-item-section>
+                 </q-item>
+
+                 <q-item clickable v-close-popup to="/teacher/profile">
+                   <q-item-section avatar><q-icon name="person" /></q-item-section>
+                   <q-item-section>My Profile</q-item-section>
                  </q-item>
 
                  <q-separator :class="$q.dark.isActive ? 'bg-grey-8' : ''" />
@@ -123,6 +128,11 @@
           <q-item-section>Exams & Marks</q-item-section>
         </q-item>
 
+        <q-item clickable v-ripple to="/teacher/profile" :active-class="$q.dark.isActive ? 'text-teal-2 bg-grey-9 border-l-teal' : 'text-primary bg-blue-1'">
+          <q-item-section avatar><q-icon name="person" /></q-item-section>
+          <q-item-section>Profile</q-item-section>
+        </q-item>
+
         <q-separator class="q-my-md" :class="$q.dark.isActive ? 'bg-grey-8' : ''" />
 
       </q-list>
@@ -147,7 +157,7 @@ const leftDrawerOpen = ref(false)
 const authStore = useAuthStore()
 const notificationStore = useNotificationStore()
 const settingsStore = useSettingsStore()
-const { notifications } = storeToRefs(notificationStore)
+const { notifications, unreadCount } = storeToRefs(notificationStore)
 const router = useRouter()
 const $q = useQuasar()
 

@@ -38,7 +38,7 @@
           </q-btn>
 
           <q-btn round flat icon="notifications" :color="$q.dark.isActive ? 'white' : 'grey-7'">
-            <q-badge floating color="red" rounded dot v-if="notifications.length > 0" />
+            <q-badge floating color="red" rounded dot v-if="unreadCount > 0" />
             <q-menu :class="$q.dark.isActive ? 'bg-dark text-white' : 'bg-white'">
                <q-list style="min-width: 300px">
                   <q-item-label header :class="$q.dark.isActive ? 'text-grey-5' : 'text-grey-7'">Notifications</q-item-label>
@@ -328,7 +328,7 @@ const $q = useQuasar()
 const authStore = useAuthStore()
 const notificationStore = useNotificationStore()
 const settingsStore = useSettingsStore()
-const { notifications } = storeToRefs(notificationStore)
+const { notifications, unreadCount } = storeToRefs(notificationStore)
 const route = useRoute()
 const router = useRouter()
 const children = ref([])

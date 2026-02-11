@@ -221,394 +221,436 @@
 
         <!-- System Controls Tab (Formerly Branding) -->
         <q-tab-panel name="controls" class="q-pa-md">
-          <div class="row q-col-gutter-lg">
-            <!-- LEFT COLUMN -->
-            <div class="col-12 col-md-6 flex column q-gutter-y-lg">
-              <!-- Platform Configurations -->
-              <q-card class="shadow-2">
-                <q-card-section>
-                  <div class="row items-center no-wrap">
-                    <div class="col">
-                      <div class="text-subtitle1 text-weight-bold">Platform Configurations</div>
-                      <div class="text-caption text-grey">
-                        Manage global restrictions and automation
-                      </div>
-                    </div>
-                    <q-icon name="tune" size="24px" color="primary" class="q-ml-sm" />
-                  </div>
-                </q-card-section>
-                <q-separator />
-                <q-list separator>
-                  <!-- Teacher Registration -->
-                  <q-item tag="label" v-ripple>
-                    <q-item-section>
-                      <q-item-label>Block New Teacher Registration</q-item-label>
-                      <q-item-label caption>Prevent new teachers from signing up</q-item-label>
-                    </q-item-section>
-                    <q-item-section side>
-                      <q-toggle color="red" v-model="settings.blockTeacherRegistration" />
-                    </q-item-section>
-                  </q-item>
-                  <!-- Mobile App Notifications -->
-                  <q-item tag="label" v-ripple>
-                    <q-item-section>
-                      <q-item-label>Mobile App Notifications</q-item-label>
-                      <q-item-label caption>Master toggle for all apps</q-item-label>
-                    </q-item-section>
-                    <q-item-section side>
-                      <q-toggle color="purple" v-model="settings.enableAppNotifications" />
-                    </q-item-section>
-                  </q-item>
-                  <!-- Auto Approve Classes -->
-                  <q-item tag="label" v-ripple>
-                    <q-item-section>
-                      <q-item-label>Auto-Approve New Classes</q-item-label>
-                      <q-item-label caption>Approve classes without admin review</q-item-label>
-                    </q-item-section>
-                    <q-item-section side>
-                      <q-toggle color="green" v-model="settings.autoApproveClasses" />
-                    </q-item-section>
-                  </q-item>
-                  <!-- Auto Approve Extra Classes -->
-                  <q-item tag="label" v-ripple>
-                    <q-item-section>
-                      <q-item-label>Auto-Approve Extra Classes</q-item-label>
-                      <q-item-label caption>Approve revision classes automatically</q-item-label>
-                    </q-item-section>
-                    <q-item-section side>
-                      <q-toggle color="green" v-model="settings.autoApproveExtraClasses" />
-                    </q-item-section>
-                  </q-item>
-                </q-list>
-              </q-card>
+          <div class="column q-gutter-y-lg" style="max-width: 1000px; margin: 0 auto">
 
-              <!-- Enrollment Controls -->
-              <q-card class="shadow-2">
-                <q-card-section>
-                  <div class="row items-center no-wrap">
-                    <div class="col">
-                      <div class="text-subtitle1 text-weight-bold">Student Enrollment</div>
-                      <div class="text-caption text-grey">Class sizes and ID generation</div>
-                    </div>
-                    <q-icon name="badge" size="24px" color="orange" class="q-ml-sm" />
-                  </div>
-                </q-card-section>
-                <q-separator />
-                <q-list dense separator>
-                  <q-item>
-                    <q-item-section>
-                      <q-item-label>Max Students Per Class</q-item-label>
-                      <q-item-label caption>Limit class size</q-item-label>
-                    </q-item-section>
-                    <q-item-section side>
-                      <q-input
-                        v-model.number="settings.maxStudentsPerClass"
-                        type="number"
-                        dense
-                        outlined
-                        style="width: 80px"
-                      />
-                    </q-item-section>
-                  </q-item>
+            <!-- Platform Configurations -->
+            <q-card class="shadow-1 rounded-borders">
+              <q-item class="bg-grey-1">
+                <q-item-section avatar>
+                  <q-avatar color="primary" text-color="white" icon="tune" size="md" />
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label class="text-subtitle1 text-weight-bold">Platform Configurations</q-item-label>
+                  <q-item-label caption>Manage global restrictions and automation</q-item-label>
+                </q-item-section>
+              </q-item>
 
-                  <q-item-label header class="text-weight-bold bg-grey-1"
-                    >ID Generation</q-item-label
-                  >
+              <q-separator />
 
-                  <q-item>
-                    <q-item-section>
-                      <q-item-label>Starting Sequence</q-item-label>
-                      <q-item-label caption
-                        >Next ID: {{ settings.studentIdPrefix || 'STU'
-                        }}{{ (settings.studentIdSequenceStart || '20000').toString().padStart(8, '0') }}</q-item-label
-                      >
-                    </q-item-section>
-                    <q-item-section side>
-                      <q-input
-                        v-model.number="settings.studentIdSequenceStart"
-                        type="number"
-                        dense
-                        outlined
-                        style="width: 100px"
-                      />
-                    </q-item-section>
-                  </q-item>
-                  <q-item>
-                    <q-item-section>
-                      <q-item-label>ID Prefix</q-item-label>
-                    </q-item-section>
-                    <q-item-section side>
-                      <q-input
-                        v-model="settings.studentIdPrefix"
-                        dense
-                        outlined
-                        readonly
-                        bg-color="grey-2"
-                        style="width: 80px"
-                      />
-                    </q-item-section>
-                  </q-item>
-                </q-list>
-              </q-card>
-            </div>
+              <q-list separator class="q-py-sm">
+                <q-item tag="label" v-ripple>
+                  <q-item-section>
+                    <q-item-label>Block New Teacher Registration</q-item-label>
+                    <q-item-label caption>Prevent new teachers from designing up</q-item-label>
+                  </q-item-section>
+                  <q-item-section side>
+                    <q-toggle color="red" v-model="settings.blockTeacherRegistration" />
+                  </q-item-section>
+                </q-item>
 
-            <!-- RIGHT COLUMN -->
-            <div class="col-12 col-md-6 flex column q-gutter-y-lg">
-              <!-- Financial Operations -->
-              <q-card class="shadow-2">
-                <q-card-section>
-                  <div class="row items-center no-wrap">
-                    <div class="col">
-                      <div class="text-subtitle1 text-weight-bold">Financial Operations</div>
-                      <div class="text-caption text-grey">Commissions, Payments & Billing</div>
-                    </div>
-                    <q-icon name="payments" size="24px" color="green" class="q-ml-sm" />
-                  </div>
-                </q-card-section>
-                <q-separator />
-                <q-list dense separator>
-                  <q-item tag="label" v-ripple>
-                    <q-item-section>
-                      <q-item-label>Institute Commission</q-item-label>
-                      <q-item-label caption>Deduction from collected fees</q-item-label>
-                    </q-item-section>
-                    <q-item-section side>
-                      <q-input
-                        v-model.number="settings.teacherFeeDeductionPercentage"
-                        outlined
-                        dense
-                        type="number"
-                        style="width: 90px"
-                        suffix="%"
-                        min="0"
-                        max="100"
-                      />
-                    </q-item-section>
-                  </q-item>
-                  <q-item>
-                    <q-item-section>
-                      <q-item-label>Fee Cycle Start Day</q-item-label>
-                      <q-item-label caption>Day of month (1-31)</q-item-label>
-                    </q-item-section>
-                    <q-item-section side>
-                      <q-input
-                        v-model.number="settings.feeCycleStartDay"
-                        type="number"
-                        dense
-                        outlined
-                        style="width: 80px"
-                        min="1"
-                        max="31"
-                      />
-                    </q-item-section>
-                  </q-item>
-                  <q-item>
-                    <q-item-section>
-                      <q-item-label>Max Unpaid Months</q-item-label>
-                      <q-item-label caption>Auto-drop threshold</q-item-label>
-                    </q-item-section>
-                    <q-item-section side>
-                      <q-input
-                        v-model.number="settings.maxUnpaidMonths"
-                        type="number"
-                        dense
-                        outlined
-                        style="width: 80px"
-                        min="1"
-                        max="12"
-                      />
-                    </q-item-section>
-                  </q-item>
-                  <q-item tag="label" v-ripple>
-                    <q-item-section>
-                      <q-item-label>Enable Payment Gateway</q-item-label>
-                    </q-item-section>
-                    <q-item-section side
-                      ><q-toggle v-model="settings.paymentGateway" color="green"
-                    /></q-item-section>
-                  </q-item>
-                  <q-item tag="label" v-ripple>
-                    <q-item-section>
-                      <q-item-label>Enable Bank Transfers</q-item-label>
-                    </q-item-section>
-                    <q-item-section side
-                      ><q-toggle v-model="settings.enableBankTransfer" color="blue"
-                    /></q-item-section>
-                  </q-item>
-                  <q-separator spaced />
-                  <q-item>
-                    <q-item-section avatar>
-                      <q-icon name="whatsapp" color="green" />
-                    </q-item-section>
-                    <q-item-section>
-                      <q-item-label>WhatsApp Contact</q-item-label>
-                      <q-item-label caption>For payment verification</q-item-label>
-                    </q-item-section>
-                    <q-item-section side>
-                      <q-input
-                        v-model="settings.whatsappContact"
-                        dense
-                        outlined
-                        style="width: 140px"
-                        placeholder="9477..."
-                      />
-                    </q-item-section>
-                  </q-item>
-                </q-list>
-              </q-card>
+                <q-item tag="label" v-ripple>
+                  <q-item-section>
+                    <q-item-label>Mobile App Notifications</q-item-label>
+                    <q-item-label caption>Master toggle for all apps</q-item-label>
+                  </q-item-section>
+                  <q-item-section side>
+                    <q-toggle color="purple" v-model="settings.enableAppNotifications" />
+                  </q-item-section>
+                </q-item>
 
-              <!-- Attendance Controls -->
-              <q-card class="shadow-2">
-                <q-card-section>
-                  <div class="row items-center no-wrap">
-                    <div class="col">
-                      <div class="text-subtitle1 text-weight-bold">Attendance & Scheduling</div>
-                      <div class="text-caption text-grey">Marking rules and visibility</div>
-                    </div>
-                    <q-icon name="event_available" size="24px" color="purple" class="q-ml-sm" />
-                  </div>
-                </q-card-section>
-                <q-separator />
-                <q-list dense separator>
-                  <q-item tag="label" v-ripple class="bg-red-1">
-                    <q-item-section>
-                      <q-item-label class="text-red">Disable Teacher Attendance</q-item-label>
-                      <q-item-label caption>Prevent manual marking</q-item-label>
-                    </q-item-section>
-                    <q-item-section side
-                      ><q-toggle color="red" v-model="settings.disableTeacherAttendance"
-                    /></q-item-section>
-                  </q-item>
-                  <q-item>
-                    <q-item-section>
-                      <q-item-label>Min Attendance %</q-item-label>
-                    </q-item-section>
-                    <q-item-section side>
-                      <q-input
-                        v-model.number="settings.minAttendancePercent"
-                        type="number"
-                        dense
-                        outlined
-                        style="width: 80px"
-                        suffix="%"
-                      />
-                    </q-item-section>
-                  </q-item>
-                  <q-item>
-                    <q-item-section>
-                      <q-item-label>Auto-mark Absent</q-item-label>
-                    </q-item-section>
-                    <q-item-section side>
-                      <q-select
-                        v-model="settings.autoMarkAbsentMinutes"
-                        :options="['Default Absent']"
-                        dense
-                        outlined
-                        style="width: 140px"
-                      />
-                    </q-item-section>
-                  </q-item>
-                  <q-item>
-                    <q-item-section>
-                      <q-item-label>Extra Class Visibility</q-item-label>
-                      <q-item-label caption>Hide after ended</q-item-label>
-                    </q-item-section>
-                    <q-item-section side>
-                      <div class="row no-wrap items-center q-gutter-x-sm">
+                <q-item tag="label" v-ripple>
+                  <q-item-section>
+                    <q-item-label>Auto-Approve New Classes</q-item-label>
+                    <q-item-label caption>Approve classes without admin review</q-item-label>
+                  </q-item-section>
+                  <q-item-section side>
+                    <q-toggle color="green" v-model="settings.autoApproveClasses" />
+                  </q-item-section>
+                </q-item>
+
+                <q-item tag="label" v-ripple>
+                  <q-item-section>
+                    <q-item-label>Auto-Approve Extra Classes</q-item-label>
+                    <q-item-label caption>Approve revision classes automatically</q-item-label>
+                  </q-item-section>
+                  <q-item-section side>
+                    <q-toggle color="green" v-model="settings.autoApproveExtraClasses" />
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            </q-card>
+
+            <!-- Financial Operations -->
+            <q-card class="shadow-1 rounded-borders">
+              <q-item class="bg-grey-1">
+                <q-item-section avatar>
+                  <q-avatar color="green-7" text-color="white" icon="payments" size="md" />
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label class="text-subtitle1 text-weight-bold">Financial Operations</q-item-label>
+                  <q-item-label caption>Commissions, Payments & Billing</q-item-label>
+                </q-item-section>
+              </q-item>
+
+              <q-separator />
+
+              <q-list separator class="q-py-sm">
+                <q-item>
+                  <q-item-section>
+                    <q-item-label>Institute Commission</q-item-label>
+                    <q-item-label caption>Deduction from collected fees</q-item-label>
+                  </q-item-section>
+                  <q-item-section side>
+                    <q-input
+                      v-model.number="settings.teacherFeeDeductionPercentage"
+                      outlined
+                      dense
+                      type="number"
+                      style="width: 120px"
+                      suffix="%"
+                      min="0"
+                      max="100"
+                    />
+                  </q-item-section>
+                </q-item>
+
+                <q-item>
+                  <q-item-section>
+                    <q-item-label>Fee Cycle Start Day</q-item-label>
+                    <q-item-label caption>Day of month (1-31)</q-item-label>
+                  </q-item-section>
+                  <q-item-section side>
+                    <q-input
+                      v-model.number="settings.feeCycleStartDay"
+                      type="number"
+                      dense
+                      outlined
+                      style="width: 120px"
+                      min="1"
+                      max="31"
+                    />
+                  </q-item-section>
+                </q-item>
+
+                <q-item>
+                  <q-item-section>
+                    <q-item-label>Max Unpaid Months</q-item-label>
+                    <q-item-label caption>Auto-drop threshold</q-item-label>
+                  </q-item-section>
+                  <q-item-section side>
+                    <q-input
+                      v-model.number="settings.maxUnpaidMonths"
+                      type="number"
+                      dense
+                      outlined
+                      style="width: 120px"
+                      min="1"
+                      max="12"
+                    />
+                  </q-item-section>
+                </q-item>
+
+                <q-item tag="label" v-ripple>
+                  <q-item-section>
+                    <q-item-label>Enable Payment Gateway</q-item-label>
+                  </q-item-section>
+                  <q-item-section side>
+                    <q-toggle v-model="settings.paymentGateway" color="green" />
+                  </q-item-section>
+                </q-item>
+
+                <q-item tag="label" v-ripple>
+                  <q-item-section>
+                    <q-item-label>Enable Bank Transfers</q-item-label>
+                  </q-item-section>
+                  <q-item-section side>
+                    <q-toggle v-model="settings.enableBankTransfer" color="blue" />
+                  </q-item-section>
+                </q-item>
+
+                <q-item>
+                  <q-item-section avatar>
+                    <q-icon name="whatsapp" color="green" />
+                  </q-item-section>
+                  <q-item-section>
+                    <q-item-label>WhatsApp Contact</q-item-label>
+                    <q-item-label caption>For payment verification</q-item-label>
+                  </q-item-section>
+                  <q-item-section side>
+                    <q-input
+                      v-model="settings.whatsappContact"
+                      dense
+                      outlined
+                      style="width: 200px"
+                      placeholder="9477..."
+                    />
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            </q-card>
+
+            <!-- Student Enrollment -->
+            <q-card class="shadow-1 rounded-borders">
+              <q-item class="bg-grey-1">
+                <q-item-section avatar>
+                  <q-avatar color="orange-8" text-color="white" icon="badge" size="md" />
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label class="text-subtitle1 text-weight-bold">Student Enrollment</q-item-label>
+                  <q-item-label caption>Class sizes and ID generation</q-item-label>
+                </q-item-section>
+              </q-item>
+
+              <q-separator />
+
+              <q-list separator class="q-py-sm">
+                <q-item>
+                  <q-item-section>
+                    <q-item-label>Max Students Per Class</q-item-label>
+                    <q-item-label caption>Limit class size</q-item-label>
+                  </q-item-section>
+                  <q-item-section side>
+                    <q-input
+                      v-model.number="settings.maxStudentsPerClass"
+                      type="number"
+                      dense
+                      outlined
+                      style="width: 120px"
+                    />
+                  </q-item-section>
+                </q-item>
+
+                <q-item-label header class="text-weight-bold text-uppercase text-caption q-pt-md">ID Generation</q-item-label>
+
+                <q-item>
+                  <q-item-section>
+                    <q-item-label>Starting Sequence</q-item-label>
+                    <q-item-label caption>Next ID: {{ settings.studentIdPrefix || 'STU' }}{{ (settings.studentIdSequenceStart || '20000').toString().padStart(8, '0') }}</q-item-label>
+                  </q-item-section>
+                  <q-item-section side>
+                    <div class="row items-center q-gutter-x-sm">
                         <q-input
-                          v-model.number="settings.extraClassVisibilityDays"
+                          v-model="settings.studentIdPrefix"
+                          label="Prefix"
+                          dense
+                          outlined
+                          readonly
+                          bg-color="grey-2"
+                          style="width: 80px"
+                        />
+                        <q-input
+                          v-model.number="settings.studentIdSequenceStart"
+                          label="Start At"
                           type="number"
                           dense
                           outlined
-                          style="width: 60px"
-                          suffix="d"
-                          min="0"
+                          style="width: 120px"
                         />
-                        <q-input
-                          v-model.number="settings.extraClassVisibilityHours"
-                          type="number"
-                          dense
-                          outlined
-                          style="width: 60px"
-                          suffix="h"
-                          min="0"
-                        />
-                      </div>
-                    </q-item-section>
-                  </q-item>
-                </q-list>
-              </q-card>
-            </div>
+                    </div>
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            </q-card>
 
-            <!-- FULL WIDTH BOTTOM -->
-            <div class="col-12">
-              <q-card class="bg-grey-1 shadow-1" flat bordered>
-                <q-card-section class="row items-center q-py-sm">
-                  <div class="text-subtitle1 text-weight-bold q-mr-md">System Maintenance</div>
-                  <div class="q-gutter-md row items-center">
+            <!-- Attendance Controls -->
+            <q-card class="shadow-1 rounded-borders">
+              <q-item class="bg-grey-1">
+                <q-item-section avatar>
+                  <q-avatar color="deep-purple-7" text-color="white" icon="event_available" size="md" />
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label class="text-subtitle1 text-weight-bold">Attendance & Scheduling</q-item-label>
+                  <q-item-label caption>Marking rules and visibility</q-item-label>
+                </q-item-section>
+              </q-item>
+
+              <q-separator />
+
+              <q-list separator class="q-py-sm">
+                <q-item tag="label" v-ripple class="bg-red-1">
+                  <q-item-section>
+                    <q-item-label class="text-red-9 text-weight-bold">Disable Teacher Attendance</q-item-label>
+                    <q-item-label caption class="text-red-5">Prevent manual marking by teachers</q-item-label>
+                  </q-item-section>
+                  <q-item-section side>
+                    <q-toggle color="red" v-model="settings.disableTeacherAttendance" />
+                  </q-item-section>
+                </q-item>
+
+                <q-item>
+                  <q-item-section>
+                    <q-item-label>Minimum Attendance %</q-item-label>
+                    <q-item-label caption>Threshold for good attendance</q-item-label>
+                  </q-item-section>
+                  <q-item-section side>
+                    <q-input
+                      v-model.number="settings.minAttendancePercent"
+                      type="number"
+                      dense
+                      outlined
+                      style="width: 120px"
+                      suffix="%"
+                    />
+                  </q-item-section>
+                </q-item>
+
+                <q-item>
+                  <q-item-section>
+                    <q-item-label>Auto-mark Absent</q-item-label>
+                    <q-item-label caption>Default behavior for unmarked students</q-item-label>
+                  </q-item-section>
+                  <q-item-section side>
                     <q-select
-                      v-model="settings.backupFrequency"
-                      :options="['daily', 'weekly', 'monthly']"
-                      label="Backup"
+                      v-model="settings.autoMarkAbsentMinutes"
+                      :options="['Default Absent']"
                       dense
                       outlined
-                      bg-color="white"
-                      style="min-width: 150px"
+                      style="width: 180px"
                     />
-                    <q-input
-                      v-model.number="settings.dataRetentionMonths"
-                      label="Retention (Months)"
-                      type="number"
-                      dense
-                      outlined
-                      bg-color="white"
-                      style="width: 150px"
-                    />
-                    <q-input
-                      v-model.number="settings.notificationRetentionDays"
-                      label="Notif. Keep (Days)"
-                      type="number"
-                      dense
-                      outlined
-                      bg-color="white"
-                      style="width: 150px"
-                    />
-                    <q-toggle
-                      label="Maintenance Mode"
-                      color="red"
-                      v-model="settings.maintenanceMode"
-                      dense
-                    />
-                  </div>
-                </q-card-section>
-                <q-separator />
-                <q-card-section>
-                  <div class="row q-col-gutter-md items-center">
-                    <div class="col-12 col-md-8">
-                      <q-banner class="bg-blue-1 text-blue-9 q-pa-sm rounded-borders">
-                        <template v-slot:avatar>
-                          <q-icon name="cloud_upload" color="primary" />
-                        </template>
-                        Backups are automatically saved to your local Google Drive folder.
-                        <div class="text-caption text-grey-7">
-                          Location: G:\My Drive\Data backup
-                        </div>
-                      </q-banner>
-                    </div>
-                    <div class="col-12 col-md-4 text-right">
-                      <q-btn
-                        color="primary"
-                        icon="backup"
-                        label="Backup to Drive - Now"
-                        @click="runBackupNow"
-                        :loading="backupRunning"
-                        unelevated
+                  </q-item-section>
+                </q-item>
+
+                <q-item>
+                  <q-item-section>
+                    <q-item-label>Extra Class Visibility</q-item-label>
+                    <q-item-label caption>Hide classes after they have ended</q-item-label>
+                  </q-item-section>
+                  <q-item-section side>
+                    <div class="row no-wrap items-center q-gutter-x-md">
+                      <q-input
+                        v-model.number="settings.extraClassVisibilityDays"
+                        label="Days"
+                        type="number"
+                        dense
+                        outlined
+                        style="width: 80px"
+                        min="0"
+                      />
+                      <q-input
+                        v-model.number="settings.extraClassVisibilityHours"
+                        label="Hours"
+                        type="number"
+                        dense
+                        outlined
+                        style="width: 80px"
+                        min="0"
                       />
                     </div>
-                  </div>
-                </q-card-section>
-              </q-card>
-            </div>
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            </q-card>
+
+            <!-- System Maintenance -->
+            <q-card class="shadow-1 rounded-borders">
+               <q-item class="bg-grey-1">
+                  <q-item-section avatar>
+                    <q-avatar color="blue-grey-8" text-color="white" icon="build_circle" size="md" />
+                  </q-item-section>
+                  <q-item-section>
+                    <q-item-label class="text-subtitle1 text-weight-bold">System Maintenance</q-item-label>
+                    <q-item-label caption>Backups and Data Retention</q-item-label>
+                  </q-item-section>
+                  <q-item-section side>
+                     <q-chip :color="settings.maintenanceMode ? 'red' : 'green'" text-color="white" size="sm">
+                        {{ settings.maintenanceMode ? 'Maintenance Mode ON' : 'System Active' }}
+                     </q-chip>
+                  </q-item-section>
+               </q-item>
+
+               <q-separator />
+
+               <q-list separator class="q-py-sm">
+                   <q-item tag="label" v-ripple>
+                     <q-item-section>
+                       <q-item-label>Maintenance Mode</q-item-label>
+                       <q-item-label caption>Take the system offline for students/parents</q-item-label>
+                     </q-item-section>
+                     <q-item-section side>
+                       <q-toggle
+                         color="red"
+                         v-model="settings.maintenanceMode"
+                       />
+                     </q-item-section>
+                   </q-item>
+
+                   <q-item>
+                     <q-item-section>
+                       <q-item-label>Automated Backup Frequency</q-item-label>
+                       <q-item-label caption>How often to backup to Google Drive</q-item-label>
+                     </q-item-section>
+                     <q-item-section side>
+                       <q-select
+                         v-model="settings.backupFrequency"
+                         :options="['daily', 'weekly', 'monthly']"
+                         dense
+                         outlined
+                         style="width: 180px"
+                       />
+                     </q-item-section>
+                   </q-item>
+
+                   <q-item>
+                     <q-item-section>
+                       <q-item-label>Data Retention</q-item-label>
+                       <q-item-label caption>Keep records for (Months)</q-item-label>
+                     </q-item-section>
+                     <q-item-section side>
+                       <q-input
+                         v-model.number="settings.dataRetentionMonths"
+                         type="number"
+                         dense
+                         outlined
+                         style="width: 120px"
+                         suffix="Months"
+                       />
+                     </q-item-section>
+                   </q-item>
+
+                   <q-item>
+                     <q-item-section>
+                       <q-item-label>Notification Retention</q-item-label>
+                       <q-item-label caption>Keep notifications for (Days)</q-item-label>
+                     </q-item-section>
+                     <q-item-section side>
+                       <q-input
+                         v-model.number="settings.notificationRetentionDays"
+                         type="number"
+                         dense
+                         outlined
+                         style="width: 120px"
+                         suffix="Days"
+                       />
+                     </q-item-section>
+                   </q-item>
+               </q-list>
+
+               <q-separator />
+
+               <q-card-actions class="bg-grey-1 q-pa-md">
+                   <q-banner class="bg-blue-1 text-blue-9 q-pa-sm rounded-borders full-width">
+                     <template v-slot:avatar>
+                       <q-icon name="cloud_upload" color="primary" />
+                     </template>
+                     <div class="row items-center justify-between">
+                         <div>
+                             <div class="text-weight-bold">Google Drive Backup</div>
+                             <div class="text-caption text-grey-8">Location: G:\My Drive\Data backup</div>
+                         </div>
+                         <q-btn
+                           color="primary"
+                           icon="backup"
+                           label="Backup Now"
+                           @click="runBackupNow"
+                           :loading="backupRunning"
+                           unelevated
+                           size="md"
+                         />
+                     </div>
+                   </q-banner>
+               </q-card-actions>
+            </q-card>
+
           </div>
         </q-tab-panel>
 
@@ -1261,6 +1303,7 @@ const settings = ref({
   backupFrequency: 'daily',
   backupNotificationEmail: '',
   dataRetentionMonths: 12,
+  notificationRetentionDays: 14,
   maintenanceMode: false,
 
   // Access Control - New
