@@ -156,6 +156,10 @@ class AttendanceController extends Controller
     public function myAttendance(Request $request)
     {
         $user = $request->user();
+        if ($request->has('student_id') && ($request->user()->role === 'parent' || $request->user()->role === 'admin')) {
+             $user = \App\Models\User::find($request->student_id);
+             if (!$user) return response()->json(['message' => 'Student not found'], 404);
+        }
 
         // Fetch all attendance for this user
         $attendances = Attendance::where('user_id', $user->id)

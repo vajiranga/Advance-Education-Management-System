@@ -128,10 +128,7 @@
                   </q-item-section>
                 </q-item>
 
-                <q-item clickable v-close-popup href="http://localhost:9000/login">
-                  <q-item-section avatar><q-icon name="person_add" /></q-item-section>
-                  <q-item-section>Add Another Account</q-item-section>
-                </q-item>
+
 
                 <q-separator :class="$q.dark.isActive ? 'bg-grey-8' : ''" />
 
@@ -192,15 +189,16 @@
         </div>
 
         <div
-          class="row items-center q-mt-sm q-pa-sm rounded-borders shadow-1 cursor-pointer"
+          class="row items-center q-mt-sm q-pa-sm rounded-borders shadow-1 cursor-pointer relative-position"
           :class="$q.dark.isActive ? 'bg-grey-9' : 'bg-white'"
+          v-ripple
         >
           <q-avatar size="32px" color="primary" text-color="white">
             <span class="text-weight-bold">{{ currentChild?.name?.charAt(0) || 'C' }}</span>
           </q-avatar>
-          <div class="q-ml-sm">
+          <div class="q-ml-sm col text-truncate">
             <div
-              class="text-weight-bold text-caption"
+              class="text-weight-bold text-caption ellipsis"
               :class="$q.dark.isActive ? 'text-white' : ''"
             >
               {{ currentChild?.name || 'Select Child' }}
@@ -213,28 +211,33 @@
               {{ currentChild?.grade || 'N/A' }}
             </div>
           </div>
-          <q-space />
-          <q-icon name="expand_more" color="grey" />
+          <q-icon name="arrow_drop_down" color="grey" size="sm" />
 
-          <q-menu fit v-model="childMenuOpen">
-            <q-list style="min-width: 150px">
+          <q-menu fit v-model="childMenuOpen" auto-close :class="$q.dark.isActive ? 'bg-grey-9 text-white' : 'bg-white'">
+            <q-list style="min-width: 150px" class="q-py-xs">
+              <q-item-label header class="text-caption">Select Student</q-item-label>
               <q-item
                 clickable
-                v-close-popup
+                v-ripple
                 v-for="child in children"
                 :key="child.id"
                 @click="selectChild(child)"
+                :active="child.id === currentChild?.id"
+                :active-class="$q.dark.isActive ? 'bg-grey-8 text-white' : 'bg-blue-1 text-primary'"
               >
-                <q-item-section avatar>
-                  <q-avatar size="24px" color="primary" text-color="white">
-                    <span class="text-weight-bold" style="font-size: 10px">{{
+                <q-item-section avatar style="min-width: 40px">
+                  <q-avatar size="28px" :color="child.id === currentChild?.id ? 'primary' : 'grey-4'" text-color="white">
+                    <span class="text-weight-bold" style="font-size: 12px">{{
                       child.name?.charAt(0) || 'C'
                     }}</span>
                   </q-avatar>
                 </q-item-section>
                 <q-item-section>
-                  <q-item-label>{{ child.name }}</q-item-label>
-                  <q-item-label caption>{{ child.grade }}</q-item-label>
+                  <q-item-label class="text-subtitle2">{{ child.name }}</q-item-label>
+                  <q-item-label caption :class="$q.dark.isActive ? 'text-grey-5' : ''">{{ child.grade }}</q-item-label>
+                </q-item-section>
+                <q-item-section side v-if="child.id === currentChild?.id">
+                   <q-icon name="check_circle" color="primary" size="xs" />
                 </q-item-section>
               </q-item>
             </q-list>
@@ -309,7 +312,7 @@
     </q-drawer>
 
     <q-page-container>
-      <router-view />
+      <router-view :key="currentChild?.id" />
     </q-page-container>
   </q-layout>
 </template>

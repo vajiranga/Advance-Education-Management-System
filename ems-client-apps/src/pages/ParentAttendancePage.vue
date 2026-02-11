@@ -1,6 +1,6 @@
 <template>
   <q-page :class="$q.dark.isActive ? 'q-pa-md bg-dark-page' : 'q-pa-md bg-grey-1'">
-    
+
     <!-- Header -->
     <div class="row items-center justify-between q-mb-lg">
       <div class="col-12">
@@ -18,13 +18,13 @@
 
     <!-- Main Content -->
     <div v-else class="row q-col-gutter-lg">
-        
+
        <!-- Upcoming Classes Section (Next 24 Hours) -->
        <div class="col-12">
           <div class="text-h6 q-mb-md flex items-center">
              <q-icon name="event" class="q-mr-sm text-primary" /> Upcoming Classes (Next 24h)
           </div>
-          
+
           <div v-if="upcoming.length === 0" class="q-pa-lg text-center bg-white rounded-borders shadow-1" :class="$q.dark.isActive ? 'bg-dark' : ''">
               <div class="text-grey">No upcoming classes for {{ selectedChild?.name }} in the next 24 hours.</div>
           </div>
@@ -53,91 +53,152 @@
           </div>
        </div>
 
-       <!-- Recent Status Section (Last 7 Days) -->
-       <div class="col-12 q-mt-lg">
-          <div class="text-h6 q-mb-md flex items-center">
-             <q-icon name="history" class="q-mr-sm text-primary" /> Recent Status
-          </div>
+        <!-- Recent Status Section (Last 7 Days) -->
+        <div class="col-12 q-mt-lg">
+           <div class="text-h6 q-mb-md flex items-center">
+              <q-icon name="history" class="q-mr-sm text-primary" /> Recent Status
+           </div>
 
-          <div v-if="recent.length === 0" class="q-pa-lg text-center bg-white rounded-borders shadow-1" :class="$q.dark.isActive ? 'bg-dark' : ''">
-              <div class="text-grey">No recent classes in the last 7 days.</div>
-          </div>
+           <div v-if="recent.length === 0" class="q-pa-lg text-center bg-white rounded-borders shadow-1" :class="$q.dark.isActive ? 'bg-dark' : ''">
+               <div class="text-grey">No recent classes in the last 7 days.</div>
+           </div>
 
-          <q-list v-else separator bordered class="rounded-borders bg-white" :class="$q.dark.isActive ? 'bg-dark' : ''">
-             <q-item v-for="(sess, sIdx) in recent" :key="'rec'+sIdx" class="q-py-md">
-                 <q-item-section avatar>
-                    <q-avatar :color="sess.status === 'present' ? 'green-1' : 'red-1'" :text-color="sess.status === 'present' ? 'green' : 'red'">
-                       <q-icon :name="sess.status === 'present' ? 'check' : 'close'" />
-                    </q-avatar>
-                 </q-item-section>
-                 
-                 <q-item-section>
-                    <q-item-label class="text-weight-bold">{{ sess.course_name }}</q-item-label>
-                    <q-item-label caption>{{ formatDate(sess.date) }} @ {{ sess.time }}</q-item-label>
-                 </q-item-section>
-                 
-                 <q-item-section side>
-                    <q-chip 
-                        :color="sess.status === 'present' ? 'green' : 'red'" 
-                        text-color="white"
-                        class="text-uppercase text-weight-bold"
-                    >
-                        {{ sess.status }}
-                    </q-chip>
-                 </q-item-section>
-             </q-item>
-          </q-list>
-       </div>
-    </div>
-  </q-page>
-</template>
+           <q-list v-else separator bordered class="rounded-borders bg-white" :class="$q.dark.isActive ? 'bg-dark' : ''">
+              <q-item v-for="(sess, sIdx) in recent" :key="'rec'+sIdx" class="q-py-md">
+                  <q-item-section avatar>
+                     <q-avatar :color="sess.status === 'present' ? 'green-1' : 'red-1'" :text-color="sess.status === 'present' ? 'green' : 'red'">
+                        <q-icon :name="sess.status === 'present' ? 'check' : 'close'" />
+                     </q-avatar>
+                  </q-item-section>
 
-<script setup>
-import { ref, onMounted, watch, computed } from 'vue'
-import { api } from 'boot/axios'
-import { date as qDate } from 'quasar'
-import { useAuthStore } from 'stores/auth-store'
+                  <q-item-section>
+                     <q-item-label class="text-weight-bold">{{ sess.course_name }}</q-item-label>
+                     <q-item-label caption>{{ formatDate(sess.date) }} @ {{ sess.time }}</q-item-label>
+                  </q-item-section>
 
-const authStore = useAuthStore()
+                  <q-item-section side>
+                     <q-chip
+                         :color="sess.status === 'present' ? 'green' : 'red'"
+                         text-color="white"
+                         class="text-uppercase text-weight-bold"
+                     >
+                         {{ sess.status }}
+                     </q-chip>
+                  </q-item-section>
+              </q-item>
+           </q-list>
+        </div>
 
-// Remove local children ref
-// const children = ref([]) 
-const selectedChild = computed(() => authStore.selectedChild)
+        <!-- Link to Full History -->
+        <div class="col-12 flex justify-center q-mt-md">
+            <q-btn flat color="primary" label="View Full Attendance History" icon="timeline" @click="showHistory = !showHistory" />
+        </div>
 
-const dashboardData = ref({ upcoming: [], recent: [] })
-const loading = ref(false)
+        <!-- Full History Expansion -->
+         <div v-if="showHistory" class="col-12">
+             <div class="text-h6 q-mb-sm" :class="$q.dark.isActive ? 'text-white' : ''">All Time History</div>
+             <div v-if="attendanceHistory.length === 0" class="text-center text-grey q-py-md">No records found.</div>
+             <div v-else class="row q-col-gutter-md">
+                 <div class="col-12" v-for="(record, index) in attendanceHistory" :key="index">
+                     <q-card class="no-shadow" :class="$q.dark.isActive ? 'bg-dark border-dark' : 'bg-white border-light'">
+                         <q-expansion-item expand-separator>
+                             <template v-slot:header>
+                                 <q-item-section>
+                                     <q-item-label class="text-subtitle1" :class="$q.dark.isActive ? 'text-white' : ''">{{ record.course_name }}</q-item-label>
+                                     <q-item-label caption>{{ record.percentage }}% Attendance</q-item-label>
+                                 </q-item-section>
+                                 <q-item-section side>
+                                     <q-circular-progress show-value font-size="10px" :value="record.percentage" size="40px" :color="getHealthColor(record.percentage)">
+                                         {{ record.percentage }}%
+                                     </q-circular-progress>
+                                 </q-item-section>
+                             </template>
+                             <q-card-section>
+                                 <q-list dense>
+                                     <q-item v-for="(h, i) in record.history" :key="i">
+                                         <q-item-section :class="$q.dark.isActive ? 'text-grey-4' : ''">{{ formatDate(h.date) }}</q-item-section>
+                                         <q-item-section side :class="h.status==='present' ? 'text-green' : 'text-red'" class="text-uppercase text-weight-bold">{{ h.status }}</q-item-section>
+                                     </q-item>
+                                 </q-list>
+                             </q-card-section>
+                         </q-expansion-item>
+                     </q-card>
+                 </div>
+             </div>
+         </div>
 
-const upcoming = computed(() => dashboardData.value.upcoming || [])
-const recent = computed(() => dashboardData.value.recent || [])
+     </div>
+   </q-page>
+ </template>
 
-onMounted(() => {
-    // Rely on global store selection
-    if (selectedChild.value) {
-        fetchDashboard(selectedChild.value.id)
-    }
-})
+ <script setup>
+ import { ref, onMounted, watch, computed } from 'vue'
+ import { api } from 'boot/axios'
+ import { date as qDate } from 'quasar'
+ import { useAuthStore } from 'stores/auth-store'
 
-// Watch global selection
-watch(selectedChild, (newVal) => {
-    if(newVal) fetchDashboard(newVal.id)
-}, { immediate: true })
+ const authStore = useAuthStore()
 
-async function fetchDashboard(childId) {
-    loading.value = true
-    try {
-        const res = await api.get(`/v1/attendance/dashboard`, { params: { student_id: childId } })
-        dashboardData.value = res.data
-    } catch (e) {
-        console.error('Error fetching dashboard', e)
-    } finally {
-        loading.value = false
-    }
-}
+ // Remove local children ref
+ // const children = ref([])
+ const selectedChild = computed(() => authStore.selectedChild)
 
-function formatDate(dateString) {
-    return qDate.formatDate(dateString, 'ddd, DD MMM')
-}
-</script>
+ const dashboardData = ref({ upcoming: [], recent: [] })
+ const attendanceHistory = ref([])
+ const showHistory = ref(false)
+ const loading = ref(false)
+
+ const upcoming = computed(() => dashboardData.value.upcoming || [])
+ const recent = computed(() => dashboardData.value.recent || [])
+
+ onMounted(() => {
+     // Rely on global store selection
+     if (selectedChild.value) {
+         fetchDashboard(selectedChild.value.id)
+         fetchHistory(selectedChild.value.id)
+     }
+ })
+
+ // Watch global selection
+ watch(selectedChild, (newVal) => {
+     if(newVal) {
+         fetchDashboard(newVal.id)
+         fetchHistory(newVal.id)
+     }
+ }, { immediate: true })
+
+ async function fetchDashboard(childId) {
+     loading.value = true
+     try {
+         const res = await api.get(`/v1/attendance/dashboard`, { params: { student_id: childId } })
+         dashboardData.value = res.data
+     } catch (e) {
+         console.error('Error fetching dashboard', e)
+     } finally {
+         loading.value = false
+     }
+ }
+
+ async function fetchHistory(childId) {
+     try {
+         const res = await api.get(`/v1/attendance/my-history`, { params: { student_id: childId } })
+         attendanceHistory.value = res.data
+     } catch (e) {
+         console.error('Error fetching history', e)
+         attendanceHistory.value = []
+     }
+ }
+
+ function formatDate(dateString) {
+     return qDate.formatDate(dateString, 'ddd, DD MMM')
+ }
+
+ function getHealthColor(percent) {
+     if (percent >= 80) return 'green'
+     if (percent >= 60) return 'orange'
+     return 'red'
+ }
+ </script>
 
 <style scoped>
 .bordered-card {

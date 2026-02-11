@@ -17,12 +17,7 @@
           for {{ selectedChild.name }}
         </div>
       </div>
-      <q-btn
-        icon="download"
-        label="Report Card"
-        outline
-        :color="$q.dark.isActive ? 'deep-purple-2' : 'deep-purple'"
-      />
+
     </div>
 
     <!-- Notices and Attendance -->
