@@ -8,6 +8,8 @@ use App\Models\User;
 
 class UserManagementController extends Controller
 {
+    use \App\Traits\GeneratesCustomIds;
+
     public function index(Request $request)
     {
         $role = $request->query('role');
@@ -96,17 +98,23 @@ class UserManagementController extends Controller
             $whatsapp = $request->whatsapp ? preg_replace('/[^0-9]/', '', $request->whatsapp) : null;
             $parentPhone = $request->parent_phone ? preg_replace('/[^0-9]/', '', $request->parent_phone) : null;
 
-            $username = null;
-            $prefix = '';
-            if ($request->role === 'student') $prefix = 'STU';
-            elseif ($request->role === 'teacher') $prefix = 'TCH';
-            elseif ($request->role === 'parent') $prefix = 'PAR';
+            // Custom ID Generation Logic
+            $prefix = 'STU';
+            $startSequence = 1;
 
-            if ($prefix) {
-                 do {
-                    $username = $prefix . date('Y') . rand(1000, 9999);
-                 } while (User::where('username', $username)->exists());
+            if ($request->role === 'student') {
+                $prefix = \App\Models\SystemSetting::where('key', 'studentIdPrefix')->value('value') ?? 'STU';
+                $startSequence = (int) (\App\Models\SystemSetting::where('key', 'studentIdSequenceStart')->value('value') ?? 20000);
+            } elseif ($request->role === 'teacher') {
+                $prefix = 'TCH';
+                $startSequence = 1;
+            } elseif ($request->role === 'parent') {
+                $prefix = 'PAR';
+                $startSequence = 1;
             }
+
+            // Generate Next ID
+            $username = $this->generateCustomId($request->role, $prefix, $startSequence);
 
             $user = User::create([
                 'name' => $request->name,
@@ -114,7 +122,7 @@ class UserManagementController extends Controller
                 'password' => \Illuminate\Support\Facades\Hash::make($request->password),
                 'plain_password' => $request->password,
                 'role' => $request->role,
-                'username' => $username,
+                'username' => $username, // Custom ID
 
                 'dob' => $request->dob,
                 'gender' => $request->gender,
@@ -124,7 +132,7 @@ class UserManagementController extends Controller
                 'grade' => $request->grade,
 
                 'parent_name' => $request->parent_name,
-                'parent_phone' => $parentPhone, // Use sanitized
+                'parent_phone' => $parentPhone,
                 'parent_email' => $request->parent_email,
 
                 'nic' => $request->nic,
@@ -136,32 +144,26 @@ class UserManagementController extends Controller
             // Auto-Create or Link Parent Account for Students
             if ($request->role === 'student' && ($request->parent_email || $parentPhone)) {
 
-                // Search for ANY existing user with this email or phone (Role doesn't matter strictly, to avoid Dupes)
                 $parentUser = User::where(function($q) use ($request, $parentPhone) {
                         if ($request->parent_email) $q->where('email', $request->parent_email);
                         if ($parentPhone) $q->orWhere('phone', $parentPhone);
                     })->first();
 
                 if (!$parentUser) {
-                    // Start Parent Username
-                    $parentPrefix = 'PAR';
-                    do {
-                        $parentUsername = $parentPrefix . date('Y') . rand(1000, 9999);
-                    } while (User::where('username', $parentUsername)->exists());
+                    // Generate Parent ID
+                    $parentUsername = $this->generateCustomId('parent', 'PAR', 1);
 
-                    // Create New Parent
                     $parentUser = User::create([
                         'name' => $request->parent_name ?? 'Parent of ' . $request->name,
                         'email' => $request->parent_email,
-                        'phone' => $parentPhone, // Stored in main phone column
+                        'phone' => $parentPhone,
                         'username' => $parentUsername,
-                        'password' => \Illuminate\Support\Facades\Hash::make('ems12345'), // Default Password
+                        'password' => \Illuminate\Support\Facades\Hash::make('ems12345'),
                         'plain_password' => 'ems12345',
                         'role' => 'parent'
                     ]);
                 }
 
-                // Link Parent ID to Student
                 $user->parent_id = $parentUser->id;
                 $user->parent_phone = $parentPhone;
                 $user->save();
@@ -321,4 +323,10 @@ class UserManagementController extends Controller
         $user->delete();
         return response()->json(['message' => 'User deleted successfully']);
     }
+
+    /**
+     * Helper to generate sequential IDs (e.g. STU00000001)
+     * Supports overflow to Alphanumeric (99999999 -> A0000000)
+     */
+    // Method removed - now using Trait
 }

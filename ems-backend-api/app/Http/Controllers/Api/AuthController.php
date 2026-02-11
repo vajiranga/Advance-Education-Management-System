@@ -12,6 +12,8 @@ use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
+    use \App\Traits\GeneratesCustomIds;
+
     public function register(Request $request)
     {
         // --- MAINTENANCE MODE CHECK ---
@@ -48,14 +50,22 @@ class AuthController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        $username = null;
+        // Custom ID Generation Logic
+        $prefix = 'STU';
+        $startSequence = 1;
+
         if ($request->role === 'student') {
-            $username = $this->generateUsername('STU');
+            $prefix = \App\Models\SystemSetting::where('key', 'studentIdPrefix')->value('value') ?? 'STU';
+            $startSequence = (int) (\App\Models\SystemSetting::where('key', 'studentIdSequenceStart')->value('value') ?? 20000);
         } elseif ($request->role === 'teacher') {
-            $username = $this->generateUsername('TCH');
+            $prefix = 'TCH';
+            $startSequence = 1;
         } elseif ($request->role === 'parent') {
-            $username = $this->generateUsername('PAR');
+            $prefix = 'PAR';
+            $startSequence = 1;
         }
+
+        $username = $this->generateCustomId($request->role, $prefix, $startSequence);
 
         $user = User::create([
             'name' => $request->name,
@@ -303,13 +313,8 @@ class AuthController extends Controller
         ]);
     }
 
-    private function generateUsername($prefix)
-    {
-        do {
-            $username = $prefix . date('Y') . rand(1000, 9999);
-        } while (User::where('username', $username)->exists());
-        return $username;
-    }
+    // generateUsername method removed - using Trait generateCustomId
+
 
     private function getRedirectUrl($role)
     {

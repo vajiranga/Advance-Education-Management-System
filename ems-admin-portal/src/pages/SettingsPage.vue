@@ -320,7 +320,7 @@
                       <q-item-label>Starting Sequence</q-item-label>
                       <q-item-label caption
                         >Next ID: {{ settings.studentIdPrefix || 'STU'
-                        }}{{ settings.studentIdSequenceStart || '20000' }}</q-item-label
+                        }}{{ (settings.studentIdSequenceStart || '20000').toString().padStart(8, '0') }}</q-item-label
                       >
                     </q-item-section>
                     <q-item-section side>
@@ -342,6 +342,8 @@
                         v-model="settings.studentIdPrefix"
                         dense
                         outlined
+                        readonly
+                        bg-color="grey-2"
                         style="width: 80px"
                       />
                     </q-item-section>
