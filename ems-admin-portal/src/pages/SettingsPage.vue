@@ -3,7 +3,13 @@
     <div class="row items-center justify-between q-mb-md">
       <div class="text-h5">System Settings</div>
       <!-- This button saves the Institute Settings (General, Branding, etc) -->
-      <q-btn v-if="activeTab !== 'security' && canEditSettings" color="primary" label="Save System Settings" icon="save" @click="saveSettings" />
+      <q-btn
+        v-if="activeTab !== 'security' && canEditSettings"
+        color="primary"
+        label="Save System Settings"
+        icon="save"
+        @click="saveSettings"
+      />
     </div>
 
     <!-- Main Settings Tabs -->
@@ -45,12 +51,21 @@
                   <div class="row items-center q-col-gutter-md">
                     <!-- Logo Preview -->
                     <div class="col-12 col-md-3 text-center">
-                      <div class="q-pa-md bg-grey-2 rounded-borders" style="min-height: 150px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                      <div
+                        class="q-pa-md bg-grey-2 rounded-borders"
+                        style="
+                          min-height: 150px;
+                          display: flex;
+                          flex-direction: column;
+                          align-items: center;
+                          justify-content: center;
+                        "
+                      >
                         <img
                           v-if="settings.logoUrl"
                           :src="settings.logoUrl"
                           alt="Institute Logo"
-                          style="max-width: 100%; max-height: 150px; object-fit: contain;"
+                          style="max-width: 100%; max-height: 150px; object-fit: contain"
                         />
                         <q-icon v-else name="business" size="80px" color="grey-5" />
                       </div>
@@ -59,7 +74,8 @@
                     <!-- Upload Controls -->
                     <div class="col-12 col-md-9">
                       <div class="text-caption text-grey-7 q-mb-sm">
-                        Upload your institute logo. This will be displayed in the header, reports, and certificates.
+                        Upload your institute logo. This will be displayed in the header, reports,
+                        and certificates.
                       </div>
                       <div class="text-caption text-grey-7 q-mb-md">
                         Recommended: PNG or SVG format, transparent background, minimum 200x200px
@@ -102,7 +118,13 @@
               <q-input v-model="settings.registrationNo" label="Registration Number" outlined />
             </div>
             <div class="col-12">
-              <q-input v-model="settings.address" label="Address" type="textarea" outlined rows="3" />
+              <q-input
+                v-model="settings.address"
+                label="Address"
+                type="textarea"
+                outlined
+                rows="3"
+              />
             </div>
             <div class="col-12 col-md-6">
               <q-input v-model="settings.contactPhone" label="Contact Phone" outlined />
@@ -111,7 +133,13 @@
               <q-input v-model="settings.contactEmail" label="Contact Email" outlined />
             </div>
             <div class="col-12">
-              <q-input v-model="settings.registrationNo" label="Institute ID" outlined readonly hint="Default System ID" />
+              <q-input
+                v-model="settings.registrationNo"
+                label="Institute ID"
+                outlined
+                readonly
+                hint="Default System ID"
+              />
             </div>
 
             <!-- New General Settings -->
@@ -125,512 +153,828 @@
               <q-input v-model="settings.taxNumber" label="Tax / VAT Number" outlined />
             </div>
             <div class="col-12 col-md-4">
-              <q-input v-model="settings.establishedYear" label="Established Year" outlined type="number" />
+              <q-input
+                v-model="settings.establishedYear"
+                label="Established Year"
+                outlined
+                type="number"
+              />
             </div>
 
-              <div class="col-12 col-md-6">
-                <q-select v-model="settings.currency" :options="['LKR']" label="Default Currency" outlined />
-              </div>
-              <div class="col-12 col-md-6">
-                <q-select v-model="settings.timeZone" :options="['Asia/Colombo']" label="Time Zone" outlined />
-              </div>
+            <div class="col-12 col-md-6">
+              <q-select
+                v-model="settings.currency"
+                :options="['LKR']"
+                label="Default Currency"
+                outlined
+              />
+            </div>
+            <div class="col-12 col-md-6">
+              <q-select
+                v-model="settings.timeZone"
+                :options="['Asia/Colombo']"
+                label="Time Zone"
+                outlined
+              />
+            </div>
 
             <div class="col-12 text-subtitle2 q-mt-md">Academic Calendar & Working Hours</div>
             <div class="col-12 col-md-6">
-               <q-input v-model="settings.academicYearStart" type="date" label="Academic Year Start" outlined stack-label />
+              <q-input
+                v-model="settings.academicYearStart"
+                type="date"
+                label="Academic Year Start"
+                outlined
+                stack-label
+              />
             </div>
             <div class="col-12 col-md-6">
-               <q-input v-model="settings.academicYearEnd" type="date" label="Academic Year End" outlined stack-label />
+              <q-input
+                v-model="settings.academicYearEnd"
+                type="date"
+                label="Academic Year End"
+                outlined
+                stack-label
+              />
             </div>
 
             <div class="col-12 col-md-6">
-               <q-input v-model="settings.workingHoursStart" type="time" label="Work Start Time" outlined stack-label />
+              <q-input
+                v-model="settings.workingHoursStart"
+                type="time"
+                label="Work Start Time"
+                outlined
+                stack-label
+              />
             </div>
             <div class="col-12 col-md-6">
-               <q-input v-model="settings.workingHoursEnd" type="time" label="Work End Time" outlined stack-label />
+              <q-input
+                v-model="settings.workingHoursEnd"
+                type="time"
+                label="Work End Time"
+                outlined
+                stack-label
+              />
             </div>
-
           </div>
         </q-tab-panel>
 
         <!-- System Controls Tab (Formerly Branding) -->
         <q-tab-panel name="controls" class="q-pa-md">
-           <div class="row q-col-gutter-lg">
-             <!-- LEFT COLUMN -->
-             <div class="col-12 col-md-6 flex column q-gutter-y-lg">
-
-                <!-- Platform Configurations -->
-                <q-card class="shadow-2">
-                   <q-card-section>
-                      <div class="row items-center no-wrap">
-                         <div class="col">
-                            <div class="text-subtitle1 text-weight-bold">Platform Configurations</div>
-                            <div class="text-caption text-grey">Manage global restrictions and automation</div>
-                         </div>
-                         <q-icon name="tune" size="24px" color="primary" class="q-ml-sm" />
+          <div class="row q-col-gutter-lg">
+            <!-- LEFT COLUMN -->
+            <div class="col-12 col-md-6 flex column q-gutter-y-lg">
+              <!-- Platform Configurations -->
+              <q-card class="shadow-2">
+                <q-card-section>
+                  <div class="row items-center no-wrap">
+                    <div class="col">
+                      <div class="text-subtitle1 text-weight-bold">Platform Configurations</div>
+                      <div class="text-caption text-grey">
+                        Manage global restrictions and automation
                       </div>
-                   </q-card-section>
-                   <q-separator />
-                   <q-list separator>
-                     <!-- Teacher Registration -->
-                     <q-item tag="label" v-ripple>
-                       <q-item-section>
-                         <q-item-label>Block New Teacher Registration</q-item-label>
-                         <q-item-label caption>Prevent new teachers from signing up</q-item-label>
-                       </q-item-section>
-                       <q-item-section side>
-                         <q-toggle color="red" v-model="settings.blockTeacherRegistration" />
-                       </q-item-section>
-                     </q-item>
-                     <!-- Mobile App Notifications -->
-                     <q-item tag="label" v-ripple>
-                       <q-item-section>
-                          <q-item-label>Mobile App Notifications</q-item-label>
-                          <q-item-label caption>Master toggle for all apps</q-item-label>
-                       </q-item-section>
-                       <q-item-section side>
-                         <q-toggle color="purple" v-model="settings.enableAppNotifications" />
-                       </q-item-section>
-                     </q-item>
-                     <!-- Auto Approve Classes -->
-                     <q-item tag="label" v-ripple>
-                       <q-item-section>
-                         <q-item-label>Auto-Approve New Classes</q-item-label>
-                         <q-item-label caption>Approve classes without admin review</q-item-label>
-                       </q-item-section>
-                       <q-item-section side>
-                         <q-toggle color="green" v-model="settings.autoApproveClasses" />
-                       </q-item-section>
-                     </q-item>
-                     <!-- Auto Approve Extra Classes -->
-                     <q-item tag="label" v-ripple>
-                       <q-item-section>
-                         <q-item-label>Auto-Approve Extra Classes</q-item-label>
-                         <q-item-label caption>Approve revision classes automatically</q-item-label>
-                       </q-item-section>
-                       <q-item-section side>
-                         <q-toggle color="green" v-model="settings.autoApproveExtraClasses" />
-                       </q-item-section>
-                     </q-item>
-                   </q-list>
-                </q-card>
+                    </div>
+                    <q-icon name="tune" size="24px" color="primary" class="q-ml-sm" />
+                  </div>
+                </q-card-section>
+                <q-separator />
+                <q-list separator>
+                  <!-- Teacher Registration -->
+                  <q-item tag="label" v-ripple>
+                    <q-item-section>
+                      <q-item-label>Block New Teacher Registration</q-item-label>
+                      <q-item-label caption>Prevent new teachers from signing up</q-item-label>
+                    </q-item-section>
+                    <q-item-section side>
+                      <q-toggle color="red" v-model="settings.blockTeacherRegistration" />
+                    </q-item-section>
+                  </q-item>
+                  <!-- Mobile App Notifications -->
+                  <q-item tag="label" v-ripple>
+                    <q-item-section>
+                      <q-item-label>Mobile App Notifications</q-item-label>
+                      <q-item-label caption>Master toggle for all apps</q-item-label>
+                    </q-item-section>
+                    <q-item-section side>
+                      <q-toggle color="purple" v-model="settings.enableAppNotifications" />
+                    </q-item-section>
+                  </q-item>
+                  <!-- Auto Approve Classes -->
+                  <q-item tag="label" v-ripple>
+                    <q-item-section>
+                      <q-item-label>Auto-Approve New Classes</q-item-label>
+                      <q-item-label caption>Approve classes without admin review</q-item-label>
+                    </q-item-section>
+                    <q-item-section side>
+                      <q-toggle color="green" v-model="settings.autoApproveClasses" />
+                    </q-item-section>
+                  </q-item>
+                  <!-- Auto Approve Extra Classes -->
+                  <q-item tag="label" v-ripple>
+                    <q-item-section>
+                      <q-item-label>Auto-Approve Extra Classes</q-item-label>
+                      <q-item-label caption>Approve revision classes automatically</q-item-label>
+                    </q-item-section>
+                    <q-item-section side>
+                      <q-toggle color="green" v-model="settings.autoApproveExtraClasses" />
+                    </q-item-section>
+                  </q-item>
+                </q-list>
+              </q-card>
 
-                <!-- Enrollment Controls -->
-                <q-card class="shadow-2">
-                    <q-card-section>
-                        <div class="row items-center no-wrap">
-                           <div class="col">
-                              <div class="text-subtitle1 text-weight-bold">Student Enrollment</div>
-                              <div class="text-caption text-grey">Class sizes and ID generation</div>
-                           </div>
-                           <q-icon name="badge" size="24px" color="orange" class="q-ml-sm" />
-                        </div>
-                    </q-card-section>
-                    <q-separator />
-                     <q-list dense separator>
-                         <q-item>
-                             <q-item-section>
-                                 <q-item-label>Max Students Per Class</q-item-label>
-                                 <q-item-label caption>Limit class size</q-item-label>
-                             </q-item-section>
-                             <q-item-section side>
-                                 <q-input v-model.number="settings.maxStudentsPerClass" type="number" dense outlined style="width: 80px" />
-                             </q-item-section>
-                         </q-item>
+              <!-- Enrollment Controls -->
+              <q-card class="shadow-2">
+                <q-card-section>
+                  <div class="row items-center no-wrap">
+                    <div class="col">
+                      <div class="text-subtitle1 text-weight-bold">Student Enrollment</div>
+                      <div class="text-caption text-grey">Class sizes and ID generation</div>
+                    </div>
+                    <q-icon name="badge" size="24px" color="orange" class="q-ml-sm" />
+                  </div>
+                </q-card-section>
+                <q-separator />
+                <q-list dense separator>
+                  <q-item>
+                    <q-item-section>
+                      <q-item-label>Max Students Per Class</q-item-label>
+                      <q-item-label caption>Limit class size</q-item-label>
+                    </q-item-section>
+                    <q-item-section side>
+                      <q-input
+                        v-model.number="settings.maxStudentsPerClass"
+                        type="number"
+                        dense
+                        outlined
+                        style="width: 80px"
+                      />
+                    </q-item-section>
+                  </q-item>
 
-                         <q-item-label header class="text-weight-bold bg-grey-1">ID Generation</q-item-label>
+                  <q-item-label header class="text-weight-bold bg-grey-1"
+                    >ID Generation</q-item-label
+                  >
 
-                         <q-item>
-                             <q-item-section>
-                                 <q-item-label>Starting Sequence</q-item-label>
-                                 <q-item-label caption>Next ID: {{ settings.studentIdPrefix || 'STU' }}{{ settings.studentIdSequenceStart || '20000' }}</q-item-label>
-                             </q-item-section>
-                             <q-item-section side>
-                                 <q-input v-model.number="settings.studentIdSequenceStart" type="number" dense outlined style="width: 100px" />
-                             </q-item-section>
-                         </q-item>
-                          <q-item>
-                             <q-item-section>
-                                 <q-item-label>ID Prefix</q-item-label>
-                             </q-item-section>
-                             <q-item-section side>
-                                 <q-input v-model="settings.studentIdPrefix" dense outlined style="width: 80px" />
-                             </q-item-section>
-                         </q-item>
-                     </q-list>
-                </q-card>
+                  <q-item>
+                    <q-item-section>
+                      <q-item-label>Starting Sequence</q-item-label>
+                      <q-item-label caption
+                        >Next ID: {{ settings.studentIdPrefix || 'STU'
+                        }}{{ settings.studentIdSequenceStart || '20000' }}</q-item-label
+                      >
+                    </q-item-section>
+                    <q-item-section side>
+                      <q-input
+                        v-model.number="settings.studentIdSequenceStart"
+                        type="number"
+                        dense
+                        outlined
+                        style="width: 100px"
+                      />
+                    </q-item-section>
+                  </q-item>
+                  <q-item>
+                    <q-item-section>
+                      <q-item-label>ID Prefix</q-item-label>
+                    </q-item-section>
+                    <q-item-section side>
+                      <q-input
+                        v-model="settings.studentIdPrefix"
+                        dense
+                        outlined
+                        style="width: 80px"
+                      />
+                    </q-item-section>
+                  </q-item>
+                </q-list>
+              </q-card>
+            </div>
 
-             </div>
+            <!-- RIGHT COLUMN -->
+            <div class="col-12 col-md-6 flex column q-gutter-y-lg">
+              <!-- Financial Operations -->
+              <q-card class="shadow-2">
+                <q-card-section>
+                  <div class="row items-center no-wrap">
+                    <div class="col">
+                      <div class="text-subtitle1 text-weight-bold">Financial Operations</div>
+                      <div class="text-caption text-grey">Commissions, Payments & Billing</div>
+                    </div>
+                    <q-icon name="payments" size="24px" color="green" class="q-ml-sm" />
+                  </div>
+                </q-card-section>
+                <q-separator />
+                <q-list dense separator>
+                  <q-item tag="label" v-ripple>
+                    <q-item-section>
+                      <q-item-label>Institute Commission</q-item-label>
+                      <q-item-label caption>Deduction from collected fees</q-item-label>
+                    </q-item-section>
+                    <q-item-section side>
+                      <q-input
+                        v-model.number="settings.teacherFeeDeductionPercentage"
+                        outlined
+                        dense
+                        type="number"
+                        style="width: 90px"
+                        suffix="%"
+                        min="0"
+                        max="100"
+                      />
+                    </q-item-section>
+                  </q-item>
+                  <q-item>
+                    <q-item-section>
+                      <q-item-label>Fee Cycle Start Day</q-item-label>
+                      <q-item-label caption>Day of month (1-31)</q-item-label>
+                    </q-item-section>
+                    <q-item-section side>
+                      <q-input
+                        v-model.number="settings.feeCycleStartDay"
+                        type="number"
+                        dense
+                        outlined
+                        style="width: 80px"
+                        min="1"
+                        max="31"
+                      />
+                    </q-item-section>
+                  </q-item>
+                  <q-item>
+                    <q-item-section>
+                      <q-item-label>Max Unpaid Months</q-item-label>
+                      <q-item-label caption>Auto-drop threshold</q-item-label>
+                    </q-item-section>
+                    <q-item-section side>
+                      <q-input
+                        v-model.number="settings.maxUnpaidMonths"
+                        type="number"
+                        dense
+                        outlined
+                        style="width: 80px"
+                        min="1"
+                        max="12"
+                      />
+                    </q-item-section>
+                  </q-item>
+                  <q-item tag="label" v-ripple>
+                    <q-item-section>
+                      <q-item-label>Enable Payment Gateway</q-item-label>
+                    </q-item-section>
+                    <q-item-section side
+                      ><q-toggle v-model="settings.paymentGateway" color="green"
+                    /></q-item-section>
+                  </q-item>
+                  <q-item tag="label" v-ripple>
+                    <q-item-section>
+                      <q-item-label>Enable Bank Transfers</q-item-label>
+                    </q-item-section>
+                    <q-item-section side
+                      ><q-toggle v-model="settings.enableBankTransfer" color="blue"
+                    /></q-item-section>
+                  </q-item>
+                  <q-separator spaced />
+                  <q-item>
+                    <q-item-section avatar>
+                      <q-icon name="whatsapp" color="green" />
+                    </q-item-section>
+                    <q-item-section>
+                      <q-item-label>WhatsApp Contact</q-item-label>
+                      <q-item-label caption>For payment verification</q-item-label>
+                    </q-item-section>
+                    <q-item-section side>
+                      <q-input
+                        v-model="settings.whatsappContact"
+                        dense
+                        outlined
+                        style="width: 140px"
+                        placeholder="9477..."
+                      />
+                    </q-item-section>
+                  </q-item>
+                </q-list>
+              </q-card>
 
-             <!-- RIGHT COLUMN -->
-             <div class="col-12 col-md-6 flex column q-gutter-y-lg">
-
-                <!-- Financial Operations -->
-                <q-card class="shadow-2">
-                   <q-card-section>
-                      <div class="row items-center no-wrap">
-                         <div class="col">
-                            <div class="text-subtitle1 text-weight-bold">Financial Operations</div>
-                            <div class="text-caption text-grey">Commissions, Payments & Billing</div>
-                         </div>
-                         <q-icon name="payments" size="24px" color="green" class="q-ml-sm" />
+              <!-- Attendance Controls -->
+              <q-card class="shadow-2">
+                <q-card-section>
+                  <div class="row items-center no-wrap">
+                    <div class="col">
+                      <div class="text-subtitle1 text-weight-bold">Attendance & Scheduling</div>
+                      <div class="text-caption text-grey">Marking rules and visibility</div>
+                    </div>
+                    <q-icon name="event_available" size="24px" color="purple" class="q-ml-sm" />
+                  </div>
+                </q-card-section>
+                <q-separator />
+                <q-list dense separator>
+                  <q-item tag="label" v-ripple class="bg-red-1">
+                    <q-item-section>
+                      <q-item-label class="text-red">Disable Teacher Attendance</q-item-label>
+                      <q-item-label caption>Prevent manual marking</q-item-label>
+                    </q-item-section>
+                    <q-item-section side
+                      ><q-toggle color="red" v-model="settings.disableTeacherAttendance"
+                    /></q-item-section>
+                  </q-item>
+                  <q-item>
+                    <q-item-section>
+                      <q-item-label>Min Attendance %</q-item-label>
+                    </q-item-section>
+                    <q-item-section side>
+                      <q-input
+                        v-model.number="settings.minAttendancePercent"
+                        type="number"
+                        dense
+                        outlined
+                        style="width: 80px"
+                        suffix="%"
+                      />
+                    </q-item-section>
+                  </q-item>
+                  <q-item>
+                    <q-item-section>
+                      <q-item-label>Auto-mark Absent</q-item-label>
+                    </q-item-section>
+                    <q-item-section side>
+                      <q-select
+                        v-model="settings.autoMarkAbsentMinutes"
+                        :options="['Default Absent']"
+                        dense
+                        outlined
+                        style="width: 140px"
+                      />
+                    </q-item-section>
+                  </q-item>
+                  <q-item>
+                    <q-item-section>
+                      <q-item-label>Extra Class Visibility</q-item-label>
+                      <q-item-label caption>Hide after ended</q-item-label>
+                    </q-item-section>
+                    <q-item-section side>
+                      <div class="row no-wrap items-center q-gutter-x-sm">
+                        <q-input
+                          v-model.number="settings.extraClassVisibilityDays"
+                          type="number"
+                          dense
+                          outlined
+                          style="width: 60px"
+                          suffix="d"
+                          min="0"
+                        />
+                        <q-input
+                          v-model.number="settings.extraClassVisibilityHours"
+                          type="number"
+                          dense
+                          outlined
+                          style="width: 60px"
+                          suffix="h"
+                          min="0"
+                        />
                       </div>
-                   </q-card-section>
-                   <q-separator />
-                   <q-list dense separator>
-                        <q-item tag="label" v-ripple>
-                          <q-item-section>
-                            <q-item-label>Institute Commission</q-item-label>
-                            <q-item-label caption>Deduction from collected fees</q-item-label>
-                          </q-item-section>
-                          <q-item-section side>
-                            <q-input
-                              v-model.number="settings.teacherFeeDeductionPercentage"
-                              outlined dense type="number" style="width: 90px" suffix="%" min="0" max="100"
-                            />
-                          </q-item-section>
-                        </q-item>
-                        <q-item>
-                             <q-item-section>
-                                 <q-item-label>Fee Cycle Start Day</q-item-label>
-                                 <q-item-label caption>Day of month (1-31)</q-item-label>
-                             </q-item-section>
-                             <q-item-section side>
-                                 <q-input v-model.number="settings.feeCycleStartDay" type="number" dense outlined style="width: 80px" min="1" max="31" />
-                             </q-item-section>
-                         </q-item>
-                        <q-item>
-                              <q-item-section>
-                                  <q-item-label>Max Unpaid Months</q-item-label>
-                                  <q-item-label caption>Auto-drop threshold</q-item-label>
-                              </q-item-section>
-                              <q-item-section side>
-                                  <q-input v-model.number="settings.maxUnpaidMonths" type="number" dense outlined style="width: 80px" min="1" max="12" />
-                              </q-item-section>
-                          </q-item>
-                         <q-item tag="label" v-ripple>
-                             <q-item-section>
-                                 <q-item-label>Enable Payment Gateway</q-item-label>
-                             </q-item-section>
-                             <q-item-section side><q-toggle v-model="settings.paymentGateway" color="green" /></q-item-section>
-                         </q-item>
-                         <q-item tag="label" v-ripple>
-                              <q-item-section>
-                                  <q-item-label>Enable Bank Transfers</q-item-label>
-                              </q-item-section>
-                              <q-item-section side><q-toggle v-model="settings.enableBankTransfer" color="blue" /></q-item-section>
-                         </q-item>
-                         <q-separator spaced />
-                         <q-item>
-                             <q-item-section avatar>
-                                <q-icon name="whatsapp" color="green" />
-                             </q-item-section>
-                             <q-item-section>
-                                 <q-item-label>WhatsApp Contact</q-item-label>
-                                 <q-item-label caption>For payment verification</q-item-label>
-                             </q-item-section>
-                             <q-item-section side>
-                                 <q-input v-model="settings.whatsappContact" dense outlined style="width: 140px" placeholder="9477..." />
-                             </q-item-section>
-                         </q-item>
-                     </q-list>
-                </q-card>
+                    </q-item-section>
+                  </q-item>
+                </q-list>
+              </q-card>
+            </div>
 
-                <!-- Attendance Controls -->
-                <q-card class="shadow-2">
-                    <q-card-section>
-                        <div class="row items-center no-wrap">
-                           <div class="col">
-                              <div class="text-subtitle1 text-weight-bold">Attendance & Scheduling</div>
-                              <div class="text-caption text-grey">Marking rules and visibility</div>
-                           </div>
-                           <q-icon name="event_available" size="24px" color="purple" class="q-ml-sm" />
+            <!-- FULL WIDTH BOTTOM -->
+            <div class="col-12">
+              <q-card class="bg-grey-1 shadow-1" flat bordered>
+                <q-card-section class="row items-center q-py-sm">
+                  <div class="text-subtitle1 text-weight-bold q-mr-md">System Maintenance</div>
+                  <div class="q-gutter-md row items-center">
+                    <q-select
+                      v-model="settings.backupFrequency"
+                      :options="['daily', 'weekly', 'monthly']"
+                      label="Backup"
+                      dense
+                      outlined
+                      bg-color="white"
+                      style="min-width: 150px"
+                    />
+                    <q-input
+                      v-model.number="settings.dataRetentionMonths"
+                      label="Retention (Months)"
+                      type="number"
+                      dense
+                      outlined
+                      bg-color="white"
+                      style="width: 150px"
+                    />
+                    <q-toggle
+                      label="Maintenance Mode"
+                      color="red"
+                      v-model="settings.maintenanceMode"
+                      dense
+                    />
+                  </div>
+                </q-card-section>
+                <q-separator />
+                <q-card-section>
+                  <div class="row q-col-gutter-md items-center">
+                    <div class="col-12 col-md-8">
+                      <q-banner class="bg-blue-1 text-blue-9 q-pa-sm rounded-borders">
+                        <template v-slot:avatar>
+                          <q-icon name="cloud_upload" color="primary" />
+                        </template>
+                        Backups are automatically saved to your local Google Drive folder.
+                        <div class="text-caption text-grey-7">
+                          Location: G:\My Drive\Data backup
                         </div>
-                    </q-card-section>
-                    <q-separator />
-                     <q-list dense separator>
-                         <q-item tag="label" v-ripple class="bg-red-1">
-                             <q-item-section>
-                                 <q-item-label class="text-red">Disable Teacher Attendance</q-item-label>
-                                 <q-item-label caption>Prevent manual marking</q-item-label>
-                             </q-item-section>
-                             <q-item-section side><q-toggle color="red" v-model="settings.disableTeacherAttendance" /></q-item-section>
-                         </q-item>
-                         <q-item>
-                             <q-item-section>
-                                 <q-item-label>Min Attendance %</q-item-label>
-                             </q-item-section>
-                             <q-item-section side>
-                                 <q-input v-model.number="settings.minAttendancePercent" type="number" dense outlined style="width: 80px" suffix="%" />
-                             </q-item-section>
-                         </q-item>
-                         <q-item>
-                             <q-item-section>
-                                 <q-item-label>Auto-mark Absent</q-item-label>
-                             </q-item-section>
-                             <q-item-section side>
-                                 <q-select
-                                    v-model="settings.autoMarkAbsentMinutes"
-                                    :options="['Default Absent']"
-                                    dense
-                                    outlined
-                                    style="width: 140px"
-                                 />
-                             </q-item-section>
-                         </q-item>
-                         <q-item>
-                             <q-item-section>
-                                 <q-item-label>Extra Class Visibility</q-item-label>
-                                 <q-item-label caption>Hide after ended</q-item-label>
-                             </q-item-section>
-                             <q-item-section side>
-                                 <div class="row no-wrap items-center q-gutter-x-sm">
-                                     <q-input v-model.number="settings.extraClassVisibilityDays" type="number" dense outlined style="width: 60px" suffix="d" min="0" />
-                                     <q-input v-model.number="settings.extraClassVisibilityHours" type="number" dense outlined style="width: 60px" suffix="h" min="0" />
-                                 </div>
-                             </q-item-section>
-                         </q-item>
-                     </q-list>
-                </q-card>
-
-             </div>
-
-             <!-- FULL WIDTH BOTTOM -->
-             <div class="col-12">
-                <q-card class="bg-grey-1 shadow-1" flat bordered>
-                    <q-card-section class="row items-center q-py-sm">
-                         <div class="text-subtitle1 text-weight-bold q-mr-md">System Maintenance</div>
-                         <div class="q-gutter-md row items-center">
-                             <q-select v-model="settings.backupFrequency" :options="['daily', 'weekly', 'monthly']" label="Backup" dense outlined bg-color="white" style="min-width: 150px" />
-                             <q-input v-model.number="settings.dataRetentionMonths" label="Retention (Months)" type="number" dense outlined bg-color="white" style="width: 150px" />
-                             <q-toggle label="Maintenance Mode" color="red" v-model="settings.maintenanceMode" dense />
-                         </div>
-                    </q-card-section>
-                </q-card>
-             </div>
-           </div>
+                      </q-banner>
+                    </div>
+                    <div class="col-12 col-md-4 text-right">
+                      <q-btn
+                        color="primary"
+                        icon="backup"
+                        label="Backup to Drive - Now"
+                        @click="runBackupNow"
+                        :loading="backupRunning"
+                        unelevated
+                      />
+                    </div>
+                  </div>
+                </q-card-section>
+              </q-card>
+            </div>
+          </div>
         </q-tab-panel>
-
-
 
         <!-- Access Control / Security Tab -->
         <q-tab-panel name="security">
           <div class="text-h6 q-mb-md">System Security & Policies</div>
 
           <div class="row q-col-gutter-lg q-mb-xl">
-               <!-- Administrator Management Table -->
-               <div class="col-12">
-                   <q-card bordered flat>
-                       <q-card-section class="row items-center justify-between">
-                           <div class="text-subtitle2">System Administrators</div>
-                           <q-btn v-if="canEditSettings" label="Add New Admin" color="primary" size="sm" icon="add" @click="openAddAdmin" />
-                       </q-card-section>
-                       <q-separator />
-                       <q-markup-table flat>
-                           <thead>
-                               <tr>
-                                   <th class="text-left">Name</th>
-                                   <th class="text-left">Email</th>
-                                   <th class="text-left">Permissions</th>
-                                   <th class="text-right">Actions</th>
-                               </tr>
-                           </thead>
-                           <tbody>
-                               <tr v-for="admin in adminList" :key="admin.id">
-                                   <td class="text-left">{{ admin.name }} <q-badge v-if="admin.is_super_admin" color="purple" label="Super" /></td>
-                                   <td class="text-left">{{ admin.email }}</td>
-                                   <td class="text-left">
-                                       <div class="row q-gutter-xs" style="max-width: 300px; overflow: hidden;">
-                                            <q-badge v-for="p in admin.permissions" :key="p" color="grey-3" text-color="black" :label="p" />
-                                       </div>
-                                   </td>
-                                   <td class="text-right">
-                                       <q-btn v-if="canEditSettings" flat round icon="edit" color="blue" size="sm" @click="openEditAdmin(admin)" :disable="admin.is_super_admin" />
-                                       <q-btn v-if="canEditSettings" flat round icon="delete" color="red" size="sm" @click="deleteAdmin(admin.id)" :disable="admin.is_super_admin" />
-                                   </td>
-                               </tr>
-                               <tr v-if="adminList.length === 0">
-                                   <td colspan="4" class="text-center text-grey">No other admins found.</td>
-                               </tr>
-                           </tbody>
-                       </q-markup-table>
-                   </q-card>
-               </div>
+            <!-- Administrator Management Table -->
+            <div class="col-12">
+              <q-card bordered flat>
+                <q-card-section class="row items-center justify-between">
+                  <div class="text-subtitle2">System Administrators</div>
+                  <q-btn
+                    v-if="canEditSettings"
+                    label="Add New Admin"
+                    color="primary"
+                    size="sm"
+                    icon="add"
+                    @click="openAddAdmin"
+                  />
+                </q-card-section>
+                <q-separator />
+                <q-markup-table flat>
+                  <thead>
+                    <tr>
+                      <th class="text-left">Name</th>
+                      <th class="text-left">Email</th>
+                      <th class="text-left">Permissions</th>
+                      <th class="text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="admin in adminList" :key="admin.id">
+                      <td class="text-left">
+                        {{ admin.name }}
+                        <q-badge v-if="admin.is_super_admin" color="purple" label="Super" />
+                      </td>
+                      <td class="text-left">{{ admin.email }}</td>
+                      <td class="text-left">
+                        <div class="row q-gutter-xs" style="max-width: 300px; overflow: hidden">
+                          <q-badge
+                            v-for="p in admin.permissions"
+                            :key="p"
+                            color="grey-3"
+                            text-color="black"
+                            :label="p"
+                          />
+                        </div>
+                      </td>
+                      <td class="text-right">
+                        <q-btn
+                          v-if="canEditSettings"
+                          flat
+                          round
+                          icon="edit"
+                          color="blue"
+                          size="sm"
+                          @click="openEditAdmin(admin)"
+                          :disable="admin.is_super_admin"
+                        />
+                        <q-btn
+                          v-if="canEditSettings"
+                          flat
+                          round
+                          icon="delete"
+                          color="red"
+                          size="sm"
+                          @click="deleteAdmin(admin.id)"
+                          :disable="admin.is_super_admin"
+                        />
+                      </td>
+                    </tr>
+                    <tr v-if="adminList.length === 0">
+                      <td colspan="4" class="text-center text-grey">No other admins found.</td>
+                    </tr>
+                  </tbody>
+                </q-markup-table>
+              </q-card>
+            </div>
 
-    <!-- Verify Password Dialog -->
-    <q-dialog v-model="showVerifyDialog" persistent>
-      <q-card style="min-width: 350px">
-        <q-card-section>
-          <div class="text-h6">Verify Super Admin</div>
-          <div class="text-caption">Please enter your password to proceed.</div>
-        </q-card-section>
+            <!-- Verify Password Dialog -->
+            <q-dialog v-model="showVerifyDialog" persistent>
+              <q-card style="min-width: 350px">
+                <q-card-section>
+                  <div class="text-h6">Verify Super Admin</div>
+                  <div class="text-caption">Please enter your password to proceed.</div>
+                </q-card-section>
 
-        <q-card-section class="q-pt-none">
-          <q-input v-model="verifyPasswordInput" type="password" dense autofocus @keyup.enter="confirmVerifyPassword" label="Password" outlines />
-        </q-card-section>
+                <q-card-section class="q-pt-none">
+                  <q-input
+                    v-model="verifyPasswordInput"
+                    type="password"
+                    dense
+                    autofocus
+                    @keyup.enter="confirmVerifyPassword"
+                    label="Password"
+                    outlines
+                  />
+                </q-card-section>
 
-        <q-card-actions align="right" class="text-primary">
-          <q-btn flat label="Cancel" v-close-popup />
-          <q-btn flat label="Confirm" @click="confirmVerifyPassword" />
-        </q-card-actions>
-      </q-card>
-    </q-dialog>
+                <q-card-actions align="right" class="text-primary">
+                  <q-btn flat label="Cancel" v-close-popup />
+                  <q-btn flat label="Confirm" @click="confirmVerifyPassword" />
+                </q-card-actions>
+              </q-card>
+            </q-dialog>
 
-    <!-- Admin Form Dialog -->
-    <q-dialog v-model="showAdminDialog" persistent>
-      <q-card style="min-width: 500px">
-        <q-card-section>
-          <div class="text-h6">{{ editingAdminId ? 'Edit Admin' : 'Add New Admin' }}</div>
-        </q-card-section>
+            <!-- Admin Form Dialog -->
+            <q-dialog v-model="showAdminDialog" persistent>
+              <q-card style="min-width: 500px">
+                <q-card-section>
+                  <div class="text-h6">{{ editingAdminId ? 'Edit Admin' : 'Add New Admin' }}</div>
+                </q-card-section>
 
-        <q-card-section class="q-pt-none scroll" style="max-height: 70vh">
-             <div class="row q-col-gutter-md">
-                 <div class="col-12 col-md-6">
-                     <q-input v-model="adminForm.name" label="Name" outlined dense />
-                 </div>
-                 <div class="col-12 col-md-6">
-                     <q-input v-model="adminForm.email" label="Email" outlined dense />
-                 </div>
-                 <div class="col-12">
-                     <q-input v-model="adminForm.password" :label="editingAdminId ? 'New Password (Leave blank to keep)' : 'Password'" type="text" outlined dense hint="Password is visible here for management" />
-                 </div>
+                <q-card-section class="q-pt-none scroll" style="max-height: 70vh">
+                  <div class="row q-col-gutter-md">
+                    <div class="col-12 col-md-6">
+                      <q-input v-model="adminForm.name" label="Name" outlined dense />
+                    </div>
+                    <div class="col-12 col-md-6">
+                      <q-input v-model="adminForm.email" label="Email" outlined dense />
+                    </div>
+                    <div class="col-12">
+                      <q-input
+                        v-model="adminForm.password"
+                        :label="editingAdminId ? 'New Password (Leave blank to keep)' : 'Password'"
+                        type="text"
+                        outlined
+                        dense
+                        hint="Password is visible here for management"
+                      />
+                    </div>
 
-                 <div class="col-12"><q-separator class="q-my-sm" /></div>
-                 <div class="col-12 text-weight-bold">Module Access</div>
-                 <div class="col-12 text-caption text-negative">* Important: Please ensure 'Attendance' is selected.</div>
+                    <div class="col-12"><q-separator class="q-my-sm" /></div>
+                    <div class="col-12 text-weight-bold">Module Access</div>
+                    <div class="col-12 text-caption text-negative">
+                      * Important: Please ensure 'Attendance' is selected.
+                    </div>
 
-                 <!-- Granular Permissions -->
-                 <div class="col-12">
+                    <!-- Granular Permissions -->
+                    <div class="col-12">
                       <q-list bordered separator class="rounded-borders">
-                          <!-- Dashboard -->
-                          <q-expansion-item
-                              expand-separator
-                              icon="dashboard"
-                              label="Dashboard"
-                              :caption="getSelectedCount('dashboard')">
-                              <q-card>
-                                  <q-card-section>
-                                      <q-checkbox v-model="adminForm.permissions" val="dashboard" label="View Dashboard" dense />
-                                      <q-checkbox v-model="adminForm.permissions" val="dashboard_broadcast" label="Send Broadcast" dense />
-                                      <q-checkbox v-model="adminForm.permissions" val="dashboard_export" label="Export Report" dense />
-                                  </q-card-section>
-                              </q-card>
-                          </q-expansion-item>
+                        <!-- Dashboard -->
+                        <q-expansion-item
+                          expand-separator
+                          icon="dashboard"
+                          label="Dashboard"
+                          :caption="getSelectedCount('dashboard')"
+                        >
+                          <q-card>
+                            <q-card-section>
+                              <q-checkbox
+                                v-model="adminForm.permissions"
+                                val="dashboard"
+                                label="View Dashboard"
+                                dense
+                              />
+                              <q-checkbox
+                                v-model="adminForm.permissions"
+                                val="dashboard_broadcast"
+                                label="Send Broadcast"
+                                dense
+                              />
+                              <q-checkbox
+                                v-model="adminForm.permissions"
+                                val="dashboard_export"
+                                label="Export Report"
+                                dense
+                              />
+                            </q-card-section>
+                          </q-card>
+                        </q-expansion-item>
 
-                          <!-- Hall Management -->
-                          <q-expansion-item
-                              expand-separator
-                              icon="meeting_room"
-                              label="Hall Management"
-                              :caption="getSelectedCount('halls')">
-                              <q-card>
-                                  <q-card-section>
-                                      <q-checkbox v-model="adminForm.permissions" val="halls" label="View Halls" dense />
-                                      <q-checkbox v-model="adminForm.permissions" val="halls_add" label="Add New Hall" dense />
-                                  </q-card-section>
-                              </q-card>
-                          </q-expansion-item>
+                        <!-- Hall Management -->
+                        <q-expansion-item
+                          expand-separator
+                          icon="meeting_room"
+                          label="Hall Management"
+                          :caption="getSelectedCount('halls')"
+                        >
+                          <q-card>
+                            <q-card-section>
+                              <q-checkbox
+                                v-model="adminForm.permissions"
+                                val="halls"
+                                label="View Halls"
+                                dense
+                              />
+                              <q-checkbox
+                                v-model="adminForm.permissions"
+                                val="halls_add"
+                                label="Add New Hall"
+                                dense
+                              />
+                            </q-card-section>
+                          </q-card>
+                        </q-expansion-item>
 
-                          <!-- Users -->
-                          <q-expansion-item
-                              expand-separator
-                              icon="people"
-                              label="Users"
-                              :caption="getSelectedCount('users')">
-                              <q-card>
-                                  <q-card-section>
-                                      <q-checkbox v-model="adminForm.permissions" val="users" label="View Users" dense />
-                                      <q-checkbox v-model="adminForm.permissions" val="users_add" label="Add New User" dense />
-                                  </q-card-section>
-                              </q-card>
-                          </q-expansion-item>
+                        <!-- Users -->
+                        <q-expansion-item
+                          expand-separator
+                          icon="people"
+                          label="Users"
+                          :caption="getSelectedCount('users')"
+                        >
+                          <q-card>
+                            <q-card-section>
+                              <q-checkbox
+                                v-model="adminForm.permissions"
+                                val="users"
+                                label="View Users"
+                                dense
+                              />
+                              <q-checkbox
+                                v-model="adminForm.permissions"
+                                val="users_add"
+                                label="Add New User"
+                                dense
+                              />
+                            </q-card-section>
+                          </q-card>
+                        </q-expansion-item>
 
-                          <!-- Classes -->
-                          <q-expansion-item
-                              expand-separator
-                              icon="school"
-                              label="Classes"
-                              :caption="getSelectedCount('classes')">
-                              <q-card>
-                                  <q-card-section>
-                                      <q-checkbox v-model="adminForm.permissions" val="classes" label="View Classes" dense />
-                                      <q-checkbox v-model="adminForm.permissions" val="classes_add" label="Add New Class" dense />
-                                      <q-checkbox v-model="adminForm.permissions" val="classes_delete" label="Delete All Classes" dense />
-                                  </q-card-section>
-                              </q-card>
-                          </q-expansion-item>
+                        <!-- Classes -->
+                        <q-expansion-item
+                          expand-separator
+                          icon="school"
+                          label="Classes"
+                          :caption="getSelectedCount('classes')"
+                        >
+                          <q-card>
+                            <q-card-section>
+                              <q-checkbox
+                                v-model="adminForm.permissions"
+                                val="classes"
+                                label="View Classes"
+                                dense
+                              />
+                              <q-checkbox
+                                v-model="adminForm.permissions"
+                                val="classes_add"
+                                label="Add New Class"
+                                dense
+                              />
+                              <q-checkbox
+                                v-model="adminForm.permissions"
+                                val="classes_delete"
+                                label="Delete All Classes"
+                                dense
+                              />
+                            </q-card-section>
+                          </q-card>
+                        </q-expansion-item>
 
-                          <!-- Attendance -->
-                          <q-expansion-item
-                              expand-separator
-                              icon="fact_check"
-                              label="Attendance"
-                              :caption="getSelectedCount('attendance')">
-                              <q-card>
-                                  <q-card-section>
-                                      <q-checkbox v-model="adminForm.permissions" val="attendance" label="View & Mark Attendance" dense />
-                                  </q-card-section>
-                              </q-card>
-                          </q-expansion-item>
+                        <!-- Attendance -->
+                        <q-expansion-item
+                          expand-separator
+                          icon="fact_check"
+                          label="Attendance"
+                          :caption="getSelectedCount('attendance')"
+                        >
+                          <q-card>
+                            <q-card-section>
+                              <q-checkbox
+                                v-model="adminForm.permissions"
+                                val="attendance"
+                                label="View & Mark Attendance"
+                                dense
+                              />
+                            </q-card-section>
+                          </q-card>
+                        </q-expansion-item>
 
-                          <!-- Cash Payment -->
-                          <q-expansion-item
-                              expand-separator
-                              icon="payments"
-                              label="Cash Payment"
-                              :caption="getSelectedCount('payments')">
-                              <q-card>
-                                  <q-card-section>
-                                      <q-checkbox v-model="adminForm.permissions" val="payments" label="View & Process Payments" dense />
-                                  </q-card-section>
-                              </q-card>
-                          </q-expansion-item>
+                        <!-- Cash Payment -->
+                        <q-expansion-item
+                          expand-separator
+                          icon="payments"
+                          label="Cash Payment"
+                          :caption="getSelectedCount('payments')"
+                        >
+                          <q-card>
+                            <q-card-section>
+                              <q-checkbox
+                                v-model="adminForm.permissions"
+                                val="payments"
+                                label="View & Process Payments"
+                                dense
+                              />
+                            </q-card-section>
+                          </q-card>
+                        </q-expansion-item>
 
-                          <!-- Finance -->
-                          <q-expansion-item
-                              expand-separator
-                              icon="account_balance"
-                              label="Finance"
-                              :caption="getSelectedCount('finance')">
-                              <q-card>
-                                  <q-card-section>
-                                      <q-checkbox v-model="adminForm.permissions" val="finance" label="View Finance" dense />
-                                      <q-checkbox v-model="adminForm.permissions" val="finance_pending" label="Pending Verification" dense />
-                                      <q-checkbox v-model="adminForm.permissions" val="finance_transactions" label="All Transactions" dense />
-                                      <q-checkbox v-model="adminForm.permissions" val="finance_uncollected" label="Uncollected Fees" dense />
-                                      <q-checkbox v-model="adminForm.permissions" val="finance_settlement" label="Teacher Settlement" dense />
-                                      <q-checkbox v-model="adminForm.permissions" val="finance_class_status" label="Class Payment Status" dense />
-                                  </q-card-section>
-                              </q-card>
-                          </q-expansion-item>
+                        <!-- Finance -->
+                        <q-expansion-item
+                          expand-separator
+                          icon="account_balance"
+                          label="Finance"
+                          :caption="getSelectedCount('finance')"
+                        >
+                          <q-card>
+                            <q-card-section>
+                              <q-checkbox
+                                v-model="adminForm.permissions"
+                                val="finance"
+                                label="View Finance"
+                                dense
+                              />
+                              <q-checkbox
+                                v-model="adminForm.permissions"
+                                val="finance_pending"
+                                label="Pending Verification"
+                                dense
+                              />
+                              <q-checkbox
+                                v-model="adminForm.permissions"
+                                val="finance_transactions"
+                                label="All Transactions"
+                                dense
+                              />
+                              <q-checkbox
+                                v-model="adminForm.permissions"
+                                val="finance_uncollected"
+                                label="Uncollected Fees"
+                                dense
+                              />
+                              <q-checkbox
+                                v-model="adminForm.permissions"
+                                val="finance_settlement"
+                                label="Teacher Settlement"
+                                dense
+                              />
+                              <q-checkbox
+                                v-model="adminForm.permissions"
+                                val="finance_class_status"
+                                label="Class Payment Status"
+                                dense
+                              />
+                            </q-card-section>
+                          </q-card>
+                        </q-expansion-item>
 
-                          <!-- Settings -->
-                          <q-expansion-item
-                              expand-separator
-                              icon="settings"
-                              label="Settings"
-                              :caption="getSelectedCount('settings')">
-                              <q-card>
-                                  <q-card-section>
-                                      <q-checkbox v-model="adminForm.permissions" val="settings" label="View Settings" dense />
-                                      <q-checkbox v-model="adminForm.permissions" val="settings_edit" label="Edit Settings" dense />
-                                  </q-card-section>
-                              </q-card>
-                          </q-expansion-item>
+                        <!-- Settings -->
+                        <q-expansion-item
+                          expand-separator
+                          icon="settings"
+                          label="Settings"
+                          :caption="getSelectedCount('settings')"
+                        >
+                          <q-card>
+                            <q-card-section>
+                              <q-checkbox
+                                v-model="adminForm.permissions"
+                                val="settings"
+                                label="View Settings"
+                                dense
+                              />
+                              <q-checkbox
+                                v-model="adminForm.permissions"
+                                val="settings_edit"
+                                label="Edit Settings"
+                                dense
+                              />
+                            </q-card-section>
+                          </q-card>
+                        </q-expansion-item>
                       </q-list>
-                 </div>
-             </div>
-        </q-card-section>
+                    </div>
+                  </div>
+                </q-card-section>
 
-        <q-card-actions align="right">
-          <q-btn flat label="Cancel" v-close-popup />
-          <q-btn color="primary" label="Save Admin" @click="saveAdmin" />
-        </q-card-actions>
-      </q-card>
-    </q-dialog>
-
-
-
+                <q-card-actions align="right">
+                  <q-btn flat label="Cancel" v-close-popup />
+                  <q-btn color="primary" label="Save Admin" @click="saveAdmin" />
+                </q-card-actions>
+              </q-card>
+            </q-dialog>
           </div>
 
           <q-separator />
@@ -639,64 +983,63 @@
           <div class="text-caption q-mb-md text-grey">Update your login credentials here.</div>
 
           <div class="row q-col-gutter-md">
-             <!-- Name & Email -->
-             <div class="col-12 col-md-6">
-               <q-input v-model="adminProfile.name" label="Admin Name" outlined />
-             </div>
-             <div class="col-12 col-md-6">
-               <q-input v-model="adminProfile.email" label="Login Admin Email" outlined hint="This email is used for login" />
-             </div>
+            <!-- Name & Email -->
+            <div class="col-12 col-md-6">
+              <q-input v-model="adminProfile.name" label="Admin Name" outlined />
+            </div>
+            <div class="col-12 col-md-6">
+              <q-input
+                v-model="adminProfile.email"
+                label="Login Admin Email"
+                outlined
+                hint="This email is used for login"
+              />
+            </div>
 
-             <div class="col-12"><q-separator class="q-my-sm" /></div>
+            <div class="col-12"><q-separator class="q-my-sm" /></div>
 
-             <!-- Password Change -->
-             <div class="col-12">
-               <q-input
-                  v-model="adminProfile.current_password"
-                  type="password"
-                  label="Current Password"
-                  outlined
-               />
-             </div>
+            <!-- Password Change -->
+            <div class="col-12">
+              <q-input
+                v-model="adminProfile.current_password"
+                type="password"
+                label="Current Password"
+                outlined
+              />
+            </div>
 
-             <div class="col-12 col-md-6">
-               <q-input
-                  v-model="adminProfile.password"
-                  type="password"
-                  label="New Password"
-                  outlined
-               />
-             </div>
-             <div class="col-12 col-md-6">
-               <q-input
-                  v-model="adminProfile.password_confirmation"
-                  type="password"
-                  label="Confirm New Password"
-                  outlined
-                  :disable="!adminProfile.password"
-               />
-             </div>
+            <div class="col-12 col-md-6">
+              <q-input
+                v-model="adminProfile.password"
+                type="password"
+                label="New Password"
+                outlined
+              />
+            </div>
+            <div class="col-12 col-md-6">
+              <q-input
+                v-model="adminProfile.password_confirmation"
+                type="password"
+                label="Confirm New Password"
+                outlined
+                :disable="!adminProfile.password"
+              />
+            </div>
 
-             <div class="col-12 q-mt-lg row items-center q-gutter-md">
-               <q-btn
-                  v-if="canEditSettings"
-                  color="primary"
-                  label="Update Admin Profile"
-                  icon="save"
-                  :loading="loadingProfile"
-                  @click="updateAdminProfile"
-               />
-               <q-separator vertical />
-               <q-btn
-                  color="negative"
-                  label="Logout"
-                  icon="logout"
-                  @click="logout"
-               />
-             </div>
+            <div class="col-12 q-mt-lg row items-center q-gutter-md">
+              <q-btn
+                v-if="canEditSettings"
+                color="primary"
+                label="Update Admin Profile"
+                icon="save"
+                :loading="loadingProfile"
+                @click="updateAdminProfile"
+              />
+              <q-separator vertical />
+              <q-btn color="negative" label="Logout" icon="logout" @click="logout" />
+            </div>
           </div>
         </q-tab-panel>
-
       </q-tab-panels>
     </q-card>
   </q-page>
@@ -728,103 +1071,124 @@ const pendingAction = ref(null)
 const editingAdminId = ref(null)
 
 const adminForm = ref({
-    name: '',
-    email: '',
-    password: '',
-    permissions: []
+  name: '',
+  email: '',
+  password: '',
+  permissions: [],
 })
+
+const backupRunning = ref(false)
+
+const runBackupNow = async () => {
+  backupRunning.value = true
+  try {
+    await api.post('/v1/admin/backup/run')
+    $q.notify({
+      type: 'positive',
+      message: 'Backup started successfully! It will be saved to your Google Drive folder shortly.',
+      timeout: 3000,
+    })
+  } catch (error) {
+    $q.notify({
+      type: 'negative',
+      message: error.response?.data?.message || 'Failed to start backup',
+      timeout: 3000,
+    })
+  } finally {
+    backupRunning.value = false
+  }
+}
 
 // Helper function to count selected permissions for a module
 const getSelectedCount = (modulePrefix) => {
-    const count = adminForm.value.permissions.filter(p => p.startsWith(modulePrefix)).length
-    return count > 0 ? `${count} selected` : 'None selected'
+  const count = adminForm.value.permissions.filter((p) => p.startsWith(modulePrefix)).length
+  return count > 0 ? `${count} selected` : 'None selected'
 }
 
 // Verify Super Admin Password Flow
 const triggerSensitiveAction = (callback) => {
-    // Ideally check if user is super admin first
-    // For now, always ask password as requested
-    verifyPasswordInput.value = ''
-    pendingAction.value = callback
-    showVerifyDialog.value = true
+  // Ideally check if user is super admin first
+  // For now, always ask password as requested
+  verifyPasswordInput.value = ''
+  pendingAction.value = callback
+  showVerifyDialog.value = true
 }
 
 const confirmVerifyPassword = async () => {
-    try {
-        await api.post('/v1/admin/verify-password', { password: verifyPasswordInput.value })
-        showVerifyDialog.value = false
-        if (pendingAction.value) pendingAction.value()
-    } catch (e) {
-         console.error(e)
-         $q.notify({ type: 'negative', message: 'Incorrect Password' })
-    }
+  try {
+    await api.post('/v1/admin/verify-password', { password: verifyPasswordInput.value })
+    showVerifyDialog.value = false
+    if (pendingAction.value) pendingAction.value()
+  } catch (e) {
+    console.error(e)
+    $q.notify({ type: 'negative', message: 'Incorrect Password' })
+  }
 }
 
 // CRUD
 const fetchAdmins = async () => {
-    try {
-        const res = await api.get('/v1/admin/admins')
-        adminList.value = res.data
-    } catch (e) {
-        console.error('Failed to fetch admins', e)
-    }
+  try {
+    const res = await api.get('/v1/admin/admins')
+    adminList.value = res.data
+  } catch (e) {
+    console.error('Failed to fetch admins', e)
+  }
 }
 
 const openAddAdmin = () => {
-    triggerSensitiveAction(() => {
-        editingAdminId.value = null
-        adminForm.value = { name: '', email: '', password: '', permissions: [] }
-        showAdminDialog.value = true
-    })
+  triggerSensitiveAction(() => {
+    editingAdminId.value = null
+    adminForm.value = { name: '', email: '', password: '', permissions: [] }
+    showAdminDialog.value = true
+  })
 }
 
 const openEditAdmin = (admin) => {
-    triggerSensitiveAction(() => {
-        editingAdminId.value = admin.id
-        adminForm.value = {
-            name: admin.name,
-            email: admin.email,
-            password: admin.plain_password || '',
-            permissions: admin.permissions || []
-        }
-        showAdminDialog.value = true
-    })
+  triggerSensitiveAction(() => {
+    editingAdminId.value = admin.id
+    adminForm.value = {
+      name: admin.name,
+      email: admin.email,
+      password: admin.plain_password || '',
+      permissions: admin.permissions || [],
+    }
+    showAdminDialog.value = true
+  })
 }
 
 const deleteAdmin = (id) => {
-    triggerSensitiveAction(async () => {
-        try {
-             await api.delete(`/v1/admin/admins/${id}`)
-             $q.notify({ type: 'positive', message: 'Admin deleted' })
-             fetchAdmins()
-        } catch (e) {
-             $q.notify({ type: 'negative', message: e.response?.data?.message || 'Failed to delete' })
-        }
-    })
+  triggerSensitiveAction(async () => {
+    try {
+      await api.delete(`/v1/admin/admins/${id}`)
+      $q.notify({ type: 'positive', message: 'Admin deleted' })
+      fetchAdmins()
+    } catch (e) {
+      $q.notify({ type: 'negative', message: e.response?.data?.message || 'Failed to delete' })
+    }
+  })
 }
 
 const saveAdmin = async () => {
-    try {
-        const payload = {
-            name: adminForm.value.name,
-            email: adminForm.value.email,
-            password: adminForm.value.password,
-            permissions: adminForm.value.permissions
-        }
-
-        if (editingAdminId.value) {
-            await api.put(`/v1/admin/admins/${editingAdminId.value}`, payload)
-        } else {
-            await api.post('/v1/admin/admins', payload)
-        }
-
-        $q.notify({ type: 'positive', message: 'Admin saved successfully' })
-        showAdminDialog.value = false
-        fetchAdmins()
-
-    } catch (e) {
-        $q.notify({ type: 'negative', message: e.response?.data?.message || 'Failed to save' })
+  try {
+    const payload = {
+      name: adminForm.value.name,
+      email: adminForm.value.email,
+      password: adminForm.value.password,
+      permissions: adminForm.value.permissions,
     }
+
+    if (editingAdminId.value) {
+      await api.put(`/v1/admin/admins/${editingAdminId.value}`, payload)
+    } else {
+      await api.post('/v1/admin/admins', payload)
+    }
+
+    $q.notify({ type: 'positive', message: 'Admin saved successfully' })
+    showAdminDialog.value = false
+    fetchAdmins()
+  } catch (e) {
+    $q.notify({ type: 'negative', message: e.response?.data?.message || 'Failed to save' })
+  }
 }
 
 // Institute Settings - Initialize with empty values, will be loaded from API
@@ -875,8 +1239,6 @@ const settings = ref({
   maxUnpaidMonths: 0,
   whatsappContact: '',
 
-
-
   minAttendancePercent: 80,
   autoMarkAbsentMinutes: 'Default Absent',
   attendanceReminderTime: '09:00',
@@ -886,6 +1248,7 @@ const settings = ref({
   extraClassVisibilityTimeout: 48,
 
   backupFrequency: 'daily',
+  backupNotificationEmail: '',
   dataRetentionMonths: 12,
   maintenanceMode: false,
 
@@ -908,7 +1271,7 @@ const settings = ref({
   gdprMode: false,
   dataAnonymization: false,
   userConsent: true,
-  disableReportExport: false
+  disableReportExport: false,
 })
 
 // Logo Upload Functions
@@ -935,22 +1298,22 @@ const handleLogoUpload = async (event) => {
     formData.append('logo', file)
 
     const res = await api.post('/v1/admin/settings/upload-logo', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
+      headers: { 'Content-Type': 'multipart/form-data' },
     })
 
     if (res.data && res.data.logoUrl) {
-       let fixedUrl = res.data.logoUrl
-       // Fix localhost URL issues or relative path - FORCE 127.0.0.1:8000
-       if (fixedUrl.includes('localhost') || fixedUrl.includes('127.0.0.1')) {
-            // Replace any localhost/127 variants with clean 127.0.0.1:8000
-            // First remove protocol if exists to simplify
-            let cleanPath = fixedUrl.replace(/^https?:\/\/[^/]+/, '')
-            // If it was just a domain, cleanPath might be empty? No, usually creates path.
-            if (!cleanPath.startsWith('/')) cleanPath = '/' + cleanPath
-            fixedUrl = 'http://127.0.0.1:8000' + cleanPath
-       } else if (fixedUrl.startsWith('/')) {
-            fixedUrl = 'http://127.0.0.1:8000' + fixedUrl
-       }
+      let fixedUrl = res.data.logoUrl
+      // Fix localhost URL issues or relative path - FORCE 127.0.0.1:8000
+      if (fixedUrl.includes('localhost') || fixedUrl.includes('127.0.0.1')) {
+        // Replace any localhost/127 variants with clean 127.0.0.1:8000
+        // First remove protocol if exists to simplify
+        let cleanPath = fixedUrl.replace(/^https?:\/\/[^/]+/, '')
+        // If it was just a domain, cleanPath might be empty? No, usually creates path.
+        if (!cleanPath.startsWith('/')) cleanPath = '/' + cleanPath
+        fixedUrl = 'http://127.0.0.1:8000' + cleanPath
+      } else if (fixedUrl.startsWith('/')) {
+        fixedUrl = 'http://127.0.0.1:8000' + fixedUrl
+      }
 
       settings.value.logoUrl = fixedUrl
 
@@ -964,7 +1327,7 @@ const handleLogoUpload = async (event) => {
     console.error('Logo upload error:', error)
     $q.notify({
       type: 'negative',
-      message: error.response?.data?.message || 'Failed to upload logo'
+      message: error.response?.data?.message || 'Failed to upload logo',
     })
   }
 }
@@ -983,183 +1346,186 @@ const removeLogo = async () => {
     console.error('Logo removal error:', error)
     $q.notify({
       type: 'negative',
-      message: error.response?.data?.message || 'Failed to remove logo'
+      message: error.response?.data?.message || 'Failed to remove logo',
     })
   }
 }
 
 // Admin Profile State
 const adminProfile = ref({
-    name: '',
-    email: '',
-    current_password: '',
-    password: '',
-    password_confirmation: ''
+  name: '',
+  email: '',
+  current_password: '',
+  password: '',
+  password_confirmation: '',
 })
 
 // Fetch Data
 onMounted(async () => {
-    // 1. Fetch User Profile
-    try {
-        const response = await api.get('/user')
-        if (response.data) {
-            adminProfile.value.name = response.data.name
-            adminProfile.value.email = response.data.email
+  // 1. Fetch User Profile
+  try {
+    const response = await api.get('/user')
+    if (response.data) {
+      adminProfile.value.name = response.data.name
+      adminProfile.value.email = response.data.email
+    }
+  } catch (error) {
+    console.error('Failed to fetch user', error)
+    $q.notify({ type: 'negative', message: 'Failed to load user profile' })
+  }
+
+  // 2. Fetch System Settings
+  try {
+    const res = await api.get('/v1/admin/settings')
+    const data = res.data
+    if (data) {
+      Object.keys(settings.value).forEach((key) => {
+        if (data[key] !== undefined) {
+          if (typeof settings.value[key] === 'boolean') {
+            settings.value[key] = data[key] === '1' || data[key] === 'true' || data[key] === true
+          } else {
+            settings.value[key] = data[key]
+          }
         }
-    } catch (error) {
-        console.error('Failed to fetch user', error)
-        $q.notify({ type: 'negative', message: 'Failed to load user profile' })
+      })
+      // Force default #01 if empty
+      if (!settings.value.registrationNo) settings.value.registrationNo = '#01'
+
+      // Fix Logo URL on load - FORCE 127.0.0.1:8000
+      if (settings.value.logoUrl) {
+        let url = settings.value.logoUrl
+        if (url.includes('localhost') || url.includes('127.0.0.1')) {
+          let cleanPath = url.replace(/^https?:\/\/[^/]+/, '')
+          if (!cleanPath.startsWith('/')) cleanPath = '/' + cleanPath
+          settings.value.logoUrl = 'http://127.0.0.1:8000' + cleanPath
+        } else if (url.startsWith('/')) {
+          settings.value.logoUrl = 'http://127.0.0.1:8000' + url
+        }
+      }
     }
-
-    // 2. Fetch System Settings
-    try {
-        const res = await api.get('/v1/admin/settings')
-        const data = res.data
-        if (data) {
-             Object.keys(settings.value).forEach(key => {
-                 if (data[key] !== undefined) {
-                     if (typeof settings.value[key] === 'boolean') {
-                         settings.value[key] = (data[key] === '1' || data[key] === 'true' || data[key] === true)
-                     } else {
-                         settings.value[key] = data[key]
-                     }
-                 }
-             })
-             // Force default #01 if empty
-             if (!settings.value.registrationNo) settings.value.registrationNo = '#01'
-
-             // Fix Logo URL on load - FORCE 127.0.0.1:8000
-             if (settings.value.logoUrl) {
-                let url = settings.value.logoUrl
-                if (url.includes('localhost') || url.includes('127.0.0.1')) {
-                    let cleanPath = url.replace(/^https?:\/\/[^/]+/, '')
-                    if (!cleanPath.startsWith('/')) cleanPath = '/' + cleanPath
-                    settings.value.logoUrl = 'http://127.0.0.1:8000' + cleanPath
-                } else if (url.startsWith('/')) {
-                     settings.value.logoUrl = 'http://127.0.0.1:8000' + url
-                }
-             }
-         }
-         // Calculate days/hours from timeout
-         if (settings.value.extraClassVisibilityTimeout !== undefined) {
-             const total = parseInt(settings.value.extraClassVisibilityTimeout)
-             settings.value.extraClassVisibilityDays = Math.floor(total / 24)
-             settings.value.extraClassVisibilityHours = total % 24
-         }
-    } catch (e) {
-        console.error('Failed to fetch settings', e)
-    } finally {
-        loadingSettings.value = false // Always set loading to false after attempt
+    // Calculate days/hours from timeout
+    if (settings.value.extraClassVisibilityTimeout !== undefined) {
+      const total = parseInt(settings.value.extraClassVisibilityTimeout)
+      settings.value.extraClassVisibilityDays = Math.floor(total / 24)
+      settings.value.extraClassVisibilityHours = total % 24
     }
+  } catch (e) {
+    console.error('Failed to fetch settings', e)
+  } finally {
+    loadingSettings.value = false // Always set loading to false after attempt
+  }
 
-    // 3. Fetch Admins (Background)
-    fetchAdmins()
+  // 3. Fetch Admins (Background)
+  fetchAdmins()
 })
 
 // Save Institute Settings
 const saveSettings = async () => {
   $q.loading.show({ message: 'Saving Settings...' })
   try {
-      // Calculate timeout
-      settings.value.extraClassVisibilityTimeout = (settings.value.extraClassVisibilityDays || 0) * 24 + (settings.value.extraClassVisibilityHours || 0)
+    // Calculate timeout
+    settings.value.extraClassVisibilityTimeout =
+      (settings.value.extraClassVisibilityDays || 0) * 24 +
+      (settings.value.extraClassVisibilityHours || 0)
 
-      await api.post('/v1/admin/settings', settings.value)
+    await api.post('/v1/admin/settings', settings.value)
 
-      // Update the settings store to reflect changes immediately
-      if (settings.value.instituteName) {
-          settingsStore.instituteName = settings.value.instituteName
-          localStorage.setItem('instituteName', settings.value.instituteName)
-      }
-      if (settings.value.appName) {
-          settingsStore.appName = settings.value.appName
-          localStorage.setItem('appName', settings.value.appName)
-      }
-      if (settings.value.instituteLogo) {
-          settingsStore.instituteLogo = settings.value.instituteLogo
-          localStorage.setItem('instituteLogo', settings.value.instituteLogo)
-      }
+    // Update the settings store to reflect changes immediately
+    if (settings.value.instituteName) {
+      settingsStore.instituteName = settings.value.instituteName
+      localStorage.setItem('instituteName', settings.value.instituteName)
+    }
+    if (settings.value.appName) {
+      settingsStore.appName = settings.value.appName
+      localStorage.setItem('appName', settings.value.appName)
+    }
+    if (settings.value.instituteLogo) {
+      settingsStore.instituteLogo = settings.value.instituteLogo
+      localStorage.setItem('instituteLogo', settings.value.instituteLogo)
+    }
 
-      $q.notify({ type: 'positive', message: 'Settings saved successfully!' })
+    $q.notify({ type: 'positive', message: 'Settings saved successfully!' })
   } catch (e) {
-      console.error(e)
-      $q.notify({ type: 'negative', message: 'Failed to save settings' })
+    console.error(e)
+    $q.notify({ type: 'negative', message: 'Failed to save settings' })
   } finally {
-      $q.loading.hide()
+    $q.loading.hide()
   }
 }
 
 // Update Admin Profile (Real API)
 const updateAdminProfile = async () => {
-    if (adminProfile.value.password && adminProfile.value.password !== adminProfile.value.password_confirmation) {
-        $q.notify({ type: 'warning', message: 'Passwords do not match' })
-        return
+  if (
+    adminProfile.value.password &&
+    adminProfile.value.password !== adminProfile.value.password_confirmation
+  ) {
+    $q.notify({ type: 'warning', message: 'Passwords do not match' })
+    return
+  }
+
+  loadingProfile.value = true
+  try {
+    const payload = {
+      name: adminProfile.value.name,
+      email: adminProfile.value.email,
+      current_password: adminProfile.value.current_password,
+    }
+    if (adminProfile.value.password) {
+      payload.password = adminProfile.value.password
+      payload.password_confirmation = adminProfile.value.password_confirmation
     }
 
-    loadingProfile.value = true
-    try {
-        const payload = {
-            name: adminProfile.value.name,
-            email: adminProfile.value.email,
-            current_password: adminProfile.value.current_password
-        }
-        if (adminProfile.value.password) {
-            payload.password = adminProfile.value.password
-            payload.password_confirmation = adminProfile.value.password_confirmation
-        }
+    await api.put('/user/profile', payload)
 
-        await api.put('/user/profile', payload)
+    $q.notify({ type: 'positive', message: 'Profile Updated Successfully' })
 
-        $q.notify({ type: 'positive', message: 'Profile Updated Successfully' })
-
-        // Clear password fields on success
-        adminProfile.value.password = ''
-        adminProfile.value.password_confirmation = ''
-
-    } catch (error) {
-        console.error('Update failed', error)
-        let msg = 'Update Failed'
-        if (error.response && error.response.data && error.response.data.errors) {
-            // Join errors if available
-            msg = Object.values(error.response.data.errors).flat().join(', ')
-        } else if (error.response && error.response.data.message) {
-            msg = error.response.data.message
-        }
-        $q.notify({ type: 'negative', message: msg })
-    } finally {
-        loadingProfile.value = false
+    // Clear password fields on success
+    adminProfile.value.password = ''
+    adminProfile.value.password_confirmation = ''
+  } catch (error) {
+    console.error('Update failed', error)
+    let msg = 'Update Failed'
+    if (error.response && error.response.data && error.response.data.errors) {
+      // Join errors if available
+      msg = Object.values(error.response.data.errors).flat().join(', ')
+    } else if (error.response && error.response.data.message) {
+      msg = error.response.data.message
     }
+    $q.notify({ type: 'negative', message: msg })
+  } finally {
+    loadingProfile.value = false
+  }
 }
 
 const logout = async () => {
-    $q.dialog({
-        title: 'Confirm Logout',
-        message: 'Are you sure you want to log out?',
-        cancel: true,
-        persistent: true
-    }).onOk(async () => {
-         try {
-             // Optional: Call logout endpoint if exists
-             // await api.post('/logout')
-         } catch (e) {
-             console.error('Logout error', e)
-         } finally {
-             // Clear any stored tokens
-             localStorage.removeItem('token')
-             localStorage.removeItem('user') // clear user data if any
+  $q.dialog({
+    title: 'Confirm Logout',
+    message: 'Are you sure you want to log out?',
+    cancel: true,
+    persistent: true,
+  }).onOk(async () => {
+    try {
+      // Optional: Call logout endpoint if exists
+      // await api.post('/logout')
+    } catch (e) {
+      console.error('Logout error', e)
+    } finally {
+      // Clear any stored tokens
+      localStorage.removeItem('token')
+      localStorage.removeItem('user') // clear user data if any
 
-             $q.notify({ type: 'info', message: 'Logged out successfully' })
+      $q.notify({ type: 'info', message: 'Logged out successfully' })
 
-             // Immediate redirect to login, replace history so user cannot go back
-             router.replace('/login')
-         }
-    })
+      // Immediate redirect to login, replace history so user cannot go back
+      router.replace('/login')
+    }
+  })
 }
 
-
 const canEditSettings = computed(() => {
-    const user = authStore.user
-    if (!user) return false
-    if (user.is_super_admin) return true
-    return (user.permissions || []).includes('settings_edit')
+  const user = authStore.user
+  if (!user) return false
+  if (user.is_super_admin) return true
+  return (user.permissions || []).includes('settings_edit')
 })
 </script>

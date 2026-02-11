@@ -130,6 +130,9 @@ Route::prefix('v1')->group(function () {
              Route::put('admin/admins/{id}', [App\Http\Controllers\Api\AdminController::class, 'update']);
              Route::delete('admin/admins/{id}', [App\Http\Controllers\Api\AdminController::class, 'destroy']);
 
+             // Backup
+             Route::post('admin/backup/run', [App\Http\Controllers\Api\Admin\BackupController::class, 'run']);
+
              Route::get('admin/settings', [App\Http\Controllers\Api\SystemSettingController::class, 'index']);
              Route::post('admin/settings', [App\Http\Controllers\Api\SystemSettingController::class, 'update']);
         });

@@ -24,3 +24,18 @@ Schedule::command('attendance:check-monthly')->lastDayOfMonth('23:00');
 
 // Schedule Unpaid Fees Check - Daily at 01:00 AM
 Schedule::command('fees:check-unpaid')->dailyAt('01:00');
+
+// Schedule Database Backup - Daily at 03:00 AM
+// Schedule Database Backup
+$frequency = SystemSetting::where('key', 'backupFrequency')->value('value');
+$backupCommand = Schedule::command('backup:database');
+
+if ($frequency === 'monthly') {
+    $backupCommand->monthlyOn(1, '03:00'); // Run on 1st of month
+} elseif ($frequency === 'weekly') {
+    $backupCommand->weeklyOn(1, '03:00'); // Run on Mondays
+} else {
+    // Default to daily
+    $backupCommand->dailyAt('03:00');
+}
+
