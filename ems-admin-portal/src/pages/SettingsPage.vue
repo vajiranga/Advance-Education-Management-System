@@ -564,6 +564,15 @@
                       bg-color="white"
                       style="width: 150px"
                     />
+                    <q-input
+                      v-model.number="settings.notificationRetentionDays"
+                      label="Notif. Keep (Days)"
+                      type="number"
+                      dense
+                      outlined
+                      bg-color="white"
+                      style="width: 150px"
+                    />
                     <q-toggle
                       label="Maintenance Mode"
                       color="red"

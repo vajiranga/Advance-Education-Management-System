@@ -7,7 +7,7 @@
         <div class="text-subtitle1 text-grey-7">Overview of your Educational Empire</div>
       </div>
       <div class="row q-gutter-sm">
-        <q-btn v-if="authStore.hasPermission('dashboard_export')" icon="download" label="Export Report" color="primary" flat class="glass-btn" />
+
         <q-btn
           v-if="authStore.hasPermission('dashboard_broadcast')"
           icon="campaign"

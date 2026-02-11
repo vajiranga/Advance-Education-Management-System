@@ -150,16 +150,17 @@ class EnrollmentController extends Controller
               });
         })->with(['teacher', 'subject', 'batch', 'hall', 'parentCourse'])->withCount('students')->orderBy('created_at', 'desc')->get();
 
-        // Filter out expired Extra Classes (Older than Today) AND Attach Payment Status
-        $today = now()->format('Y-m-d');
+        // Filter out expired Extra Classes based on System Setting (Default 3 days)
+        $visDays = (int) (\App\Models\SystemSetting::where('key', 'extraClassVisibilityDays')->value('value') ?? 3);
+        $cutoffDate = now()->subDays($visDays)->format('Y-m-d');
         $currentMonth = now()->format('Y-m');
 
-        $filtered = $courses->map(function($course) use ($today, $currentMonth, $user) {
+        $filtered = $courses->map(function($course) use ($cutoffDate, $currentMonth, $user) {
             // 1. Check Expiry for Extra Classes
             if ($course->type === 'extra') {
                 $schedule = $course->schedule;
-                if (isset($schedule['date']) && $schedule['date'] < $today) {
-                    return null; // Expired
+                if (isset($schedule['date']) && $schedule['date'] < $cutoffDate) {
+                    return null; // Expired (older than 3 days)
                 }
             }
 

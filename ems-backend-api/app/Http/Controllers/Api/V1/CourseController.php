@@ -73,7 +73,7 @@ class CourseController extends Controller
                     ->get();
 
                 // Apply Extra Class Visibility Filter if 'all' is requested (usually for dropdowns)
-                $visDays = (int) (\App\Models\SystemSetting::where('key', 'extraClassVisibilityDays')->value('value') ?? 0);
+                $visDays = (int) (\App\Models\SystemSetting::where('key', 'extraClassVisibilityDays')->value('value') ?? 3);
                 $visHours = (int) (\App\Models\SystemSetting::where('key', 'extraClassVisibilityHours')->value('value') ?? 2);
                 $now = now();
 
@@ -553,7 +553,7 @@ class CourseController extends Controller
                     // (Transl: In the dropdown list, extra classes should disappear after that day based on logic)
 
                     // Actually, let's just use the settings.
-                    $visDays = (int) (SystemSetting::where('key', 'extraClassVisibilityDays')->value('value') ?? 0);
+                    $visDays = (int) (SystemSetting::where('key', 'extraClassVisibilityDays')->value('value') ?? 3);
                     $visHours = (int) (SystemSetting::where('key', 'extraClassVisibilityHours')->value('value') ?? 2);
 
                     // End Time of the class

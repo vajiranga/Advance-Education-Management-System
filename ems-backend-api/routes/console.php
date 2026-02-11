@@ -39,3 +39,5 @@ if ($frequency === 'monthly') {
     $backupCommand->dailyAt('03:00');
 }
 
+// Schedule Notification Cleanup - Daily at 04:00 AM
+Schedule::command('notifications:clean')->dailyAt('04:00');

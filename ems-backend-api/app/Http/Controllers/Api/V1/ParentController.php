@@ -122,10 +122,10 @@ class ParentController extends Controller
                  return [
                      'title' => 'Extra Class Added: ' . $course->name,
                      'status' => 'info', // To be handled by frontend
-                     'date' => $course->created_at->format('Y-m-d') 
+                     'date' => $course->created_at->format('Y-m-d')
                  ];
              });
-        
+
         // Merge and Sort
         $recentActivity = collect($attendanceActivity)->merge($extraClassActivity)
             ->sortByDesc('date')
@@ -167,17 +167,25 @@ class ParentController extends Controller
         // Format similar to StudentController logic
         $formatted = $courses->map(function ($course) {
 
-            // Sub/Extra classes logic could be here (mock/DB)
-            $extraClasses = $course->extraClasses->map(function($sub) use ($course) {
+            // Filter out extra classes based on System Setting (Default 3 days)
+            $visDays = (int) (\App\Models\SystemSetting::where('key', 'extraClassVisibilityDays')->value('value') ?? 3);
+            $cutoffDate = now()->subDays($visDays)->format('Y-m-d');
+
+            $extraClasses = $course->extraClasses->filter(function($sub) use ($cutoffDate) {
+                 if (isset($sub->schedule['date'])) {
+                     return $sub->schedule['date'] >= $cutoffDate;
+                 }
+                 return true;
+            })->map(function($sub) use ($course) {
                  return [
                     'id' => $sub->id,
                     'name' => 'Extra: ' . $course->name,
                     'parent_course' => $course,
                     'type' => 'extra',
                     'schedule' => [
-                        'date' => $sub->date,
-                        'start' => $sub->start_time,
-                        'end' => $sub->end_time,
+                        'date' => $sub->schedule['date'] ?? null,
+                        'start' => $sub->schedule['start'] ?? null,
+                        'end' => $sub->schedule['end'] ?? null,
                         'type' => 'one-off'
                     ],
                     'hall' => $sub->hall
