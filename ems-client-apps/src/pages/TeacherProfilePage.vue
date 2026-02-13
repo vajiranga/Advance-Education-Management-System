@@ -17,42 +17,27 @@
               <div class="text-caption text-uppercase q-mt-xs" :class="$q.dark.isActive ? 'text-grey-5' : 'text-grey-7'">{{ form.role }}</div>
           </q-card>
 
-          <!-- Digital ID Card Section -->
-          <q-card class="col-auto q-pa-none shadow-2 rounded-borders overflow-hidden" :class="$q.dark.isActive ? 'bg-dark border-dark' : 'bg-white'">
-             <q-card-section>
-                 <div class="text-subtitle1 text-weight-bold q-mb-sm" :class="$q.dark.isActive ? 'text-white' : 'text-grey-9'">Digital ID Card</div>
+          <!-- Barcode / Download Section -->
+          <q-card class="col-auto text-center q-pa-lg shadow-2 rounded-borders" :class="$q.dark.isActive ? 'bg-dark border-dark' : 'bg-white'">
+             <div class="text-subtitle1 text-weight-bold q-mb-md" :class="$q.dark.isActive ? 'text-white' : 'text-grey-9'">Teacher ID</div>
 
-                 <!-- ID Card Preview Area -->
-                 <div class="row justify-center q-py-sm">
-                     <div ref="idCardRef" class="id-card-container relative-position shadow-5" :style="idCardStyle">
-                         <!-- Background Pattern/Design -->
-                         <div class="absolute-full bg-pattern"></div>
+             <!-- Barcode Display -->
+             <div class="q-pa-sm rounded-borders inline-block q-mb-md" :class="$q.dark.isActive ? 'bg-white' : 'bg-grey-2'">
+               <div style="font-family: 'Libre Barcode 39', sans-serif; font-size: 48px; line-height: 1; color: black !important;">
+                 *{{ displayTeacherId }}*
+               </div>
+             </div>
+             <div class="text-caption q-mb-md" :class="$q.dark.isActive ? 'text-grey-5' : 'text-grey'">Scan at Entrance</div>
 
-                         <!-- Card Content -->
-                         <div class="relative-position full-height column items-center justify-center text-center q-pa-md text-white">
-                             <div class="text-h6 text-uppercase text-weight-bolder letter-spacing-1 q-mb-xs">Teacher ID</div>
-                             <q-avatar size="60px" class="bg-white text-primary q-my-sm shadow-2">
-                                <span class="text-weight-bold text-h5">{{ form.name.charAt(0) }}</span>
-                             </q-avatar>
-                             <div class="text-subtitle1 text-weight-bold q-mt-xs">{{ authStore.user?.name }}</div>
-                             <div class="text-h5 text-weight-bolder letter-spacing-2 bg-white text-primary q-px-sm rounded-borders q-mt-sm">{{ displayTeacherId }}</div>
-                             <div class="text-caption q-mt-md opacity-80">Certified Teacher of {{ $q.dark.isActive ? 'Institute' : 'Our Institute' }}</div>
-                         </div>
-                     </div>
-                 </div>
-             </q-card-section>
-             <q-separator :class="$q.dark.isActive ? 'bg-grey-8' : ''" />
-             <q-card-actions align="center" class="q-py-md">
-                 <q-btn
-                    icon="download"
-                    label="Download ID Card"
-                    color="primary"
-                    unelevated
-                    class="full-width"
-                    @click="downloadIdCard"
-                    :loading="downloading"
-                 />
-             </q-card-actions>
+             <q-btn
+                icon="download"
+                label="Download ID Card"
+                color="primary"
+                unelevated
+                class="full-width"
+                @click="downloadIdCard"
+                :loading="downloading"
+             />
           </q-card>
       </div>
 
@@ -172,6 +157,55 @@
         </q-card>
       </div>
     </div>
+
+    <!-- Hidden ID Card Template (Matches Student ID Layout) -->
+    <div style="position: fixed; left: -9999px; top: 0;">
+        <div ref="idCardRef" id="id-card-element" style="width: 400px; height: 280px; background: linear-gradient(135deg, #009688 0%, #004d40 100%); color: white; border-radius: 12px; padding: 20px; font-family: 'Roboto', sans-serif; position: relative; overflow: hidden; box-shadow: 0 4px 8px rgba(0,0,0,0.2);">
+            <!-- Decorative Circle -->
+            <div style="position: absolute; top: -50px; right: -50px; width: 150px; height: 150px; background: rgba(255,255,255,0.1); border-radius: 50%;"></div>
+
+            <div class="row items-center no-wrap full-height">
+                 <!-- Photo Placeholder -->
+                  <div style="width: 100px; height: 100px; background: white; border-radius: 8px; margin-right: 20px; display: flex; align-items: center; justify-content: center; color: #009688; font-weight: bold; font-size: 40px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                       {{ authStore.user?.name?.charAt(0) || 'T' }}
+                  </div>
+
+                  <!-- Details -->
+                  <div style="flex: 1; z-index: 1;">
+                       <div style="font-size: 12px; opacity: 0.8; letter-spacing: 1px; margin-bottom: 4px;">EMS TEACHER IDENTITY</div>
+                       <div style="font-size: 20px; font-weight: bold; margin-bottom: 4px; line-height: 1.2;">{{ authStore.user?.name || 'Teacher Name' }}</div>
+                       <div style="font-size: 14px; opacity: 0.9; margin-bottom: 12px;">{{ displayTeacherId }}</div>
+
+                       <div class="row q-col-gutter-xs">
+                            <div class="col-6">
+                                <div style="font-size: 9px; opacity: 0.7; text-transform: uppercase;">Role</div>
+                                <div style="font-size: 13px; font-weight: 500; text-transform: uppercase;">{{ authStore.user?.role || 'TEACHER' }}</div>
+                            </div>
+                            <div class="col-6">
+                                <div style="font-size: 9px; opacity: 0.7; text-transform: uppercase;">Email</div>
+                                <div style="font-size: 11px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px;">{{ authStore.user?.email || 'N/A' }}</div>
+                            </div>
+                       </div>
+
+                       <div class="row q-col-gutter-xs q-mt-xs">
+                           <div class="col-6">
+                               <div style="font-size: 9px; opacity: 0.7; text-transform: uppercase;">Phone</div>
+                               <div style="font-size: 13px; font-weight: 500;">{{ authStore.user?.phone || 'N/A' }}</div>
+                           </div>
+                           <div class="col-6">
+                               <div style="font-size: 9px; opacity: 0.7; text-transform: uppercase;">Year</div>
+                               <div style="font-size: 13px; font-weight: 500;">2026</div>
+                           </div>
+                       </div>
+                  </div>
+            </div>
+
+            <!-- Barcode Footer -->
+            <div style="position: absolute; bottom: 15px; left: 20px; right: 20px; background: white; padding: 4px 10px; text-align: center; border-radius: 6px;">
+                 <div style="font-family: 'Libre Barcode 39', sans-serif; font-size: 36px; color: black; line-height: 1; margin-bottom: -5px;">*{{ displayTeacherId }}*</div>
+            </div>
+        </div>
+    </div>
   </q-page>
 </template>
 
@@ -206,13 +240,7 @@ const displayTeacherId = computed(() => {
     return id
 })
 
-const idCardStyle = computed(() => ({
-    width: '300px',
-    height: '180px',
-    borderRadius: '12px',
-    background: 'linear-gradient(135deg, #009688 0%, #4db6ac 100%)', // Teal Gradient
-    boxShadow: '0 4px 15px rgba(0,0,0,0.2)'
-}))
+
 
 onMounted(() => {
   if (authStore.user) {
@@ -272,6 +300,8 @@ const downloadIdCard = async () => {
 </script>
 
 <style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Libre+Barcode+39&display=swap');
+
 .bg-pattern {
     background-image: radial-gradient(circle at 20% 20%, rgba(255,255,255,0.1) 0%, transparent 20%),
                       radial-gradient(circle at 80% 80%, rgba(255,255,255,0.1) 0%, transparent 20%);
