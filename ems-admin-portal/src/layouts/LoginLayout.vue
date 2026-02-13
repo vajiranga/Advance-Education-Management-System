@@ -1,8 +1,8 @@
 <template>
   <q-layout view="lHh Lpr lFf">
     <q-page-container class="login-container">
-      <!-- 3D Background Container -->
-      <div ref="vantaRef" class="vanta-bg"></div>
+      <!-- Lightweight CSS Background -->
+      <div class="simple-bg"></div>
 
       <div class="row justify-center items-center window-height relative-position z-top">
         <div class="col-11 col-sm-8 col-md-6 col-lg-4">
@@ -58,59 +58,25 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue'
-import { useRouter } from 'vue-router'
-import * as THREE from 'three'
-import NET from 'vanta/dist/vanta.net.min'
-
+import { ref } from 'vue'
 import { useAuthStore } from 'stores/auth-store'
 import { useSettingsStore } from 'stores/settings-store'
 import { useQuasar } from 'quasar'
 
-const vantaRef = ref(null)
-const vantaEffect = ref(null)
-
 const email = ref('')
 const password = ref('')
 const rememberMe = ref(false)
-const router = useRouter()
 const authStore = useAuthStore()
 const settings = useSettingsStore()
 const $q = useQuasar()
-
-onMounted(() => {
-  window.THREE = THREE
-  try {
-      vantaEffect.value = NET({
-        el: vantaRef.value,
-        THREE: THREE,
-        mouseControls: true,
-        touchControls: true,
-        gyroControls: false,
-        minHeight: 200.00,
-        minWidth: 200.00,
-        scale: 1.00,
-        scaleMobile: 1.00,
-        color: 0x2563eb,
-        backgroundColor: 0xf8fafc,
-        points: 12.00,
-        maxDistance: 22.00,
-        spacing: 16.00
-      })
-  } catch(e) { console.error('Vanta Error:', e) }
-})
-
-onBeforeUnmount(() => {
-  if (vantaEffect.value) {
-    vantaEffect.value.destroy()
-  }
-})
 
 const onSubmit = async () => {
   try {
       await authStore.login(email.value, password.value)
       $q.notify({ type: 'positive', message: 'Welcome Back, Admin!' })
-      router.push('/attendance') // Direct to Attendance as requested
+      // Force full reload to ensure auth state and headers are correctly initialized
+      // This solves the issue where the page needs a refresh to load data
+      window.location.href = '/attendance'
   } catch (e) {
       console.error(e)
       $q.notify({ type: 'negative', message: e.message || 'Login Failed. Check credentials.' })
@@ -121,19 +87,24 @@ const onSubmit = async () => {
 <style lang="scss" scoped>
 .login-container {
   overflow: hidden;
+  position: relative;
 }
 
-.vanta-bg {
+.simple-bg {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
   z-index: 0;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
 }
 
 .glass-panel {
   border-radius: 16px;
-  /* Use the global glass-panel class for transparency */
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
 }
 </style>
