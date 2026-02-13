@@ -21,25 +21,42 @@ export const useUserStore = defineStore('user', () => {
         }
     }
 
-    async function fetchStudents() {
+    async function fetchStudents(params = {}) {
         loading.value = true
         try {
-            const res = await api.get('/v1/users', { params: { role: 'student' } })
+            // Default params
+            const query = {
+                role: 'student',
+                page: params.page || 1,
+                per_page: params.rowsPerPage || 20,
+                search: params.filter || ''
+            }
+            const res = await api.get('/v1/users', { params: query })
             students.value = res.data.data
+            return res.data // Return full object for pagination meta
         } catch (err) {
             console.error(err)
+            return null
         } finally {
             loading.value = false
         }
     }
 
-    async function fetchParents() {
+    async function fetchParents(params = {}) {
         loading.value = true
         try {
-            const res = await api.get('/v1/users', { params: { role: 'parent' } })
+            const query = {
+                role: 'parent',
+                page: params.page || 1,
+                per_page: params.rowsPerPage || 20,
+                search: params.filter || ''
+            }
+            const res = await api.get('/v1/users', { params: query })
             parents.value = res.data.data
+            return res.data
         } catch (err) {
             console.error(err)
+            return null
         } finally {
             loading.value = false
         }

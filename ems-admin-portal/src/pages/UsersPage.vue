@@ -98,8 +98,10 @@
                 :filter="filter"
                 selection="multiple"
                 v-model:selected="selectedStudents"
-                :pagination="tablePagination"
-                :rows-per-page-options="[100, 200, 500, 1000, 0]"
+                v-model:pagination="studentPagination"
+                @request="onRequestStudents"
+                :loading="loading"
+                :rows-per-page-options="[20, 50, 100, 200, 500]"
               >
                 <template v-slot:top-right>
                   <div class="row q-gutter-sm">
@@ -189,8 +191,10 @@
                 :columns="parentCols"
                 row-key="id"
                 :filter="filter"
-                :pagination="tablePagination"
-                :rows-per-page-options="[100, 200, 500, 1000, 0]"
+                v-model:pagination="parentPagination"
+                @request="onRequestParents"
+                :loading="loading"
+                :rows-per-page-options="[20, 50, 100, 200, 500]"
               >
                 <template v-slot:top-right>
                   <q-input borderless dense debounce="300" v-model="filter" placeholder="Search">
@@ -565,10 +569,80 @@ const parentCols = [
   { name: 'actions', label: 'Actions', align: 'right' },
 ]
 
+const studentPagination = ref({
+  sortBy: 'desc',
+  descending: false,
+  page: 1,
+  rowsPerPage: 20,
+  rowsNumber: 10 // Dummy until loaded
+})
+
+async function onRequestStudents(props) {
+  const { page, rowsPerPage, sortBy, descending } = props.pagination
+  const filterVal = props.filter
+
+  loading.value = true
+
+  try {
+     const res = await userStore.fetchStudents({
+         page,
+         rowsPerPage,
+         filter: filterVal
+     })
+
+     if (res) {
+         // Update pagination settings from response
+         studentPagination.value.rowsNumber = res.total
+         studentPagination.value.page = res.current_page
+         studentPagination.value.rowsPerPage = parseInt(res.per_page)
+         studentPagination.value.sortBy = sortBy
+         studentPagination.value.descending = descending
+     }
+  } catch(e) {
+      console.error(e)
+  } finally {
+      loading.value = false
+  }
+}
+
+const parentPagination = ref({
+  sortBy: 'desc',
+  descending: false,
+  page: 1,
+  rowsPerPage: 20,
+  rowsNumber: 10
+})
+
+async function onRequestParents(props) {
+  const { page, rowsPerPage, sortBy, descending } = props.pagination
+  const filterVal = props.filter
+
+  loading.value = true
+  try {
+     const res = await userStore.fetchParents({
+         page,
+         rowsPerPage,
+         filter: filterVal
+     })
+     if (res) {
+         parentPagination.value.rowsNumber = res.total
+         parentPagination.value.page = res.current_page
+         parentPagination.value.rowsPerPage = parseInt(res.per_page)
+         parentPagination.value.sortBy = sortBy
+         parentPagination.value.descending = descending
+     }
+  } catch(e) {
+      console.error(e)
+  } finally {
+      loading.value = false
+  }
+}
+
 onMounted(async () => {
   await userStore.fetchTeachers()
-  await userStore.fetchStudents()
-  await userStore.fetchParents()
+  // Students & Parents loaded via q-table @request on mount usually, but we can trigger specific initial load if needed
+  onRequestStudents({ pagination: studentPagination.value, filter: filter.value })
+  onRequestParents({ pagination: parentPagination.value, filter: filter.value })
 })
 
 function togglePassword(id) {

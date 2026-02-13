@@ -135,7 +135,7 @@
             </div>
           </q-card-section>
           <div class="q-pa-md">
-            <VueApexCharts type="area" height="300" :options="chartOptions" :series="chartSeries" />
+            <VueApexCharts v-if="isActive && chartSeries.length > 0" type="area" height="300" :options="chartOptions" :series="chartSeries" />
           </div>
         </q-card>
       </div>
@@ -144,7 +144,7 @@
         <q-card class="full-height">
           <q-card-section><div class="text-h6">Payment Methods</div></q-card-section>
           <div class="q-pa-md flex flex-center">
-            <VueApexCharts type="donut" height="250" :options="pieOptions" :series="pieSeries" />
+            <VueApexCharts v-if="isActive && pieSeries.length > 0" type="donut" height="250" :options="pieOptions" :series="pieSeries" />
           </div>
         </q-card>
       </div>
@@ -204,8 +204,8 @@
           label="Pending Verification"
           icon="hourglass_empty"
         >
-          <q-badge color="orange" floating v-if="pendingTransactions.length > 0">{{
-            pendingTransactions.length
+          <q-badge color="orange" floating v-if="stats.pending_count > 0">{{
+            stats.pending_count
           }}</q-badge>
         </q-tab>
         <q-tab
@@ -278,41 +278,6 @@
           </div>
         </q-tab-panel>
 
-        <!-- Verify Dialog -->
-        <q-dialog v-model="showVerifyDialog">
-            <q-card style="min-width: 400px">
-                <q-card-section>
-                    <div class="text-h6">Verify Payment</div>
-                </q-card-section>
-                <q-card-section v-if="selectedPayment">
-                    <div class="text-subtitle1">{{ selectedPayment.student?.name }} ({{ selectedPayment.student?.username }})</div>
-                    <div class="text-h5 text-primary q-my-md">LKR {{ selectedPayment.amount }}</div>
-                    <div class="q-mb-sm">
-                        <strong>Type:</strong> {{ selectedPayment.type }}<br/>
-                        <strong>Note:</strong> {{ selectedPayment.note }}
-                    </div>
-
-                    <div class="row q-col-gutter-sm q-mb-md" v-if="selectedPayment.fees && selectedPayment.fees.length > 0">
-                        <div class="col-12 text-weight-bold">Payment Covers:</div>
-                        <!-- If we had fees relation loaded, we could list them. Since backend summary might not eager load fees deeper detail, relying on note or description for now unless we fetch details. -->
-                         <!-- Assuming 'courses' or similar might be needed. -->
-                    </div>
-
-                    <div v-if="selectedPayment.slip_image">
-                         <div class="text-weight-bold q-mb-xs">Payment Slip:</div>
-                         <q-img :src="selectedPayment.slip_image" style="max-height: 300px" class="rounded-borders" />
-                         <div class="row justify-end q-mt-sm">
-                            <q-btn flat icon="print" label="Print" @click="printReceipt(selectedPayment)" size="sm" />
-                         </div>
-                    </div>
-                </q-card-section>
-                <q-card-actions align="right">
-                    <q-btn flat label="Close" v-close-popup color="grey" />
-                    <q-btn flat label="Reject" color="negative" @click="confirmReject" />
-                    <q-btn unelevated label="Approve & Verify" color="green" @click="confirmVerify" :loading="processingVerify" />
-                </q-card-actions>
-            </q-card>
-        </q-dialog>
 
         <!-- All Transactions Tab (Recent Feed) -->
         <q-tab-panel name="all" class="q-pa-md">
@@ -1255,7 +1220,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch, computed } from 'vue' // Revert watch removal if needed or just keep cleaned
+import { ref, onMounted, watch, computed, onActivated, onDeactivated } from 'vue' // Revert watch removal if needed or just keep cleaned
 import { useFinanceStore } from 'stores/finance-store'
 import { api } from 'boot/axios' // Need raw api for search
 import { storeToRefs } from 'pinia'
@@ -1403,46 +1368,7 @@ const verificationNote = ref('')
 
 
 
-async function confirmVerify() {
-  if (!selectedPayment.value) return
-  processingVerify.value = true
-  try {
-    await financeStore.approvePayment(selectedPayment.value.id)
-    $q.notify({ type: 'positive', message: 'Payment Verified' })
-    showVerifyDialog.value = false
-    refreshAll() // Reload data
-  } catch (e) {
-    console.error(e)
-    $q.notify({ type: 'negative', message: 'Verification Failed' })
-  } finally {
-    processingVerify.value = false
-  }
-}
 
-async function confirmReject() {
-    if (!selectedPayment.value) return
-    // Maybe prompt for rejection note or reason? For now, standard reject.
-    $q.notify({
-        message: 'Reject this payment?',
-        color: 'negative',
-        actions: [
-            { label: 'Cancel', color: 'white', handler: () => { /* ... */ } },
-            { label: 'Reject', color: 'white', handler: async () => {
-                 processingVerify.value = true
-                 try {
-                    await financeStore.rejectPayment(selectedPayment.value.id, verificationNote.value)
-                    $q.notify({ type: 'info', message: 'Payment Rejected' })
-                    showVerifyDialog.value = false
-                    refreshAll()
-                 } catch (e) {
-                    console.error(e)
-                 } finally {
-                    processingVerify.value = false
-                 }
-            }}
-        ]
-    })
-}
 
 // Filter Logic
 const filterYear = ref(new Date().getFullYear())
@@ -1465,6 +1391,7 @@ const monthFilterOptions = [
   { label: 'August', value: 8 },
   { label: 'September', value: 9 },
   { label: 'October', value: 10 },
+  { label: 'November', value: 11 },
   { label: 'December', value: 12 },
 ]
 
@@ -1657,68 +1584,96 @@ const chartMetricOptions = [
   { label: 'New Students', value: 'students', type: 'count' },
 ]
 
+
+
 async function loadChartData() {
   await financeStore.fetchAnalytics({ year: chartYear.value })
 }
 
+// ------------------------------------------------------------------------
+// CHART STATE MANAGEMENT (Fix for ApexCharts 'querySelectorAll' error)
+// ------------------------------------------------------------------------
+const isActive = ref(true)
+
+function updateCharts() {
+  const newVal = analyticsData.value
+  const metric = chartMetric.value
+
+  if (newVal && newVal.chartData) {
+    // Academic Year Data
+    const metricOption = chartMetricOptions.find((o) => o.value === metric) || chartMetricOptions[0]
+    const isCurrency = metricOption?.type === 'currency'
+
+    // Safely update chart options
+    chartOptions.value = {
+      ...chartOptions.value,
+      xaxis: {
+        categories: newVal.chartData.labels || [],
+      },
+      yaxis: {
+        labels: {
+          formatter: (val) => {
+            if (!val || val === 0) return isCurrency ? 'LKR 0' : '0'
+            if (isCurrency) {
+              if (Math.abs(val) >= 1000) {
+                return 'LKR ' + (val / 1000).toFixed(1) + 'k'
+              }
+              return 'LKR ' + val.toFixed(0)
+            }
+            return val.toFixed(0)
+          },
+        },
+      },
+      tooltip: {
+        y: {
+          formatter: (val) => (isCurrency ? 'LKR ' + val.toLocaleString() : val.toString()),
+        },
+      },
+    }
+
+    // Safely update series
+    chartSeries.value = [
+      {
+        name: metricOption?.label || 'Value',
+        data: newVal.chartData.datasets[metric] || [],
+      },
+    ]
+  } else if (newVal && newVal.monthly) {
+    // Legacy Fallback
+    chartOptions.value = {
+      ...chartOptions.value,
+      xaxis: { categories: newVal.monthly.map((i) => i.month) },
+    }
+    chartSeries.value = [{ name: 'Revenue', data: newVal.monthly.map((i) => i.total) }]
+  }
+
+  // Update Pie Chart
+  if (newVal && newVal.methods) {
+    pieOptions.value = {
+      ...pieOptions.value,
+      labels: newVal.methods.map((m) => m.type),
+    }
+    pieSeries.value = newVal.methods.map((m) => m.count)
+  }
+}
+
+onActivated(() => {
+  isActive.value = true
+  // Force update when coming back
+  updateCharts()
+})
+
+onDeactivated(() => {
+  isActive.value = false
+})
+
 // Watch for analytics data to update chart
 watch(
   [() => analyticsData.value, chartMetric],
-  ([newVal, metric]) => {
-    if (newVal && newVal.chartData) {
-      // Academic Year Data
-      const metricOption = chartMetricOptions.find((o) => o.value === metric)
-      const isCurrency = metricOption?.type === 'currency'
-
-      chartOptions.value = {
-        ...chartOptions.value,
-        xaxis: {
-          categories: newVal.chartData.labels,
-        },
-        yaxis: {
-          labels: {
-            formatter: (val) => {
-              if (!val || val === 0) return isCurrency ? 'LKR 0' : '0'
-              if (isCurrency) {
-                // Format currency: show in thousands (k) if >= 1000
-                if (Math.abs(val) >= 1000) {
-                  return 'LKR ' + (val / 1000).toFixed(1) + 'k'
-                }
-                return 'LKR ' + val.toFixed(0)
-              }
-              return val.toFixed(0) // Count format
-            },
-          },
-        },
-        tooltip: {
-          y: {
-            formatter: (val) => (isCurrency ? 'LKR ' + val.toLocaleString() : val.toString()),
-          },
-        },
-      }
-      chartSeries.value = [
-        {
-          name: metricOption?.label || 'Value',
-          data: newVal.chartData.datasets[metric] || [],
-        },
-      ]
-    } else if (newVal && newVal.monthly) {
-      // Legacy Fallback (Should not happen with new backend)
-      chartOptions.value = {
-        ...chartOptions.value,
-        xaxis: { categories: newVal.monthly.map((i) => i.month) },
-      }
-      chartSeries.value = [{ name: 'Revenue', data: newVal.monthly.map((i) => i.total) }]
-    }
-
-    // Update Pie Chart for Payment Methods
-    if (newVal && newVal.methods) {
-      pieOptions.value = {
-        ...pieOptions.value,
-        labels: newVal.methods.map((m) => m.type),
-      }
-      pieSeries.value = newVal.methods.map((m) => m.count)
-    }
+  () => {
+    // Only update if the component is active in the DOM
+    if (!isActive.value) return
+    updateCharts()
   },
   { deep: true },
 )
@@ -1868,13 +1823,6 @@ function printAdminReceipt(payment, student, course) {
   printWindow.document.close()
 }
 
-
-
-// ... (existing functions) ...
-
-/* Update Imports - already done at top */
-
-/* Add Columns */
 const uncollectedColumns = [
   {
     name: 'student_name',
@@ -1999,22 +1947,62 @@ async function loadTopCourses(reset = false) {
   }
 }
 
-async function refreshAll() {
+async function loadInitialData() {
   refreshing.value = true
   try {
-    const params = apiParams.value
+    // Load Stats & Charts (Global Dashboard Data)
     await Promise.all([
-      financeStore.fetchTransactions(params), // Keeps stats cards updated with filters
-      loadRecentTransactions(false), // Updates the feed WITHOUT filters (Reset)
-      financeStore.fetchSettlements(params),
-      financeStore.fetchUncollectedFees(),
-      loadChartData(),
-      loadTopCourses(true),
+       financeStore.fetchTransactions(apiParams.value), // Updates Stats
+       loadChartData(),
+       loadTopCourses(true) // Top courses are on the dashboard, so load them.
     ])
-    $q.notify({ type: 'positive', message: 'Dashboard Updated', timeout: 500, position: 'top' })
   } finally {
     refreshing.value = false
   }
+}
+
+async function loadTabContent(val) {
+   const currentTab = val || tab.value
+   const params = apiParams.value
+
+   if (currentTab === 'pending') {
+      // Pending is now loaded via fetchTransactions (filtered view if needed)
+      // If we want SPECIFICALLY pending, we might need to ensure fetchTransactions is called with correct filters if the logic implies that.
+      // Current logic: fetchTransactions updates everything.
+      // But let's reload to be safe if it was stale.
+      await financeStore.fetchTransactions({ ...params, status: 'pending' })
+   }
+   else if (currentTab === 'all') {
+       if (allRecentTransactions.value.length === 0) {
+           await loadRecentTransactions(false)
+       }
+   }
+   else if (currentTab === 'uncollected') {
+       // Only load if empty or if needed (Simple caching check)
+       if (financeStore.uncollectedFees.length === 0) {
+           await loadUncollectedFees()
+       }
+   }
+   else if (currentTab === 'settlements') {
+       await financeStore.fetchSettlements(params)
+   }
+   else if (currentTab === 'class-status') {
+       // Class status depends on filters, so it might need manual trigger or check if filters are set
+       if (classFilter.value) {
+           await loadClassPaymentStatus()
+       }
+   }
+}
+
+watch(tab, (newTab) => {
+    loadTabContent(newTab)
+})
+
+async function refreshAll() {
+    // Manual Refresh Button logic
+    await loadInitialData()
+    await loadTabContent()
+    $q.notify({ type: 'positive', message: 'Dashboard Updated', timeout: 500, position: 'top' })
 }
 
 async function loadTeachers() {
@@ -2138,11 +2126,12 @@ onMounted(async () => {
   refreshAll()
   loadClassOptions()
   loadTeachers()
-  loadUncollectedFees()
+
 })
 
-watch(apiParams, () => {
-  refreshAll()
+watch(apiParams, async () => {
+   await loadInitialData()
+   await loadTabContent()
 })
 
 watch([uncollectedYear, uncollectedMonth], () => {

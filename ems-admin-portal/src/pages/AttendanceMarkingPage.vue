@@ -24,7 +24,10 @@
                                            <q-btn v-close-popup label="Close" color="primary" flat />
                                        </div>
                                    </q-date>
-                               </q-popup-proxy>
+                           </q-popup-proxy>
+                           </q-btn>
+                           <q-btn flat round dense icon="refresh" class="text-white" @click="fetchSessions" :loading="loadingSessions">
+                               <q-tooltip>Refresh Sessions</q-tooltip>
                            </q-btn>
                        </div>
                    </div>

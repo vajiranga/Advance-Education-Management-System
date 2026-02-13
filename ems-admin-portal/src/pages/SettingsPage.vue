@@ -2,14 +2,18 @@
   <q-page class="q-pa-md">
     <div class="row items-center justify-between q-mb-md">
       <div class="text-h5">System Settings</div>
-      <!-- This button saves the Institute Settings (General, Branding, etc) -->
-      <q-btn
-        v-if="activeTab !== 'security' && canEditSettings"
-        color="primary"
-        label="Save System Settings"
-        icon="save"
-        @click="saveSettings"
-      />
+      <div class="row q-gutter-sm items-center">
+        <q-btn
+          v-if="activeTab !== 'security' && canEditSettings"
+          color="primary"
+          label="Save System Settings"
+          icon="save"
+          @click="saveSettings"
+        />
+        <q-btn flat round icon="refresh" @click="loadSettings" :loading="loadingSettings">
+          <q-tooltip>Refresh Settings</q-tooltip>
+        </q-btn>
+      </div>
     </div>
 
     <!-- Main Settings Tabs -->
@@ -1414,8 +1418,10 @@ const adminProfile = ref({
   password_confirmation: '',
 })
 
-// Fetch Data
-onMounted(async () => {
+
+const loadSettings = async () => {
+  loadingSettings.value = true
+
   // 1. Fetch User Profile
   try {
     const response = await api.get('/user')
@@ -1471,6 +1477,11 @@ onMounted(async () => {
 
   // 3. Fetch Admins (Background)
   fetchAdmins()
+}
+
+// Fetch Data
+onMounted(() => {
+  loadSettings()
 })
 
 // Save Institute Settings

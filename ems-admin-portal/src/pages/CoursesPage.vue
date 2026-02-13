@@ -4,6 +4,9 @@
     <div class="row items-center justify-between q-mb-md">
       <div class="text-h5">Class Management</div>
       <div class="q-gutter-md">
+        <q-btn flat round icon="refresh" @click="refreshData" :loading="loading">
+          <q-tooltip>Refresh Data</q-tooltip>
+        </q-btn>
         <q-btn v-if="authStore.hasPermission('classes_add')" color="primary" icon="add_card" label="Create New Class" @click="openAddDialog" />
       </div>
     </div>
@@ -690,10 +693,17 @@ watch(halls, (val) => {
 }, { immediate: true })
 
 
-onMounted(async () => {
-  courseStore.fetchCourses({ type: viewType.value, all: true })
-  courseStore.fetchMetadata()
-  await userStore.fetchTeachers()
+
+async function refreshData() {
+  await Promise.all([
+     courseStore.fetchCourses({ type: viewType.value, all: true }),
+     courseStore.fetchMetadata(),
+     userStore.fetchTeachers()
+  ])
+}
+
+onMounted(() => {
+  refreshData()
   teacherOptions.value = teachers.value
 })
 

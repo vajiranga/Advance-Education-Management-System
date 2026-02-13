@@ -8,6 +8,17 @@
       </div>
       <div class="row q-gutter-sm">
 
+
+        <q-btn
+          flat
+          round
+          icon="refresh"
+          @click="loadData"
+          :loading="loadingData"
+        >
+          <q-tooltip>Refresh Data</q-tooltip>
+        </q-btn>
+
         <q-btn
           v-if="authStore.hasPermission('dashboard_broadcast')"
           icon="campaign"
@@ -278,6 +289,7 @@ const showBroadcastDialog = ref(false)
 const sending = ref(false)
 const broadcastForm = ref({ title: '', message: '', target: 'all' })
 const pendingActions = ref({ pending_classes: 0, pending_payments: 0, total_pending: 0 })
+const loadingData = ref(false)
 
 // Today's Classes
 const todayClasses = ref([])
@@ -305,15 +317,28 @@ const targetLabel = computed(() => {
   return map[broadcastForm.value.target] || 'Users'
 })
 
-onMounted(async () => {
-  await Promise.all([
-    financeStore.fetchAnalytics(),
-    financeStore.fetchTransactions(),
-    fetchCounts(),
-    fetchPendingActions(),
-    fetchRecentEnrollments(),
-    fetchTodayClasses()
-  ])
+
+async function loadData() {
+  loadingData.value = true
+  try {
+    await Promise.all([
+      financeStore.fetchAnalytics(),
+      financeStore.fetchTransactions(),
+      fetchCounts(),
+      fetchPendingActions(),
+      fetchRecentEnrollments(),
+      fetchTodayClasses()
+    ])
+  } catch (e) {
+    console.error('Failed to load dashboard data', e)
+    $q.notify({ type: 'negative', message: 'Failed to refresh data' })
+  } finally {
+    loadingData.value = false
+  }
+}
+
+onMounted(() => {
+  loadData()
 })
 
 async function fetchPendingActions() {

@@ -7,6 +7,9 @@
         <q-chip color="secondary" text-color="white" icon="event">
           {{ formattedDate }}
         </q-chip>
+        <q-btn flat round icon="refresh" @click="refreshData" :loading="hallStore.loading">
+          <q-tooltip>Refresh Data</q-tooltip>
+        </q-btn>
         <q-btn v-if="authStore.hasPermission('halls_add')" color="primary" icon="add_location" label="Add New Hall" @click="openAddDialog" />
       </div>
     </div>
@@ -421,14 +424,19 @@ function deleteHall(hall) {
   })
 }
 
-// Initial Run
-onMounted(async () => {
+
+async function refreshData() {
   await Promise.all([
     hallStore.fetchHalls(),
     courseStore.fetchCourses(),
     fetchSettings()
   ])
-  checkAvailability() // Run initial check
+  checkAvailability()
+}
+
+// Initial Run
+onMounted(() => {
+  refreshData()
 })
 
 // Watch filters

@@ -233,11 +233,7 @@ const form = ref({
 })
 
 const displayId = computed(() => {
-    let id = authStore.user?.username || ''
-    if (id && id.startsWith('TCH')) {
-         return id.replace('TCH', 'STD')
-    }
-    return id
+    return authStore.user?.username || ''
 })
 
 onMounted(() => {

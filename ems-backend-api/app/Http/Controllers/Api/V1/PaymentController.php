@@ -41,20 +41,20 @@ class PaymentController extends Controller
 
         $fees = \App\Models\StudentFee::where('student_id', $user->id)
             ->where('status', 'pending')
-             // Ensure Student is actually Enrolled in the course (Active)
+            // Ensure Student is actually Enrolled in the course (Active)
             ->whereHas('course', function ($query) use ($user) {
-                 $query->withTrashed() // Include soft-deleted courses
-                       ->whereHas('students', function ($q) use ($user) {
-                     $q->where('users.id', $user->id) // Current Student
-                       ->where('enrollments.status', 'active'); // Active Enrollment
-                 });
+                $query->withTrashed() // Include soft-deleted courses
+                    ->whereHas('students', function ($q) use ($user) {
+                        $q->where('users.id', $user->id) // Current Student
+                            ->where('enrollments.status', 'active'); // Active Enrollment
+                    });
             })
-            ->with(['course' => function($q) {
+            ->with(['course' => function ($q) {
                 $q->withTrashed(); // Include soft-deleted courses
             }, 'course.subject'])
             ->orderBy('month', 'desc')
             ->get()
-            ->map(function($fee) {
+            ->map(function ($fee) {
                 return [
                     'id' => $fee->id, // fee_id
                     'course_id' => $fee->course_id,
@@ -110,7 +110,7 @@ class PaymentController extends Controller
         // Laravel handles this if name is "fee_ids" array.
         // However, if manual CSV string passed? Assuming Standard Array or Single ID.
         if (is_string($ids)) {
-             $ids = explode(',', $ids);
+            $ids = explode(',', $ids);
         }
 
         // Create Single Payment Record (Grouping)
@@ -141,7 +141,7 @@ class PaymentController extends Controller
         }
 
         if (empty($validFees)) {
-             return response()->json(['message' => 'No eligible fees found or already paid'], 400);
+            return response()->json(['message' => 'No eligible fees found or already paid'], 400);
         }
 
         // Determine Status
@@ -171,7 +171,7 @@ class PaymentController extends Controller
                 'data' => json_encode(['payment_id' => $payment->id])
             ]);
         } else {
-             // Notify Student (Pending Approval)
+            // Notify Student (Pending Approval)
             \App\Models\Notification::create([
                 'user_id' => $payment->user_id,
                 'type' => 'payment_pending',
@@ -281,29 +281,29 @@ class PaymentController extends Controller
 
 
 
-        $childrenIds = \App\Models\User::where(function($query) use ($user) {
-                if (!empty($user->email)) $query->where('parent_email', $user->email);
-                $query->orWhere('parent_id', $user->id);
-                if (!empty($user->phone)) $query->orWhere('parent_phone', $user->phone);
-            })
+        $childrenIds = \App\Models\User::where(function ($query) use ($user) {
+            if (!empty($user->email)) $query->where('parent_email', $user->email);
+            $query->orWhere('parent_id', $user->id);
+            if (!empty($user->phone)) $query->orWhere('parent_phone', $user->phone);
+        })
             ->pluck('id');
 
         $fees = \App\Models\StudentFee::whereIn('student_id', $childrenIds)
             ->where('status', 'pending')
             // Fix: Check Active Enrollment
             ->whereHas('course', function ($query) {
-                 $query->withTrashed() // Include soft-deleted courses
-                       ->whereHas('students', function ($q) {
-                       $q->whereColumn('enrollments.user_id', 'student_fees.student_id')
-                         ->where('enrollments.status', 'active');
-                 });
+                $query->withTrashed() // Include soft-deleted courses
+                    ->whereHas('students', function ($q) {
+                        $q->whereColumn('enrollments.user_id', 'student_fees.student_id')
+                            ->where('enrollments.status', 'active');
+                    });
             })
-            ->with(['student', 'course' => function($q) {
+            ->with(['student', 'course' => function ($q) {
                 $q->withTrashed(); // Include soft-deleted courses
             }])
             ->orderBy('due_date', 'asc')
             ->get()
-            ->map(function($fee) {
+            ->map(function ($fee) {
                 return [
                     'id' => $fee->id,
                     'student_name' => $fee->student->name,
@@ -323,18 +323,19 @@ class PaymentController extends Controller
     /**
      * Parent: Get Pending Fees for Specific Child (Mirrors getDueFees)
      */
-    public function getChildDueFees(Request $request, $id) {
+    public function getChildDueFees(Request $request, $id)
+    {
         $user = $request->user();
 
 
 
         // Validation: Ensure child belongs to parent
         $isChild = \App\Models\User::where('id', $id)
-             ->where(function($q) use ($user) {
-                 if (!empty($user->email)) $q->where('parent_email', $user->email);
-                 $q->orWhere('parent_id', $user->id);
-                 if (!empty($user->phone)) $q->orWhere('parent_phone', $user->phone);
-             })->exists();
+            ->where(function ($q) use ($user) {
+                if (!empty($user->email)) $q->where('parent_email', $user->email);
+                $q->orWhere('parent_id', $user->id);
+                if (!empty($user->phone)) $q->orWhere('parent_phone', $user->phone);
+            })->exists();
 
         if (!$isChild) return response()->json(['message' => 'Unauthorized'], 403);
 
@@ -343,18 +344,18 @@ class PaymentController extends Controller
             ->where('status', 'pending')
             // Fix: Check Active Enrollment
             ->whereHas('course', function ($query) use ($id) {
-                 $query->withTrashed() // Include soft-deleted courses
-                       ->whereHas('students', function ($q) use ($id) {
-                     $q->where('users.id', $id)
-                       ->where('enrollments.status', 'active');
-                 });
+                $query->withTrashed() // Include soft-deleted courses
+                    ->whereHas('students', function ($q) use ($id) {
+                        $q->where('users.id', $id)
+                            ->where('enrollments.status', 'active');
+                    });
             })
-            ->with(['course' => function($q) {
+            ->with(['course' => function ($q) {
                 $q->withTrashed(); // Include soft-deleted courses
             }, 'course.subject'])
             ->orderBy('month', 'desc')
             ->get()
-            ->map(function($fee) {
+            ->map(function ($fee) {
                 return [
                     'id' => $fee->id,
                     'course_id' => $fee->course_id,
@@ -375,15 +376,16 @@ class PaymentController extends Controller
     /**
      * Parent: Get Payment History for Specific Child (Mirrors myPayments)
      */
-    public function getChildPayments(Request $request, $id) {
+    public function getChildPayments(Request $request, $id)
+    {
         $user = $request->user();
 
         $isChild = \App\Models\User::where('id', $id)
-             ->where(function($q) use ($user) {
-                 if (!empty($user->email)) $q->where('parent_email', $user->email);
-                 $q->orWhere('parent_id', $user->id);
-                 if (!empty($user->phone)) $q->orWhere('parent_phone', $user->phone);
-             })->exists();
+            ->where(function ($q) use ($user) {
+                if (!empty($user->email)) $q->where('parent_email', $user->email);
+                $q->orWhere('parent_id', $user->id);
+                if (!empty($user->phone)) $q->orWhere('parent_phone', $user->phone);
+            })->exists();
 
         if (!$isChild) return response()->json(['message' => 'Unauthorized'], 403);
 
@@ -413,7 +415,7 @@ class PaymentController extends Controller
             ->where('month', $month)
             ->with(['student'])
             ->get()
-            ->map(function($fee) {
+            ->map(function ($fee) {
                 return [
                     'student_id' => $fee->student_id,
                     'student_name' => $fee->student->name,
@@ -430,88 +432,89 @@ class PaymentController extends Controller
      */
     public function getAdminPaymentSummary(Request $request)
     {
-         $query = Payment::query()->with(['student', 'course']);
+        $query = Payment::query()->with(['student', 'course']);
 
-         if ($request->has('status')) {
-             $query->where('status', $request->status);
-         }
+        if ($request->has('status')) {
+            $query->where('status', $request->status);
+        }
 
-         // Search by student name
-         if ($request->has('search')) {
-             $search = $request->search;
-             $query->whereHas('student', function($q) use ($search) {
-                 $q->where('name', 'like', "%{$search}%")
-                   ->orWhere('username', 'like', "%{$search}%");
-             });
-         }
+        // Search by student name
+        if ($request->has('search')) {
+            $search = $request->search;
+            $query->whereHas('student', function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('username', 'like', "%{$search}%");
+            });
+        }
 
-         // Date Range Filter (Consistent with Dashboard Cycle)
-         if ($request->has('start_date') && $request->has('end_date')) {
-             $start = \Carbon\Carbon::parse($request->start_date)->startOfDay();
-             $end = \Carbon\Carbon::parse($request->end_date)->endOfDay();
+        // Date Range Filter (Consistent with Dashboard Cycle)
+        if ($request->has('start_date') && $request->has('end_date')) {
+            $start = \Carbon\Carbon::parse($request->start_date)->startOfDay();
+            $end = \Carbon\Carbon::parse($request->end_date)->endOfDay();
 
-             $query->where(function($q) use ($start, $end) {
-                 $q->whereBetween('paid_at', [$start, $end])
-                   ->orWhere(function($sub) use ($start, $end) {
+            $query->where(function ($q) use ($start, $end) {
+                $q->whereBetween('paid_at', [$start, $end])
+                    ->orWhere(function ($sub) use ($start, $end) {
                         // For pending/rejected, use created_at as they have no paid_at
                         $sub->whereNull('paid_at')->whereBetween('created_at', [$start, $end]);
-                   });
-             });
-         }
+                    });
+            });
+        }
 
-         // Calculate Global Stats matching the filtered query
-         // We must replicate the date filter logic for accuracy
-         $statsRevenueQuery = Payment::query()->where('status', 'paid');
+        // Calculate Global Stats matching the filtered query
+        // We must replicate the date filter logic for accuracy
+        $statsRevenueQuery = Payment::query()->where('status', 'paid');
 
-         if ($request->has('start_date') && $request->has('end_date')) {
-             $start = \Carbon\Carbon::parse($request->start_date)->startOfDay();
-             $end = \Carbon\Carbon::parse($request->end_date)->endOfDay();
-             $statsRevenueQuery->whereBetween('paid_at', [$start, $end]);
-         }
+        if ($request->has('start_date') && $request->has('end_date')) {
+            $start = \Carbon\Carbon::parse($request->start_date)->startOfDay();
+            $end = \Carbon\Carbon::parse($request->end_date)->endOfDay();
+            $statsRevenueQuery->whereBetween('paid_at', [$start, $end]);
+        }
 
-         $totalRevenue = $statsRevenueQuery->sum('amount');
+        $totalRevenue = $statsRevenueQuery->sum('amount');
 
-         // Pending Count (Filtered by date? Usually users want to see ALL pending, but if filtered by month, maybe just that month's?)
-         // Let's keep pending count GLOBAL for action items, but we can also provide filtered.
-         // User asked to make them "same". Dashboard usually shows "Month Revenue".
+        // Pending Count (Filtered by date? Usually users want to see ALL pending, but if filtered by month, maybe just that month's?)
+        // Let's keep pending count GLOBAL for action items, but we can also provide filtered.
+        // User asked to make them "same". Dashboard usually shows "Month Revenue".
 
-         // Total Pending (Global, action required)
-         $totalPendingCount = Payment::where('status', 'pending')->count();
+        // Total Pending (Global, action required)
+        $totalPendingCount = Payment::where('status', 'pending')->count();
 
-         // Uncollected Fees (Filtered by date if provided, otherwise Global)
-         $uncollectedFeesQuery = \App\Models\StudentFee::where('status', 'pending');
+        // Uncollected Fees (Filtered by date if provided, otherwise Global)
+        $uncollectedFeesQuery = \App\Models\StudentFee::where('status', 'pending');
 
-         if ($request->has('start_date')) {
+        if ($request->has('start_date')) {
             // The billing cycle 'start_date' (e.g., 2026-01-10) directly corresponds to the fee month (e.g., 2026-01)
             $targetMonth = \Carbon\Carbon::parse($request->start_date)->format('Y-m');
             $uncollectedFeesQuery->where('month', $targetMonth);
-         }
+        }
 
-         $uncollectedAmount = $uncollectedFeesQuery->sum('amount');
+        $uncollectedAmount = $uncollectedFeesQuery->sum('amount');
 
-         // Default sort (using paid_at for paid transactions, created_at for pending)
-         $query->orderBy('paid_at', 'desc');
-         $perPage = $request->input('per_page', 20);
-         $paginated = $query->paginate($perPage);
+        // Default sort (using paid_at for paid transactions, created_at for pending)
+        $query->orderBy('paid_at', 'desc');
+        $perPage = $request->input('per_page', 20);
+        $paginated = $query->paginate($perPage);
 
-         // Custom response format to include stats
-         return response()->json([
-             'data' => $paginated->items(),
-             'current_page' => $paginated->currentPage(),
-             'last_page' => $paginated->lastPage(),
-             'total' => $paginated->total(),
-             'stats' => [
-                 'total_revenue' => $totalRevenue,
-                 'pending_count' => $totalPendingCount,
-                 'uncollected_fees' => $uncollectedAmount
-             ]
-         ]);
+        // Custom response format to include stats
+        return response()->json([
+            'data' => $paginated->items(),
+            'current_page' => $paginated->currentPage(),
+            'last_page' => $paginated->lastPage(),
+            'total' => $paginated->total(),
+            'stats' => [
+                'total_revenue' => $totalRevenue,
+                'pending_count' => $totalPendingCount,
+                'uncollected_fees' => $uncollectedAmount
+            ]
+        ]);
     }
 
     /**
      * Admin: Get Analytics Data
      */
-    public function getAnalytics(Request $request) {
+    public function getAnalytics(Request $request)
+    {
         // 1. Determine Academic Year
         // If today is Jan 2026, we are in 2025 Academic Year (Feb 2025 - Jan 2026)
         // If today is Feb 2026, we are in 2026 Academic Year (Feb 2026 - Jan 2027)
@@ -561,8 +564,8 @@ class PaymentController extends Controller
             // Use StudentFee logic where status is pending and due_date falls in this cycle
             // OR created_at falls in this cycle? Usually Due Date aligns with cycle.
             $pending = \App\Models\StudentFee::where('status', 'pending')
-                 ->whereBetween('due_date', [$cycleStart, $cycleEnd])
-                 ->sum('amount');
+                ->whereBetween('due_date', [$cycleStart, $cycleEnd])
+                ->sum('amount');
             $pendingData[] = $pending;
 
             // C. New Students - Based on User creation date (Role: student)
@@ -588,7 +591,7 @@ class PaymentController extends Controller
             ->whereBetween('paid_at', [$firstCycleStart, $lastCycleEnd])
             ->groupBy('type')
             ->get()
-            ->map(function($row) {
+            ->map(function ($row) {
                 return ['type' => ucfirst(str_replace('_', ' ', $row->type)), 'count' => $row->count];
             });
 
@@ -611,7 +614,8 @@ class PaymentController extends Controller
     /**
      * Admin: Export Monthly Report
      */
-    public function exportReport(Request $request) {
+    public function exportReport(Request $request)
+    {
         // ... (existing code) ...
         $month = $request->month ?? Carbon::now()->format('Y-m');
 
@@ -653,7 +657,8 @@ class PaymentController extends Controller
     /**
      * Admin: Generate Monthly Fees for Active Enrollments
      */
-    public function generateMonthlyFees(Request $request) {
+    public function generateMonthlyFees(Request $request)
+    {
         $request->validate([
             'month' => 'required|date_format:Y-m', // e.g. 2026-02
             'due_date' => 'required|date'
@@ -674,7 +679,7 @@ class PaymentController extends Controller
         // Assuming 'enrollments' table has 'status' = 'active'
         // And linked course has a fee_amount > 0
         $enrollments = \App\Models\Enrollment::where('status', 'active')
-            ->whereHas('course', function($q) {
+            ->whereHas('course', function ($q) {
                 $q->where('fee_amount', '>', 0);
             })
             ->with(['course', 'student.parentAccount'])
@@ -789,77 +794,79 @@ class PaymentController extends Controller
     }
 
     /**
- * Admin: Get Teacher Settlements (Detailed)
- */
-public function getTeacherSettlements(Request $request) {
-    // Get configured deduction percentage from settings (default 10%)
-    $deductionPercentage = (float) \App\Models\SystemSetting::where('key', 'teacherFeeDeductionPercentage')->value('value') ?? 10;
+     * Admin: Get Teacher Settlements (Detailed)
+     */
+    public function getTeacherSettlements(Request $request)
+    {
+        // Get configured deduction percentage from settings (default 10%)
+        $deductionPercentage = (float) \App\Models\SystemSetting::where('key', 'teacherFeeDeductionPercentage')->value('value') ?? 10;
 
-    // Get all active teachers
-    $allTeachers = \App\Models\User::where('role', 'teacher')->get();
+        // Get all active teachers
+        $allTeachers = \App\Models\User::where('role', 'teacher')->get();
 
-    // Get fees for the period
-    $allFees = collect();
+        // Get fees for the period
+        $allFees = collect();
 
-    if ($request->has('start_date') && $request->has('end_date')) {
-         // Date Range Based Report (from Financial Overview filters)
-         $allFees = \App\Models\StudentFee::where('status', 'paid')
-            ->whereBetween('paid_at', [$request->start_date . ' 00:00:00', $request->end_date . ' 23:59:59'])
-            ->with(['course.teacher', 'student'])
-            ->get();
-    } else {
-         // No filters - return all paid fees
-         $allFees = \App\Models\StudentFee::where('status', 'paid')
-            ->with(['course.teacher', 'student'])
-            ->get();
+        if ($request->has('start_date') && $request->has('end_date')) {
+            // Date Range Based Report (from Financial Overview filters)
+            $allFees = \App\Models\StudentFee::where('status', 'paid')
+                ->whereBetween('paid_at', [$request->start_date . ' 00:00:00', $request->end_date . ' 23:59:59'])
+                ->with(['course.teacher', 'student'])
+                ->get();
+        } else {
+            // No filters - return all paid fees
+            $allFees = \App\Models\StudentFee::where('status', 'paid')
+                ->with(['course.teacher', 'student'])
+                ->get();
+        }
+
+        // Group fees by teacher
+        $feesByTeacher = $allFees->groupBy(function ($fee) {
+            return $fee->course && $fee->course->teacher_id ? $fee->course->teacher_id : 'unknown';
+        })->filter(function ($group, $key) {
+            return $key !== 'unknown'; // Remove entries without teachers
+        });
+
+        // Build settlements for all teachers
+        $settlements = $allTeachers->map(function ($teacher) use ($feesByTeacher, $deductionPercentage) {
+            $teacherFees = $feesByTeacher->get($teacher->id, collect());
+
+            // Separate paid and pending
+            $paidFees = $teacherFees->where('status', 'paid');
+            $pendingFees = $teacherFees->where('status', 'pending');
+
+            $totalCollected = $paidFees->sum('amount');
+            $totalPending = $pendingFees->sum('amount');
+            $totalStudents = $teacherFees->count();
+            $paidCount = $paidFees->count();
+            $pendingCount = $pendingFees->count();
+
+            // Calculate teacher share based on settings
+            $totalDeduction = ($totalCollected * $deductionPercentage) / 100;
+            $totalTeacherShare = $totalCollected - $totalDeduction;
+
+            return [
+                'teacher_id' => $teacher->id,
+                'teacher_name' => $teacher->name,
+                'total_students' => $totalStudents,
+                'payment_count' => $paidCount,
+                'pending_count' => $pendingCount,
+                'total_collected' => $totalCollected,
+                'total_pending' => $totalPending,
+                'teacher_share' => $totalTeacherShare,
+                'deduction_percentage' => $deductionPercentage,
+                'deduction_amount' => $totalDeduction
+            ];
+        })->values();
+
+        return response()->json($settlements);
     }
-
-    // Group fees by teacher
-    $feesByTeacher = $allFees->groupBy(function($fee) {
-        return $fee->course && $fee->course->teacher_id ? $fee->course->teacher_id : 'unknown';
-    })->filter(function($group, $key) {
-        return $key !== 'unknown'; // Remove entries without teachers
-    });
-
-    // Build settlements for all teachers
-    $settlements = $allTeachers->map(function($teacher) use ($feesByTeacher, $deductionPercentage) {
-        $teacherFees = $feesByTeacher->get($teacher->id, collect());
-
-        // Separate paid and pending
-        $paidFees = $teacherFees->where('status', 'paid');
-        $pendingFees = $teacherFees->where('status', 'pending');
-
-        $totalCollected = $paidFees->sum('amount');
-        $totalPending = $pendingFees->sum('amount');
-        $totalStudents = $teacherFees->count();
-        $paidCount = $paidFees->count();
-        $pendingCount = $pendingFees->count();
-
-        // Calculate teacher share based on settings
-        $totalDeduction = ($totalCollected * $deductionPercentage) / 100;
-        $totalTeacherShare = $totalCollected - $totalDeduction;
-
-        return [
-            'teacher_id' => $teacher->id,
-            'teacher_name' => $teacher->name,
-            'total_students' => $totalStudents,
-            'payment_count' => $paidCount,
-            'pending_count' => $pendingCount,
-            'total_collected' => $totalCollected,
-            'total_pending' => $totalPending,
-            'teacher_share' => $totalTeacherShare,
-            'deduction_percentage' => $deductionPercentage,
-            'deduction_amount' => $totalDeduction
-        ];
-    })->values();
-
-    return response()->json($settlements);
-}
 
     /**
      * Admin: Get List of Top Courses by Revenue
      */
-    public function getTopCourses(Request $request) {
+    public function getTopCourses(Request $request)
+    {
         $query = \App\Models\StudentFee::where('status', 'paid');
 
         if ($request->has('start_date') && $request->has('end_date')) {
@@ -895,23 +902,24 @@ public function getTeacherSettlements(Request $request) {
     /**
      * Admin: Get Pending Fees for Specific Student (for Cash Payment)
      */
-    public function getStudentPendingFees(Request $request, $id) {
+    public function getStudentPendingFees(Request $request, $id)
+    {
         $fees = \App\Models\StudentFee::where('student_id', $id)
             ->where('status', 'pending')
             // Only show fees for active enrollments (matching student app)
-            ->whereHas('course', function($q) use ($id) {
+            ->whereHas('course', function ($q) use ($id) {
                 $q->withTrashed() // Include soft-deleted courses
-                  ->whereHas('students', function ($query) use ($id) {
-                      $query->where('users.id', $id)
+                    ->whereHas('students', function ($query) use ($id) {
+                        $query->where('users.id', $id)
                             ->where('enrollments.status', 'active'); // Active enrollment only
-                  });
+                    });
             })
-            ->with(['course' => function($q) {
+            ->with(['course' => function ($q) {
                 $q->withTrashed(); // Include soft-deleted courses
             }, 'course.subject'])
             ->orderBy('month', 'asc')
             ->get()
-            ->map(function($fee) {
+            ->map(function ($fee) {
                 return [
                     'id' => $fee->id, // fee_id
                     'course_name' => $fee->course->name,
@@ -929,7 +937,8 @@ public function getTeacherSettlements(Request $request) {
      * Admin: Get List of Students with Pending Fees
      * Exclude students with >= 4 months of consecutive pending fees (likely dropouts)
      */
-    public function getPendingFeeList(Request $request) {
+    public function getPendingFeeList(Request $request)
+    {
         $query = \App\Models\StudentFee::where('status', 'pending');
 
         // Filter by month if provided
@@ -945,26 +954,72 @@ public function getTeacherSettlements(Request $request) {
         $result = [];
 
         foreach ($grouped as $studentId => $fees) {
-             // If student has 4 or more pending records (across all months), treat as "Dropped Out" and hide from active collection list
-             // Only apply this filter if no specific month is requested
-             if (!$request->has('month') && $fees->count() >= 4) {
-                 continue;
-             }
+            // If student has 4 or more pending records (across all months), treat as "Dropped Out" and hide from active collection list
+            // Only apply this filter if no specific month is requested
+            if (!$request->has('month') && $fees->count() >= 4) {
+                continue;
+            }
 
-             foreach ($fees as $fee) {
-                 $result[] = [
-                     'id' => $fee->id,
-                     'student_id' => $fee->student_id,
-                     'student' => $fee->student, // Return full object for display if needed
-                     'course' => $fee->course,
-                     'amount' => $fee->amount,
-                     'month' => $fee->month,
-                     'status' => 'pending'
-                 ];
-             }
+            foreach ($fees as $fee) {
+                $result[] = [
+                    'id' => $fee->id,
+                    'student_id' => $fee->student_id,
+                    'student' => $fee->student, // Return full object for display if needed
+                    'course' => $fee->course,
+                    'amount' => $fee->amount,
+                    'month' => $fee->month,
+                    'status' => 'pending'
+                ];
+            }
         }
 
         return response()->json($result);
     }
 
+    /**
+     * Admin: Get Payment History for Specific Student
+     */
+    public function getStudentHistory(Request $request, $id)
+    {
+        $payments = \App\Models\Payment::where('student_id', $id)
+            ->with(['course'])
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($payment) {
+                return [
+                    'id' => $payment->id,
+                    'amount' => $payment->amount,
+                    'paid_at' => $payment->created_at->format('Y-m-d H:i:s'),
+                    'type' => $payment->type,
+                    'status' => $payment->status,
+                    'course_name' => $payment->course->name ?? 'N/A',
+                    'month' => $payment->month ?? 'N/A'
+                ];
+            });
+
+        // Get all enrollments including dropped ones
+        $enrollments = \Illuminate\Support\Facades\DB::table('enrollments')
+            ->join('courses', 'enrollments.course_id', '=', 'courses.id')
+            ->where('enrollments.user_id', $id)
+            ->select(
+                'courses.name as course_name',
+                'enrollments.status',
+                'enrollments.created_at as enrolled_at',
+                'enrollments.updated_at as dropped_at'
+            )
+            ->orderBy('enrollments.created_at', 'desc')
+            ->get()
+            ->map(function ($enrollment) {
+                // only show dropped_at if status is dropped/inactive
+                if ($enrollment->status === 'active') {
+                    $enrollment->dropped_at = null;
+                }
+                return $enrollment;
+            });
+
+        return response()->json([
+            'payments' => $payments,
+            'enrollments' => $enrollments
+        ]);
+    }
 }

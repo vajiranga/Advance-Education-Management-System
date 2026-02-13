@@ -26,7 +26,7 @@ export const useFinanceStore = defineStore('finance', () => {
                 // Update global stats from backend
                 stats.value.revenue = parseFloat(res.data.stats.total_revenue || 0)
                 stats.value.pending_fees = parseFloat(res.data.stats.uncollected_fees || 0)
-                // pending_count might be useful if we add a counter for it
+                stats.value.pending_count = parseInt(res.data.stats.pending_count || 0)
 
             } else {
                 // Fallback for old format (paginated directly)

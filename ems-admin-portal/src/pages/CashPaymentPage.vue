@@ -335,6 +335,9 @@ async function openHistory() {
   const data = await financeStore.fetchStudentHistory(paymentForm.value.selectedStudent.id)
   if (data) {
     studentHistory.value = data
+  } else {
+    showHistoryDialog.value = false
+    $q.notify({ type: 'warning', message: 'Failed to load student history' })
   }
 }
 
