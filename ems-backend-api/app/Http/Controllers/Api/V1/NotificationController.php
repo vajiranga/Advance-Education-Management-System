@@ -25,30 +25,34 @@ class NotificationController extends Controller
             ->get();
 
         // 2. Fetch Relevant Broadcasts/Notices
-        $noticesQuery = Notice::where('scheduled_at', '<=', now())
+        // Allow up to 5 mins future scheduled time to account for server clock drift
+        $noticesQuery = Notice::where(function ($q) {
+            $q->whereNull('scheduled_at')
+                ->orWhere('scheduled_at', '<=', now()->addMinutes(5));
+        })
             ->orderBy('scheduled_at', 'desc');
 
         if ($user->role === 'student') {
             $enrolledCourseIds = Enrollment::where('user_id', $user->id)->pluck('course_id');
-            $noticesQuery->where(function($q) use ($enrolledCourseIds) {
+            $noticesQuery->where(function ($q) use ($enrolledCourseIds) {
                 $q->whereIn('target_audience', ['all', 'student'])
-                  ->orWhereIn('course_id', $enrolledCourseIds);
+                    ->orWhereIn('course_id', $enrolledCourseIds);
             });
         } elseif ($user->role === 'teacher') {
             $noticesQuery->whereIn('target_audience', ['all', 'teacher']);
-            // Optionally add notices for courses they teach? 
+            // Optionally add notices for courses they teach?
             // For now, assume teachers only get global/teacher notices.
         } elseif ($user->role === 'parent') {
             $noticesQuery->whereIn('target_audience', ['all', 'parent']);
         } else {
-             // Admins see everything? Or just 'all'? Let's show everything for now or just 'all'
-             $noticesQuery->whereIn('target_audience', ['all', 'student', 'teacher', 'parent']);
+            // Admins see everything? Or just 'all'? Let's show everything for now or just 'all'
+            $noticesQuery->whereIn('target_audience', ['all', 'student', 'teacher', 'parent']);
         }
 
         $notices = $noticesQuery->limit($limit)->get();
 
         // 3. Transform Notices to match Notification structure
-        $formattedNotices = $notices->map(function($n) {
+        $formattedNotices = $notices->map(function ($n) {
             return [
                 'id' => 'notice-' . $n->id, // Distinct ID format
                 'user_id' => null,
@@ -56,7 +60,7 @@ class NotificationController extends Controller
                 'message' => $n->message,
                 'type' => $n->type ?? 'info',
                 'read_at' => null, // Broadcasts technically don't track read state yet
-                'created_at' => $n->scheduled_at,
+                'created_at' => $n->scheduled_at ?? $n->created_at,
                 'updated_at' => $n->updated_at,
                 'data' => [] // Extra data field if needed
             ];
@@ -64,16 +68,16 @@ class NotificationController extends Controller
 
         // 4. Merge and Sort
         $all = $notifications->concat($formattedNotices)->sortByDesc('created_at')->values();
-        
+
         // 5. Paginate Manually
-        // Since we combined two sources, true DB pagination is hard. 
+        // Since we combined two sources, true DB pagination is hard.
         // We'll return the top X combined results.
         $pagedData = $all->take($limit);
 
         // Recalculate unread (Approximation)
         $unreadCount = Notification::where('user_id', $user->id)->whereNull('read_at')->count();
         // Add notice count? For now, let's just stick to personal unread count to avoid bloat
-        // $unreadCount += $formattedNotices->count(); 
+        // $unreadCount += $formattedNotices->count();
 
         return response()->json([
             'data' => $pagedData,
