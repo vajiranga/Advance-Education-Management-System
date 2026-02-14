@@ -11,6 +11,21 @@ export const useSettingsStore = defineStore('settings', {
     whatsappContact: localStorage.getItem('whatsappContact') || '',
     paymentGateway: localStorage.getItem('paymentGateway') === 'true',
     enableBankTransfer: localStorage.getItem('enableBankTransfer') === 'true',
+    instituteAddress: localStorage.getItem('instituteAddress') || '',
+    institutePhone: localStorage.getItem('institutePhone') || '',
+    instituteEmail: localStorage.getItem('instituteEmail') || '',
+    workingDays: [
+        { day: 'Monday', isOpen: true, start: '08:00', end: '17:00' },
+        { day: 'Tuesday', isOpen: true, start: '08:00', end: '17:00' },
+        { day: 'Wednesday', isOpen: true, start: '08:00', end: '17:00' },
+        { day: 'Thursday', isOpen: true, start: '08:00', end: '17:00' },
+        { day: 'Friday', isOpen: true, start: '08:00', end: '17:00' },
+        { day: 'Saturday', isOpen: true, start: '08:00', end: '13:00' },
+        { day: 'Sunday', isOpen: false, start: '08:00', end: '13:00' }
+    ],
+    specialHolidays: [],
+    workStartTime: '08:00',
+    workEndTime: '17:00',
     loading: false
   }),
 
@@ -57,7 +72,23 @@ export const useSettingsStore = defineStore('settings', {
 
             this.logoUrl = url
             localStorage.setItem('logoUrl', this.logoUrl)
+            this.logoUrl = url
+            localStorage.setItem('logoUrl', this.logoUrl)
           }
+
+          // Working Hours & Holidays
+          if (response.data.workingDays) {
+             try {
+                 this.workingDays = JSON.parse(response.data.workingDays)
+             } catch { this.workingDays = [] }
+          }
+          if (response.data.specialHolidays) {
+             try {
+                 this.specialHolidays = JSON.parse(response.data.specialHolidays)
+             } catch { this.specialHolidays = [] }
+          }
+          if (response.data.workStartTime) this.workStartTime = response.data.workStartTime
+          if (response.data.workEndTime) this.workEndTime = response.data.workEndTime
           if (response.data.disableTeacherAttendance !== undefined) {
              const val = response.data.disableTeacherAttendance
              this.disableTeacherAttendance = (val === 'true' || val === true || val === '1' || val === 1)
@@ -76,6 +107,18 @@ export const useSettingsStore = defineStore('settings', {
              const val = response.data.enableBankTransfer
              this.enableBankTransfer = (val === 'true' || val === true || val === '1' || val === 1)
              localStorage.setItem('enableBankTransfer', this.enableBankTransfer)
+          }
+          if (response.data.instituteAddress) {
+            this.instituteAddress = response.data.instituteAddress
+            localStorage.setItem('instituteAddress', this.instituteAddress)
+          }
+          if (response.data.institutePhone) {
+            this.institutePhone = response.data.institutePhone
+            localStorage.setItem('institutePhone', this.institutePhone)
+          }
+          if (response.data.instituteEmail) {
+            this.instituteEmail = response.data.instituteEmail
+            localStorage.setItem('instituteEmail', this.instituteEmail)
           }
         }
       } catch (error) {

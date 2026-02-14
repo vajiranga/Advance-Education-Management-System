@@ -11,6 +11,12 @@
            Since 1979 - The First & The Best
         </q-chip>
 
+        <div class="q-mb-md">
+            <q-chip :color="openingStatus.color" text-color="white" class="glass-chip q-px-md" :icon="openingStatus.icon">
+                <span class="text-weight-bold">{{ openingStatus.message }}</span>
+            </q-chip>
+        </div>
+
         <h1 class="hero-title text-weight-bolder q-mb-md leading-tight">
           අනාගතය ගොඩදාගන්න <br>
           <span class="text-gradient">සුපිරිම තැන</span>
@@ -233,13 +239,86 @@
        </div>
     </section>
 
+    <!-- Footer / Contact -->
+    <footer id="footer" class="q-py-xl relative-position z-10 bg-darker">
+       <div class="container">
+          <div class="row q-col-gutter-xl">
+              <!-- Institute Info -->
+              <div class="col-12 col-md-4">
+                 <div class="row items-center q-mb-md">
+                    <img v-if="settingsStore.logoUrl" :src="settingsStore.logoUrl" style="height: 48px; width: auto; object-fit: contain;" class="q-mr-sm" />
+                    <span class="text-h4 text-weight-bold">{{ settingsStore.instituteName }}</span>
+                 </div>
+                 <p class="text-grey-5" style="font-size: 1.1rem; line-height: 1.6;">
+                    The premier educational institute in Sri Lanka, dedicated to molding the future generation through excellence in education and character building.
+                 </p>
+                 <div class="row q-gutter-md q-mt-lg">
+                    <q-btn flat round color="blue" icon="facebook" type="a" href="https://web.facebook.com/vidyananda.vidyapitaya.giriulla" target="_blank" />
+                    <q-btn flat round color="red" icon="smart_display" type="a" href="#" />
+                    <q-btn flat round color="green" icon="whatsapp" type="a" :href="`https://wa.me/${settingsStore.whatsappContact}`" v-if="settingsStore.whatsappContact" />
+                 </div>
+              </div>
+
+              <!-- Links -->
+              <div class="col-6 col-md-2">
+                 <div class="text-h6 text-weight-bold q-mb-md text-primary q-mt-sm">Links</div>
+                 <div class="column q-gutter-sm text-grey-5">
+                    <a href="#" class="no-decoration text-grey-5 hover-text-primary">Home</a>
+                    <a href="#classes" class="no-decoration text-grey-5 hover-text-primary">Classes</a>
+                    <a href="#teachers" class="no-decoration text-grey-5 hover-text-primary">Teachers</a>
+                    <a href="/login" class="no-decoration text-grey-5 hover-text-primary">Student Login</a>
+                 </div>
+              </div>
+
+              <!-- Subjects -->
+              <div class="col-6 col-md-2">
+                 <div class="text-h6 text-weight-bold q-mb-md text-primary q-mt-sm">Subjects</div>
+                 <div class="column q-gutter-sm text-grey-5">
+                    <div>Maths</div>
+                    <div>Science</div>
+                    <div>Sinhala</div>
+                    <div>History</div>
+                    <div>ICT</div>
+                 </div>
+              </div>
+
+              <!-- Contact Us -->
+              <div class="col-12 col-md-4">
+                 <h4 class="text-h5 text-weight-bold q-mb-lg text-primary">Contact Us</h4>
+                 <div class="column q-gutter-y-md">
+                    <div class="row items-start">
+                       <q-icon name="location_on" color="primary" size="sm" class="q-mr-md q-mt-xs" />
+                       <span class="text-grey-4 text-body1">{{ settingsStore.instituteAddress || 'No Address Provided' }}</span>
+                    </div>
+                    <div class="row items-center">
+                       <q-icon name="phone" color="primary" size="sm" class="q-mr-md" />
+                       <span class="text-grey-4 text-body1">{{ settingsStore.institutePhone || 'No Phone Provided' }}</span>
+                    </div>
+                    <div class="row items-center">
+                       <q-icon name="email" color="primary" size="sm" class="q-mr-md" />
+                       <span class="text-grey-4 text-body1">{{ settingsStore.instituteEmail || 'No Email Provided' }}</span>
+                    </div>
+                 </div>
+              </div>
+          </div>
+
+          <q-separator color="grey-9" class="q-my-lg" />
+
+          <div class="text-center text-grey-6">
+             &copy; {{ new Date().getFullYear() }} {{ settingsStore.instituteName }}. All Rights Reserved.
+          </div>
+       </div>
+    </footer>
+
   </q-page>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useSettingsStore } from 'stores/settings-store'
 import * as THREE from 'three'
+
+import { date } from 'quasar'
 
 const slide = ref(1)
 const ctaCanvas = ref(null)
@@ -248,6 +327,57 @@ const settingsStore = useSettingsStore()
 let animationId = null
 let heroAnimationId = null
 let renderer, scene, camera, particlesMesh
+
+// Status Logic
+const openingStatus = computed(() => {
+    // Default Fallbacks
+    const sHolidays = settingsStore.specialHolidays || []
+    const wDays = settingsStore.workingDays || []
+
+    const now = new Date()
+    const todayStr = date.formatDate(now, 'YYYY-MM-DD')
+    const dayName = date.formatDate(now, 'dddd')
+    const currentTime = date.formatDate(now, 'HH:mm')
+
+    // 1. Special Holiday?
+    if (sHolidays.includes(todayStr)) {
+        return { isOpen: false, message: 'Closed (Holiday)', color: 'red', icon: 'event_busy' }
+    }
+
+    // 2. Find Today's Config
+    // If workingDays is array of strings (legacy), fallback to default Open 8-5
+    // If workingDays is array of objects, find the day
+    let todayConfig = null
+    if (wDays.length > 0 && typeof wDays[0] === 'string') {
+        // Legacy Support
+        if (!wDays.includes(dayName)) {
+             return { isOpen: false, message: 'Closed Today', color: 'orange', icon: 'door_back' }
+        }
+        todayConfig = { isOpen: true, start: '08:00', end: '17:00' }
+    } else {
+        todayConfig = wDays.find(d => d.day === dayName)
+    }
+
+    // 3. Not in working days config or marked closed
+    if (!todayConfig || !todayConfig.isOpen) {
+        return { isOpen: false, message: 'Closed Today', color: 'orange', icon: 'door_back' }
+    }
+
+    // 4. Check Time Range
+    const start = todayConfig.start || '08:00'
+    const end = todayConfig.end || '17:00'
+
+    if (currentTime >= start && currentTime <= end) {
+        return { isOpen: true, message: `Open Now (${start} - ${end})`, color: 'green', icon: 'door_front' }
+    } else {
+        // If before open
+        if (currentTime < start) {
+             return { isOpen: false, message: `Closed (Opens ${start})`, color: 'orange', icon: 'schedule' }
+        }
+        // If after close
+        return { isOpen: false, message: `Closed (Closed at ${end})`, color: 'orange', icon: 'schedule' }
+    }
+})
 
 // Mouse Interaction for Hero
 let mouseX = 0
@@ -777,4 +907,7 @@ const features = [
 .bg-gradient-blue-vertical {
     background: linear-gradient(to bottom, rgba(37, 99, 235, 0.05), transparent);
 }
+
+.no-decoration { text-decoration: none; transition: color 0.3s; }
+.hover-text-primary:hover { color: #60a5fa !important; }
 </style>

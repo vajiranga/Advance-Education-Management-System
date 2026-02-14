@@ -52,7 +52,14 @@ class SystemSettingController extends Controller
             'disableTeacherAttendance',
             'whatsappContact',
             'paymentGateway',
-            'enableBankTransfer'
+            'enableBankTransfer',
+            'workingDays',
+            'workStartTime',
+            'workEndTime',
+            'specialHolidays',
+            'instituteAddress',
+            'institutePhone',
+            'instituteEmail'
         ];
 
         $settings = SystemSetting::whereIn('key', $publicKeys)->pluck('value', 'key');

@@ -47,74 +47,7 @@
       <router-view />
     </q-page-container>
 
-    <q-footer id="footer" class="bg-black text-white q-py-xl" style="border-top: 1px solid rgba(255,255,255,0.05)">
-       <div class="container">
-          <div class="row q-col-gutter-xl">
-             <div class="col-12 col-md-4">
-                <div class="row items-center q-mb-md">
-                   <q-icon name="public" size="md" class="q-mr-sm text-primary" />
-                   <div class="text-h5 text-weight-bolder">{{ settingsStore.instituteName }}</div>
-                </div>
-                <p class="text-grey-5 leading-relaxed">
-                   The First & The Best. <br>
-                   1979 සිට පවතින සුපිරිම පන්ති. <br>
-                   ගිරිඋල්ල.
-                </p>
-                <div class="row q-gutter-md q-mt-lg">
-                   <q-btn round color="blue-9" icon="facebook" size="sm" />
-                   <q-btn round color="red-6" icon="smart_display" size="sm" />
-                   <q-btn round color="light-blue" icon="telegram" size="sm" />
-                </div>
-             </div>
 
-             <div class="col-6 col-md-2">
-                <div class="text-subtitle1 text-weight-bold q-mb-md text-primary">Links</div>
-                <div class="column q-gutter-sm text-grey-5">
-                   <a href="#" class="no-decoration text-grey-5 hover-text-primary">Home</a>
-                   <a href="#classes" class="no-decoration text-grey-5 hover-text-primary">Classes</a>
-                   <a href="#teachers" class="no-decoration text-grey-5 hover-text-primary">Teachers</a>
-                   <a href="/login" class="no-decoration text-grey-5 hover-text-primary">Student Login</a>
-                </div>
-             </div>
-
-             <div class="col-6 col-md-2">
-                <div class="text-subtitle1 text-weight-bold q-mb-md text-primary">Subjects</div>
-                <div class="column q-gutter-sm text-grey-5">
-                   <div>Maths</div>
-                   <div>Science</div>
-                   <div>Sinhala</div>
-                   <div>History</div>
-                   <div>ICT</div>
-                </div>
-             </div>
-
-             <div class="col-12 col-md-4">
-                <div class="text-subtitle1 text-weight-bold q-mb-md text-primary">Contact Us</div>
-                <div class="q-list custom-list">
-                    <div class="row items-start q-mb-sm">
-                        <q-icon name="place" color="grey-5" class="q-mr-sm q-mt-xs" />
-                        <span class="text-grey-5">Negombo Road, Giriulla</span>
-                    </div>
-                    <div class="row items-center q-mb-sm">
-                        <q-icon name="phone" color="grey-5" class="q-mr-sm" />
-                        <span class="text-grey-5">077-8282529, 037-2288145</span>
-                    </div>
-                    <div class="row items-center">
-                         <q-icon name="email" color="grey-5" class="q-mr-sm" />
-                         <span class="text-grey-5">info@vidyananda.lk</span>
-                    </div>
-                </div>
-             </div>
-          </div>
-
-          <q-separator dark class="q-my-xl bg-grey-9" />
-
-          <div class="text-center text-grey-7 text-caption">
-             &copy; 2026 {{ settingsStore.instituteName }}. All Rights Reserved. <br>
-             අධ්‍යාපනයේ උන්නතිය වෙනුවෙන් නිර්මාණය කරන ලදී. ❤️
-          </div>
-       </div>
-    </q-footer>
   </q-layout>
 </template>
 

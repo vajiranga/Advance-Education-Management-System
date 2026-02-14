@@ -115,15 +115,12 @@
           </div>
 
           <div class="row q-col-gutter-md">
-            <div class="col-12 col-md-6">
+            <div class="col-12">
               <q-input v-model="settings.instituteName" label="Institute Name" outlined />
-            </div>
-            <div class="col-12 col-md-6">
-              <q-input v-model="settings.registrationNo" label="Registration Number" outlined />
             </div>
             <div class="col-12">
               <q-input
-                v-model="settings.address"
+                v-model="settings.instituteAddress"
                 label="Address"
                 type="textarea"
                 outlined
@@ -131,10 +128,10 @@
               />
             </div>
             <div class="col-12 col-md-6">
-              <q-input v-model="settings.contactPhone" label="Contact Phone" outlined />
+              <q-input v-model="settings.institutePhone" label="Contact Phone" outlined />
             </div>
             <div class="col-12 col-md-6">
-              <q-input v-model="settings.contactEmail" label="Contact Email" outlined />
+              <q-input v-model="settings.instituteEmail" label="Contact Email" outlined />
             </div>
             <div class="col-12">
               <q-input
@@ -183,42 +180,67 @@
             </div>
 
             <div class="col-12 text-subtitle2 q-mt-md">Academic Calendar & Working Hours</div>
-            <div class="col-12 col-md-6">
-              <q-input
-                v-model="settings.academicYearStart"
-                type="date"
-                label="Academic Year Start"
-                outlined
-                stack-label
-              />
-            </div>
-            <div class="col-12 col-md-6">
-              <q-input
-                v-model="settings.academicYearEnd"
-                type="date"
-                label="Academic Year End"
-                outlined
-                stack-label
-              />
+            <!-- Working Days & Hours (Per Day) -->
+            <div class="col-12 text-subtitle2 q-mt-md">Weekly Schedule</div>
+            <div class="col-12">
+               <q-card flat bordered class="bg-grey-1">
+                 <q-card-section class="q-pa-xs">
+                   <div v-for="(dayConfig, index) in settings.workingDays" :key="index" class="row items-center q-py-sm q-px-md border-bottom-light">
+                      <div class="col-12 col-sm-3">
+                         <q-checkbox v-model="dayConfig.isOpen" :label="dayConfig.day" color="primary" />
+                      </div>
+                      <div class="col-6 col-sm-4 q-pr-sm">
+                         <q-input
+                           v-model="dayConfig.start"
+                           type="time"
+                           filled
+                           dense
+                           label="Open"
+                           :disable="!dayConfig.isOpen"
+                           bg-color="white"
+                         />
+                      </div>
+                      <div class="col-6 col-sm-4 q-pl-sm">
+                         <q-input
+                           v-model="dayConfig.end"
+                           type="time"
+                           filled
+                           dense
+                           label="Close"
+                           :disable="!dayConfig.isOpen"
+                           bg-color="white"
+                         />
+                      </div>
+                   </div>
+                 </q-card-section>
+               </q-card>
             </div>
 
-            <div class="col-12 col-md-6">
-              <q-input
-                v-model="settings.workingHoursStart"
-                type="time"
-                label="Work Start Time"
-                outlined
-                stack-label
-              />
-            </div>
-            <div class="col-12 col-md-6">
-              <q-input
-                v-model="settings.workingHoursEnd"
-                type="time"
-                label="Work End Time"
-                outlined
-                stack-label
-              />
+            <!-- Special Holidays -->
+            <div class="col-12 text-subtitle2 q-mt-md">Special Holidays (Closed)</div>
+            <div class="col-12 row q-col-gutter-sm items-start">
+                 <div class="col-12 col-md-4">
+                    <q-input v-model="newHolidayDate" type="date" dense outlined label="Add Holiday Date" stack-label />
+                 </div>
+                 <div class="col-12 col-md-2">
+                    <q-btn label="Add" color="primary" @click="addHoliday" :disable="!newHolidayDate" icon="add" />
+                 </div>
+                 <div class="col-12 col-md-12">
+                     <div class="q-gutter-sm q-mt-sm">
+                        <q-chip
+                          v-for="(h, i) in settings.specialHolidays"
+                          :key="i"
+                          removable
+                          @remove="removeHoliday(i)"
+                          color="red-1"
+                          text-color="red"
+                          icon="event_busy"
+                        >
+                            {{ h }}
+                        </q-chip>
+                        <div v-if="!settings.specialHolidays || settings.specialHolidays.length === 0" class="text-grey text-caption">No special holidays added.</div>
+                     </div>
+                 </div>
             </div>
           </div>
         </q-tab-panel>
@@ -1252,9 +1274,9 @@ const saveAdmin = async () => {
 const settings = ref({
   instituteName: '',
   registrationNo: '#01',
-  address: '',
-  contactPhone: '',
-  contactEmail: '',
+  instituteAddress: '',
+  institutePhone: '',
+  instituteEmail: '',
   onlinePayments: false,
   smsAlerts: false,
   guestAccess: false,
@@ -1277,8 +1299,16 @@ const settings = ref({
   timeZone: 'Asia/Colombo',
   academicYearStart: '',
   academicYearEnd: '',
-  workingDays: [],
-  workingHoursStart: '08:00',
+  workingDays: [
+    { day: 'Monday', isOpen: true, start: '08:00', end: '17:00' },
+    { day: 'Tuesday', isOpen: true, start: '08:00', end: '17:00' },
+    { day: 'Wednesday', isOpen: true, start: '08:00', end: '17:00' },
+    { day: 'Thursday', isOpen: true, start: '08:00', end: '17:00' },
+    { day: 'Friday', isOpen: true, start: '08:00', end: '17:00' },
+    { day: 'Saturday', isOpen: true, start: '08:00', end: '13:00' },
+    { day: 'Sunday', isOpen: false, start: '08:00', end: '13:00' }
+  ],
+  workingHoursStart: '08:00', // Keep for backward compat for now
   workingHoursEnd: '17:00',
 
   // System Controls - New
@@ -1418,6 +1448,34 @@ const adminProfile = ref({
   password_confirmation: '',
 })
 
+const newHolidayDate = ref('')
+// Defines the structure of a full week
+const defaultWeekSchedule = [
+    { day: 'Monday', isOpen: true, start: '08:00', end: '17:00' },
+    { day: 'Tuesday', isOpen: true, start: '08:00', end: '17:00' },
+    { day: 'Wednesday', isOpen: true, start: '08:00', end: '17:00' },
+    { day: 'Thursday', isOpen: true, start: '08:00', end: '17:00' },
+    { day: 'Friday', isOpen: true, start: '08:00', end: '17:00' },
+    { day: 'Saturday', isOpen: true, start: '08:00', end: '13:00' },
+    { day: 'Sunday', isOpen: false, start: '08:00', end: '13:00' }
+]
+
+const addHoliday = () => {
+    if (!newHolidayDate.value) return
+    if (!settings.value.specialHolidays) settings.value.specialHolidays = []
+    if (!settings.value.specialHolidays.includes(newHolidayDate.value)) {
+        settings.value.specialHolidays.push(newHolidayDate.value)
+        settings.value.specialHolidays.sort()
+    }
+    newHolidayDate.value = ''
+}
+
+const removeHoliday = (index) => {
+    if (settings.value.specialHolidays) {
+        settings.value.specialHolidays.splice(index, 1)
+    }
+}
+
 
 const loadSettings = async () => {
   loadingSettings.value = true
@@ -1443,11 +1501,56 @@ const loadSettings = async () => {
         if (data[key] !== undefined) {
           if (typeof settings.value[key] === 'boolean') {
             settings.value[key] = data[key] === '1' || data[key] === 'true' || data[key] === true
+          } else if (key === 'workingDays') {
+             // Handle Complex Schedule Array
+             try {
+                let parsed = Array.isArray(data[key]) ? data[key] : JSON.parse(data[key])
+
+                // If the saved data is the old format (array of strings), migrate it
+                if (parsed.length > 0 && typeof parsed[0] === 'string') {
+                   // Migrate old format ['Monday', 'Tuesday'] to new object format
+                   settings.value.workingDays = defaultWeekSchedule.map(d => ({
+                      ...d,
+                      isOpen: parsed.includes(d.day)
+                   }))
+                } else {
+                   // It's the new format, but let's ensure all days are present (merge with default)
+                   settings.value.workingDays = defaultWeekSchedule.map(defDay => {
+                      const found = parsed.find(p => p.day === defDay.day)
+                      return found ? found : defDay
+                   })
+                }
+             } catch {
+                settings.value.workingDays = [...defaultWeekSchedule]
+             }
+          } else if (key === 'specialHolidays') {
+             try {
+                settings.value[key] = Array.isArray(data[key]) ? data[key] : JSON.parse(data[key])
+             } catch {
+                settings.value[key] = []
+             }
           } else {
             settings.value[key] = data[key]
           }
         }
       })
+
+      // Ensure workingDays is populated if missing
+      if (!settings.value.workingDays || settings.value.workingDays.length === 0) {
+          settings.value.workingDays = [...defaultWeekSchedule]
+      }
+
+      // Migrate legacy contact details if new ones are missing
+      if (!settings.value.instituteAddress && data.address) {
+          settings.value.instituteAddress = data.address
+      }
+      if (!settings.value.institutePhone && data.contactPhone) {
+          settings.value.institutePhone = data.contactPhone
+      }
+      if (!settings.value.instituteEmail && data.contactEmail) {
+          settings.value.instituteEmail = data.contactEmail
+      }
+
       // Force default #01 if empty
       if (!settings.value.registrationNo) settings.value.registrationNo = '#01'
 
@@ -1507,6 +1610,20 @@ const saveSettings = async () => {
     if (settings.value.instituteLogo) {
       settingsStore.instituteLogo = settings.value.instituteLogo
       localStorage.setItem('instituteLogo', settings.value.instituteLogo)
+    }
+
+    // Update Contact Details
+    if (settings.value.instituteAddress) {
+        settingsStore.instituteAddress = settings.value.instituteAddress
+        localStorage.setItem('instituteAddress', settings.value.instituteAddress)
+    }
+    if (settings.value.institutePhone) {
+        settingsStore.institutePhone = settings.value.institutePhone
+        localStorage.setItem('institutePhone', settings.value.institutePhone)
+    }
+    if (settings.value.instituteEmail) {
+        settingsStore.instituteEmail = settings.value.instituteEmail
+        localStorage.setItem('instituteEmail', settings.value.instituteEmail)
     }
 
     $q.notify({ type: 'positive', message: 'Settings saved successfully!' })
