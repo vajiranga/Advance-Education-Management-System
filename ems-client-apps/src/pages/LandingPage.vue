@@ -169,37 +169,37 @@
            <h2 class="text-h3 text-weight-bold q-mb-lg">විද්‍යානන්දේ අපි</h2>
            <p class="text-grey-5 q-mb-xl text-h6">ඉගෙනීම විතරක් නෙමෙයි, ජීවිතයත් දිනන තැන.</p>
 
-           <q-carousel
-             animated
-             v-model="slide"
-             arrows
-             navigation
-             infinite
-             :autoplay="2500"
-             transition-prev="slide-right"
-             transition-next="slide-left"
-             height="500px"
-             class="rounded-borders shadow-20 glass-panel container-fluid"
-           >
-             <q-carousel-slide :name="1" img-src="/images/sports-meet.png">
-                <div class="absolute-bottom custom-caption">
-                   <div class="text-h2">වාර්ෂික ක්‍රීඩා උත්සවය</div>
-                   <div class="text-subtitle1">ජයග්‍රහණයේ සොඳුරු මතකයන්</div>
-                </div>
-             </q-carousel-slide>
-             <q-carousel-slide :name="2" img-src="/images/prefects-day.png">
-                <div class="absolute-bottom custom-caption">
-                   <div class="text-h2">සිසු නායක දිනය</div>
-                   <div class="text-subtitle1">නායකත්වයේ ඇරඹුම</div>
-                </div>
-             </q-carousel-slide>
-             <q-carousel-slide :name="3" img-src="/images/environment-day.png">
-                <div class="absolute-bottom custom-caption">
-                   <div class="text-h2">පරිසර දින සැමරුම</div>
-                   <div class="text-subtitle1">අපේ පරිසරය, අපේ අනාගතයයි</div>
-                </div>
-             </q-carousel-slide>
-           </q-carousel>
+             <q-carousel
+               animated
+               v-model="slide"
+               arrows
+               navigation
+               infinite
+               :autoplay="2500"
+               transition-prev="slide-right"
+               transition-next="slide-left"
+               height="500px"
+               class="rounded-borders shadow-20 glass-panel container-fluid"
+             >
+               <q-carousel-slide :name="1" img-src="/images/New year games.jpg">
+                  <div class="absolute-bottom custom-caption">
+                     <div class="text-h2">New Year Games</div>
+                     <div class="text-subtitle1">Awantha & Avurudu</div>
+                  </div>
+               </q-carousel-slide>
+               <q-carousel-slide :name="2" img-src="/images/Price given.jpg">
+                  <div class="absolute-bottom custom-caption">
+                     <div class="text-h2">Prize Giving Ceremony</div>
+                     <div class="text-subtitle1">Awarding Excellence</div>
+                  </div>
+               </q-carousel-slide>
+               <q-carousel-slide :name="3" img-src="/images/Annual trip hortan place.jpg">
+                  <div class="absolute-bottom custom-caption">
+                     <div class="text-h2">Annual Trip - Horton Plains</div>
+                     <div class="text-subtitle1">Exploring Nature</div>
+                  </div>
+               </q-carousel-slide>
+             </q-carousel>
        </div>
     </section>
 
